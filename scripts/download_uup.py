@@ -4,7 +4,6 @@ UUP File Downloader for Windows 11 ISO Builder
 Automates the download of UUP files from uupdump.net
 """
 
-import os
 import sys
 import json
 import subprocess

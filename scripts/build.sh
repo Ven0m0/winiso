@@ -34,6 +34,14 @@ log_success() { echo -e "${GREEN}[OK]${NC} $1"; }
 log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
+# Run prerequisite validation
+log_info "Running prerequisite validation..."
+if ! bash "$SCRIPT_DIR/validate_prereqs.sh"; then
+    log_error "Prerequisite validation failed. Please fix errors and try again."
+    exit 1
+fi
+echo ""
+
 # Ensure output directory exists
 mkdir -p "$OUTPUT_DIR"
 

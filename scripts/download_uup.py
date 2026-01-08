@@ -270,7 +270,7 @@ def download_build(build_id, output_dir, edition_filter=None):
     ]
 
     try:
-        result = subprocess.run(aria2_cmd, check=True)
+        subprocess.run(aria2_cmd, check=True)
         aria2_input.unlink()  # Clean up input file
 
         log_success(f"Download complete! Files saved to: {output_dir}")

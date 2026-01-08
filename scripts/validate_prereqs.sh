@@ -206,7 +206,7 @@ echo ""
 # =============================================================================
 log_info "Checking available disk space..."
 
-available_space=$(df -BG "$PROJECT_ROOT" | awk 'NR==2 {print $4}' | sed 's/G//')
+available_space=$(df --output=avail -BG "$PROJECT_ROOT" | tail -n 1 | tr -d 'G[:space:]')
 if [[ $available_space -lt 20 ]]; then
     log_warn "Low disk space: ${available_space}GB available (20GB+ recommended)"
     ((WARNINGS++))

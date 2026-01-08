@@ -111,7 +111,7 @@ No migration needed. Existing configurations will work with the new validation s
 
 ## Known Limitations
 - Requires Linux environment (Arch, Debian/Ubuntu, or Fedora recommended)
-- UUP files must be downloaded manually from uupdump.net
+- UUP files are required; they can be downloaded automatically via `make download` (recommended) or manually from uupdump.net
 - Windows servicing stage (optional) requires Windows machine with DISM
 - Minimum 20GB disk space required for build process
 

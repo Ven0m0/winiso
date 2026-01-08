@@ -377,10 +377,14 @@ For more information, visit: https://uupdump.net
     script_dir = Path(__file__).parent
     project_root = script_dir.parent
 
-    if args.output == 'uup_files':
-        output_dir = project_root / 'uup_files'
-    else:
-        output_dir = Path(args.output)
+    # Security: Resolve and validate output path to prevent traversal
+    output_dir = Path(args.output)
+    if not output_dir.is_absolute():
+        output_dir = project_root.joinpath(output_dir)
+
+    if not str(output_dir.resolve()).startswith(str(project_root.resolve())):
+        log_error(f"Path traversal attempt detected for output: {args.output}")
+        return 1
 
     # List mode
     if args.list:

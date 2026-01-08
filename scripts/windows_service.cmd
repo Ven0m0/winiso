@@ -60,10 +60,32 @@ Dism /Cleanup-Mountpoints
 DISM /Cleanup-Wim
 
 echo.
-echo [2/10] Mounting WIM image (Index 1)...
-DISM /Mount-Image /ImageFile:"%WIM_PATH%" /Index:1 /MountDir:"%MOUNT_DIR%"
+echo [2/10] Getting WIM image count...
+for /f "tokens=3" %%i in ('DISM /Get-ImageInfo /ImageFile:"%WIM_PATH%" ^| findstr /C:"Index"') do set INDEX_COUNT=%%i
+
+:: Get the actual number of images
+for /f %%i in ('DISM /Get-ImageInfo /ImageFile:"%WIM_PATH%" ^| findstr /C:"Index :" ^| find /c /v ""') do set IMAGE_COUNT=%%i
+
+if "%IMAGE_COUNT%"=="" set IMAGE_COUNT=1
+echo Found %IMAGE_COUNT% image(s) in WIM file
+
+echo.
+echo Starting servicing for all %IMAGE_COUNT% image(s)...
+set CURRENT_INDEX=1
+
+:PROCESS_NEXT_INDEX
+if %CURRENT_INDEX% GTR %IMAGE_COUNT% goto SERVICING_COMPLETE
+
+echo.
+echo ============================================================================
+echo Processing Index %CURRENT_INDEX% of %IMAGE_COUNT%
+echo ============================================================================
+
+echo.
+echo [2/10] Mounting WIM image (Index %CURRENT_INDEX%)...
+DISM /Mount-Image /ImageFile:"%WIM_PATH%" /Index:%CURRENT_INDEX% /MountDir:"%MOUNT_DIR%"
 if %errorlevel% neq 0 (
-    echo ERROR: Failed to mount WIM image
+    echo ERROR: Failed to mount WIM image index %CURRENT_INDEX%
     pause
     exit /b 1
 )
@@ -132,26 +154,53 @@ del /s /f /q "%ISO_DIR%\*.chk" 2>nul
 echo Temp files cleaned.
 
 echo.
-echo [9/10] Unmounting and committing changes...
+echo [9/10] Unmounting and committing changes for index %CURRENT_INDEX%...
 Dism /Cleanup-Mountpoints
 Dism /Unmount-Image /MountDir:"%MOUNT_DIR%" /Commit
 if %errorlevel% neq 0 (
-    echo ERROR: Failed to unmount/commit image
+    echo ERROR: Failed to unmount/commit image index %CURRENT_INDEX%
     echo Attempting discard...
     Dism /Unmount-Image /MountDir:"%MOUNT_DIR%" /Discard
     pause
     exit /b 1
 )
 
+:: Move to next index
+set /a CURRENT_INDEX=%CURRENT_INDEX%+1
+goto PROCESS_NEXT_INDEX
+
+:SERVICING_COMPLETE
 echo.
-echo [10/10] Exporting to optimized WIM with maximum compression...
+echo All %IMAGE_COUNT% image(s) have been serviced.
+
+echo.
+echo [10/10] Exporting all images to optimized WIM with maximum compression...
 set "CLEANED_WIM=%~dp1install_cleaned.wim"
-Dism /Export-Image /SourceImageFile:"%WIM_PATH%" /SourceIndex:1 /DestinationImageFile:"%CLEANED_WIM%" /Compress:max /CheckIntegrity
+
+:: Export all indexes
+set EXPORT_INDEX=1
+:EXPORT_NEXT_INDEX
+if %EXPORT_INDEX% GTR %IMAGE_COUNT% goto EXPORT_COMPLETE
+
+echo Exporting index %EXPORT_INDEX% of %IMAGE_COUNT%...
+if %EXPORT_INDEX% EQU 1 (
+    :: First export creates the file
+    Dism /Export-Image /SourceImageFile:"%WIM_PATH%" /SourceIndex:%EXPORT_INDEX% /DestinationImageFile:"%CLEANED_WIM%" /Compress:max /CheckIntegrity
+) else (
+    :: Subsequent exports append to the file
+    Dism /Export-Image /SourceImageFile:"%WIM_PATH%" /SourceIndex:%EXPORT_INDEX% /DestinationImageFile:"%CLEANED_WIM%" /Compress:max /CheckIntegrity
+)
 if %errorlevel% neq 0 (
-    echo ERROR: Failed to export cleaned image
+    echo ERROR: Failed to export index %EXPORT_INDEX%
     pause
     exit /b 1
 )
+
+set /a EXPORT_INDEX=%EXPORT_INDEX%+1
+goto EXPORT_NEXT_INDEX
+
+:EXPORT_COMPLETE
+echo All %IMAGE_COUNT% image(s) exported successfully.
 
 :: Replace original with cleaned version
 echo.

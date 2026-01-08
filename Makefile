@@ -10,15 +10,21 @@
 #   make help           - Show this help
 # =============================================================================
 
-.PHONY: all deps build build-pro build-pause clean help
+.PHONY: all deps build build-pro build-pause clean help validate
 
 # Default target
 all: build
 
-# Install system dependencies (Arch Linux)
+# Install system dependencies
 deps:
 	@echo "Installing dependencies..."
 	./scripts/setup_env.sh
+
+# Validate prerequisites
+validate:
+	@echo "Validating prerequisites..."
+	chmod +x scripts/*.sh
+	./scripts/validate_prereqs.sh
 
 # Build debloated ISO (default: Pro for Workstations, fallback Pro)
 build:
@@ -55,6 +61,7 @@ help:
 	@echo ""
 	@echo "Usage:"
 	@echo "  make deps        - Install system dependencies (run once)"
+	@echo "  make validate    - Validate prerequisites before building"
 	@echo "  make build       - Build debloated ISO"
 	@echo "  make build-pro   - Build with Windows 11 Pro only"
 	@echo "  make build-pause - Pause for Windows servicing stage"
@@ -65,6 +72,7 @@ help:
 	@echo "  2. Download UUP files and place in uup_files/"
 	@echo "  3. (Optional) Edit config/autounattend.xml"
 	@echo "  4. (Optional) Edit config/debloat_list.txt"
+	@echo "  5. Run 'make validate' to check everything is ready"
 	@echo ""
 	@echo "Environment Variables:"
 	@echo "  TARGET_EDITION       - Preferred edition (default: ProfessionalWorkstation)"

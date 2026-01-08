@@ -37,7 +37,7 @@ def log_error(msg):
 
 def check_dependencies():
     """Check if required tools are installed"""
-    required = ['aria2c', 'cabextract']
+    required = ['aria2c']
     missing = []
 
     for tool in required:

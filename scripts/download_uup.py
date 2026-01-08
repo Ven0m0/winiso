@@ -185,6 +185,7 @@ def select_editions(build_info):
         if 0 <= idx < len(editions):
             return [edition_files[editions[idx]]]
     except ValueError:
+        # Non-numeric or invalid input; fall through to generic warning and default behavior.
         pass
 
     log_warn("Invalid selection, downloading all editions")

@@ -117,7 +117,6 @@ No migration needed. Existing configurations will work with the new validation s
 
 ## Future Enhancements
 - Docker container for portable builds
-- Automated UUP download integration
 - CI/CD pipeline for automated testing
 - Support for Windows Server editions
 - Pre-configured templates for different use cases

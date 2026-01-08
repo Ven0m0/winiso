@@ -10,7 +10,7 @@
 #   make help           - Show this help
 # =============================================================================
 
-.PHONY: all deps build build-pro build-pause clean help validate
+.PHONY: all deps build build-pro build-pause clean help validate download
 
 # Default target
 all: build
@@ -25,6 +25,12 @@ validate:
 	@echo "Validating prerequisites..."
 	chmod +x scripts/*.sh
 	./scripts/validate_prereqs.sh
+
+# Download UUP files from uupdump.net
+download:
+	@echo "Downloading UUP files..."
+	chmod +x scripts/download_uup.py
+	./scripts/download_uup.py
 
 # Build debloated ISO (default: Pro for Workstations, fallback Pro)
 build:
@@ -61,6 +67,7 @@ help:
 	@echo ""
 	@echo "Usage:"
 	@echo "  make deps        - Install system dependencies (run once)"
+	@echo "  make download    - Download UUP files from uupdump.net"
 	@echo "  make validate    - Validate prerequisites before building"
 	@echo "  make build       - Build debloated ISO"
 	@echo "  make build-pro   - Build with Windows 11 Pro only"
@@ -69,7 +76,7 @@ help:
 	@echo ""
 	@echo "Prerequisites:"
 	@echo "  1. Run 'make deps' to install required tools"
-	@echo "  2. Download UUP files and place in uup_files/"
+	@echo "  2. Run 'make download' to get UUP files (or download manually)"
 	@echo "  3. (Optional) Edit config/autounattend.xml"
 	@echo "  4. (Optional) Edit config/debloat_list.txt"
 	@echo "  5. Run 'make validate' to check everything is ready"

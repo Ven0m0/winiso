@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0] - 2026-01-08 - Automated UUP Download
+
+### Added
+- **Automated UUP downloader** (`scripts/download_uup.py`)
+  - Interactive menu for browsing and selecting Windows 11 builds
+  - Direct integration with uupdump.net API
+  - Edition filtering (download specific editions or all)
+  - Fast parallel downloads using aria2c
+  - Automatic file organization to `uup_files/` directory
+  - Command-line options for automation
+  - Comprehensive documentation (`scripts/README_DOWNLOAD.md`)
+
+- **New Makefile target**
+  - `make download` - Launch interactive UUP downloader
+
+### Changed
+- Updated README.md to highlight automated download feature
+- Updated Makefile help to include download command
+- Quick Start now recommends automated download method
+
+### Documentation
+- Added complete downloader documentation (`scripts/README_DOWNLOAD.md`)
+- Updated README.md with download options
+- Enhanced Quick Start guide with automated workflow
+
 ## [1.0.0] - 2026-01-08 - Production Ready Release
 
 ### Added

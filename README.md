@@ -4,6 +4,8 @@ A Linux-based automation toolset for creating debloated Windows 11 ISO files fro
 
 ## Features
 
+- **Automated UUP Download:** Interactive downloader for fetching Windows 11 builds from uupdump.net
+- **Pre-Build Validation:** Comprehensive checks for dependencies, files, and configuration
 - **Targeted Edition:** Builds Windows 11 Pro for Workstations (fallback to Pro)
 - **70+ Apps Removed:** Xbox, Cortana, Clipchamp, Solitaire, news/weather apps, and more
 - **Unattended Setup:** Injects `autounattend.xml` for OOBE bypass and privacy settings
@@ -22,6 +24,16 @@ make deps
 Supports Arch Linux (pacman), Debian/Ubuntu (apt), and Fedora (dnf).
 
 ### 2. Download UUP Files
+
+**Option A: Automatic Download (Recommended)**
+
+```bash
+make download
+```
+
+This launches an interactive menu to select and download Windows 11 builds directly from uupdump.net.
+
+**Option B: Manual Download**
 
 1. Visit [uupdump.net](https://uupdump.net)
 2. Select your desired Windows 11 build
@@ -56,6 +68,7 @@ The debloated ISO will appear in `output/`.
 | Command | Description |
 |---------|-------------|
 | `make deps` | Install system dependencies |
+| `make download` | Download UUP files from uupdump.net (interactive) |
 | `make validate` | Validate prerequisites before building |
 | `make build` | Build ISO with Pro for Workstations (default) |
 | `make build-pro` | Build ISO with Pro edition only |

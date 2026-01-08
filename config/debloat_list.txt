@@ -1,0 +1,145 @@
+# =============================================================================
+# Windows 11 Debloat Patterns
+# =============================================================================
+# Case-insensitive wildcards applied to:
+#   /Program Files/WindowsApps/
+#   /ProgramData/Microsoft/Windows/AppRepository/Packages/
+#
+# SAFE: Consumer apps, ads, games, social media, OEM bloat
+# KEEP: Store, WebView2, VCLibs, UI.Xaml, .NET.Native, Defender, Edge
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# GAMING & ENTERTAINMENT
+# -----------------------------------------------------------------------------
+*Xbox*
+*Solitaire*
+*CandyCrush*
+*BubbleWitch*
+*MarchofEmpires*
+*Minecraft*
+*Roblox*
+*HiddenCity*
+*CaesarsSlotsFreeCasino*
+
+# -----------------------------------------------------------------------------
+# STREAMING & SOCIAL MEDIA
+# -----------------------------------------------------------------------------
+*Disney*
+*Spotify*
+*Netflix*
+*Hulu*
+*TikTok*
+*Instagram*
+*Facebook*
+*Twitter*
+*LinkedInforWindows*
+*Pandora*
+
+# -----------------------------------------------------------------------------
+# NEWS & WEATHER
+# -----------------------------------------------------------------------------
+*BingWeather*
+*BingNews*
+*MSN*
+*FlipBoard*
+
+# -----------------------------------------------------------------------------
+# PRODUCTIVITY BLOAT
+# -----------------------------------------------------------------------------
+*Clipchamp*
+*OfficeHub*
+*GetOffice*
+*MicrosoftStickyNotes*
+*Todos*
+*PowerAutomateDesktop*
+*Whiteboard*
+
+# -----------------------------------------------------------------------------
+# COMMUNICATION
+# -----------------------------------------------------------------------------
+*YourPhone*
+*PhoneLink*
+*SkypeApp*
+*Teams*
+*CommunicationsApps*
+*windowscommunicationsapps*
+
+# -----------------------------------------------------------------------------
+# MEDIA APPS
+# -----------------------------------------------------------------------------
+*ZuneMusic*
+*ZuneVideo*
+*MixedReality*
+*3DViewer*
+*3DBuilder*
+*Print3D*
+
+# -----------------------------------------------------------------------------
+# SYSTEM BLOAT
+# -----------------------------------------------------------------------------
+*GetHelp*
+*FeedbackHub*
+*Getstarted*
+*QuickAssist*
+*People*
+*Cortana*
+*Copilot*
+
+# -----------------------------------------------------------------------------
+# UTILITIES (Optional - uncomment if unwanted)
+# -----------------------------------------------------------------------------
+*WindowsMaps*
+*WindowsAlarms*
+*WindowsSoundRecorder*
+# *WindowsCalculator*
+# *WindowsCamera*
+# *ScreenSketch*
+# *Photos*
+
+# -----------------------------------------------------------------------------
+# BING & SEARCH
+# -----------------------------------------------------------------------------
+*BingSearch*
+*BingTranslator*
+
+# -----------------------------------------------------------------------------
+# TELEMETRY & ADVERTISING
+# -----------------------------------------------------------------------------
+*DiagnosticDataViewer*
+*Advertising*
+
+# -----------------------------------------------------------------------------
+# OEM BLOAT (Common preinstalls)
+# -----------------------------------------------------------------------------
+*McAfee*
+*Norton*
+*Dropbox*
+*ExpressVPN*
+*Fitbit*
+*Phototastic*
+*PolarrPhotoEditor*
+*Wunderlist*
+*Keeper*
+*Drawboard*
+*Duolingo*
+
+# -----------------------------------------------------------------------------
+# DEVELOPER TOOLS (Bloat for non-developers)
+# -----------------------------------------------------------------------------
+*DevHome*
+
+# -----------------------------------------------------------------------------
+# OPTIONAL - Uncomment to remove
+# -----------------------------------------------------------------------------
+# Widgets sidebar
+# *MicrosoftWindows.Client.WebExperience*
+
+# OneNote (if using desktop Office)
+# *OneNote*
+
+# Family Safety
+# *Family*
+
+# Wallet/Pay
+# *Wallet*

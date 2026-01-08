@@ -1,0 +1,43 @@
+# Build artifacts
+scripts/ISODIR/
+*.iso
+
+# UUP input files (user-provided)
+uup_files/*.cab
+uup_files/*.esd
+uup_files/*.xml
+uup_files/*.txt
+uup_files/files/
+
+# Output (generated)
+output/*.iso
+
+# Upstream reference (optional)
+# upstream/
+
+# Logs
+*.log
+*.log1
+*.log2
+
+# Temporary files
+*.tmp
+*.bak
+*.old
+*.trace
+*.chk
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Keep placeholder files
+!uup_files/.gitkeep
+!output/.gitkeep

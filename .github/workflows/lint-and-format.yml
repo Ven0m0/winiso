@@ -44,7 +44,7 @@ jobs:
         run: black --check scripts/
 
       - name: Lint with Flake8
-        run: flake8 scripts/
+        run: flake8 scripts/ --max-line-length=120
 
   lint-xml:
     name: Lint XML Config

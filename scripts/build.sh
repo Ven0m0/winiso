@@ -100,14 +100,14 @@ fi
 if [[ -f "$ISO_FILE" ]]; then
     ISO_NAME=$(basename "$ISO_FILE")
     log_success "ISO created: $ISO_NAME"
-    
+
     # Move to output directory
     log_info "Moving $ISO_NAME to $OUTPUT_DIR..."
     mv "$ISO_FILE" "$OUTPUT_DIR/"
-    
+
     # Get final size
     FINAL_SIZE=$(du -h "$OUTPUT_DIR/$ISO_NAME" | cut -f1)
-    
+
     echo ""
     log_success "======================================"
     log_success "Build Complete!"

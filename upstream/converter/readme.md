@@ -106,7 +106,7 @@ brew tap sidneys/homebrew
 brew install aria2 cabextract wimlib cdrtools sidneys/homebrew/chntpw
 ```
 
-For macOS users on Apple Silicon (M1, M2, M3):  
+For macOS users on Apple Silicon (M1, M2, M3):
 ```bash
 brew tap minacle/chntpw
 brew install aria2 cabextract wimlib cdrtools minacle/chntpw/chntpw

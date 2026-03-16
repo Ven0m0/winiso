@@ -1,0 +1,60 @@
+# ─── Default behavior ─────────────────────────────────────────────────────────
+# Normalize line endings to LF in the repo; let Git convert on checkout.
+* text=auto eol=lf
+
+# ─── Shell scripts ────────────────────────────────────────────────────────────
+*.sh        text eol=lf
+Makefile    text eol=lf
+
+# ─── Windows scripts (must keep CRLF so cmd.exe executes correctly) ───────────
+*.cmd       text eol=crlf
+*.bat       text eol=crlf
+
+# ─── XML / config ─────────────────────────────────────────────────────────────
+# autounattend.xml is Windows-consumed; keep LF in repo but note Windows setup
+# expects UTF-8 without BOM (handled at ISO-injection time by build.sh).
+*.xml       text eol=lf
+*.json      text eol=lf
+*.ini       text eol=lf
+
+# ─── Documentation & plain text ───────────────────────────────────────────────
+*.md        text eol=lf
+*.txt       text eol=lf
+*.rst       text eol=lf
+LICENSE     text eol=lf
+
+# ─── Python ───────────────────────────────────────────────────────────────────
+*.py        text eol=lf
+
+# ─── Binary / generated assets (no diff, no merge, no EOL munging) ───────────
+*.iso       binary
+*.wim       binary
+*.esd       binary
+*.cab       binary
+*.exe       binary
+*.dll       binary
+*.png       binary
+*.jpg       binary
+*.jpeg      binary
+*.gif       binary
+*.ico       binary
+*.zip       binary
+*.7z        binary
+*.gz        binary
+*.xz        binary
+*.tar       binary
+
+# ─── Diff drivers ─────────────────────────────────────────────────────────────
+# Show XML diffs with full context for easier review.
+*.xml       diff=xml
+
+# Treat Windows answer files as XML for diffing.
+autounattend.xml diff=xml
+
+# ─── Export-ignore: exclude dev/meta files from `git archive` tarballs ────────
+.gitignore          export-ignore
+.gitattributes      export-ignore
+.github/            export-ignore
+AGENTS.md           export-ignore
+CLAUDE.md           export-ignore
+upstream/           export-ignore

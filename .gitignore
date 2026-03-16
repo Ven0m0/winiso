@@ -1,50 +1,61 @@
-# Build artifacts
+# ─── Build artifacts ──────────────────────────────────────────────────────────
 scripts/ISODIR/
 *.iso
+output/*.iso
 
-# UUP input files (user-provided)
+# ─── UUP input files (user-provided, never committed) ────────────────────────
 uup_files/*.cab
 uup_files/*.esd
 uup_files/*.xml
 uup_files/*.txt
 uup_files/files/
 
-# Output (generated)
-output/*.iso
+# Keep directory placeholders
+!uup_files/.gitkeep
+!output/.gitkeep
 
-# Upstream reference (optional)
-# upstream/
-
-# Logs
+# ─── Logs & traces ────────────────────────────────────────────────────────────
 *.log
-*.log1
-*.log2
-
-# Temporary files
-*.tmp
-*.bak
-*.old
+*.log[0-9]
 *.trace
 *.chk
 
-# Editor files
+# ─── Temporary / scratch files ───────────────────────────────────────────────
+*.tmp
+*.bak
+*.old
+*.orig
+*.rej
+
+# ─── Editor & IDE ─────────────────────────────────────────────────────────────
 *.swp
 *.swo
 *~
 .vscode/
 .idea/
+*.iml
+*.sublime-workspace
 
-# Python cache
+# ─── Python cache ─────────────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
+.eggs/
+dist/
+build/
+*.egg-info/
 
-# OS files
+# ─── OS-generated files ───────────────────────────────────────────────────────
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+desktop.ini
 
-# Keep placeholder files
-!uup_files/.gitkeep
-!output/.gitkeep
+# ─── Ventoy runtime state (if Ventoy USB is ever mounted locally) ────────────
+ventoy/ventoy/themes/

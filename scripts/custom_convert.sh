@@ -422,9 +422,9 @@ extractDir="${tempDir}/extract"
 echo -e "\033[1m${scriptName}\033[0m"
 
 updatesDetected=false
-for file in "$(find "$uupDir" -type f -iname "*windows1*-kb*.cab" -or -iname "ssu-*.cab")"; do
+while IFS= read -r -d '' file; do
   updatesDetected=true
-done
+done < <(find "$uupDir" -type f \( -iname "*windows1*-kb*.cab" -or -iname "ssu-*.cab" \) -print0)
 
 if [[ $updatesDetected == true ]]; then
   echo -e "\033[33mNote: This script does not and cannot support the integration of updates.\nUse the Windows version of the converter to integrate updates."
@@ -442,7 +442,7 @@ if [[ "$(version "$cabextractVersion")" -ge "$(version "1.10")" ]]; then
 else
   keepSymlinks=""
 fi
-for file in "$(find "$uupDir" -type f -iname "*.cab" -not -iname "*windows1*-kb*.cab" -not -iname "ssu-*.cab" -not -iname "*desktopdeployment*.cab" -not -iname "*aggregatedmetadata*.cab")"; do
+while IFS= read -r -d '' file; do
   fileName=$(basename "$file" .cab)
   echo -e "${infoColor}""CAB -> ESD:""$resetColor"" ${fileName}"
 
@@ -456,7 +456,7 @@ for file in "$(find "$uupDir" -type f -iname "*.cab" -not -iname "*windows1*-kb*
   errorHandler $? "Failed to create ${fileName}.esd"
 
   rm -rf "$extractDir"
-done
+done < <(find "$uupDir" -type f -iname "*.cab" -not -iname "*windows1*-kb*.cab" -not -iname "ssu-*.cab" -not -iname "*desktopdeployment*.cab" -not -iname "*aggregatedmetadata*.cab" -print0)
 
 fileName=
 file=
@@ -568,9 +568,9 @@ if [[ -e ./ISODIR/sources/winpe.jpg ]]; then
 fi
 
 refglobs=false
-for file in "$(find "$tempDir" -type f -iname "*.esd")"; do
+while IFS= read -r -d '' file; do
   refglobs=true
-done
+done < <(find "$tempDir" -type f -iname "*.esd" -print0)
 
 # Edition restriction: prefer ProfessionalWorkstation, fallback to Professional only
 # Set TARGET_EDITION env var to override (e.g., "Professional" or "Enterprise")

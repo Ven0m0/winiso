@@ -299,8 +299,8 @@ def download_build(build_id, output_dir, edition_filter=None):
         log_success(f"Download complete! Files saved to: {output_dir}")
 
         # Count downloaded files
-        downloaded = len(
-            [f for f in output_path.glob("*") if f.is_file() and f.name != ".gitkeep"]
+        downloaded = sum(
+            1 for f in output_path.glob("*") if f.is_file() and f.name != ".gitkeep"
         )
         log_info(f"Total files downloaded: {downloaded}")
 

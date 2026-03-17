@@ -5,12 +5,13 @@
 #   make deps           - Install system dependencies
 #   make build          - Build debloated ISO (Pro for Workstations preferred)
 #   make build-pro      - Build with Pro edition only
+#   make build-nano     - Build extreme nano11-style debloated ISO
 #   make build-pause    - Build and pause for Windows servicing stage
 #   make clean          - Remove build artifacts
 #   make help           - Show this help
 # =============================================================================
 
-.PHONY: all deps build build-pro build-pause clean help validate download
+.PHONY: all deps build build-pro build-nano build-pause clean help validate download
 
 # Default target
 all: build
@@ -44,6 +45,12 @@ build-pro:
 	chmod +x scripts/*.sh
 	TARGET_EDITION=Professional FALLBACK_EDITION=Professional ./scripts/build.sh
 
+# Build extreme nano11-style debloated ISO
+build-nano:
+	@echo "Building extreme nano11-style debloated Windows 11 ISO..."
+	chmod +x scripts/*.sh
+	NANO=1 ./scripts/build.sh
+
 # Build and pause for Windows servicing stage
 # Use this when you want to run DISM cleanup, 8.3 stripping, etc. on Windows
 build-pause:
@@ -71,6 +78,7 @@ help:
 	@echo "  make validate    - Validate prerequisites before building"
 	@echo "  make build       - Build debloated ISO"
 	@echo "  make build-pro   - Build with Windows 11 Pro only"
+	@echo "  make build-nano  - Build extreme nano11-style debloated ISO"
 	@echo "  make build-pause - Pause for Windows servicing stage"
 	@echo "  make clean       - Remove all build artifacts"
 	@echo ""
@@ -85,3 +93,4 @@ help:
 	@echo "  TARGET_EDITION       - Preferred edition (default: ProfessionalWorkstation)"
 	@echo "  FALLBACK_EDITION     - Fallback if target not found (default: Professional)"
 	@echo "  PAUSE_FOR_WINDOWS_STAGE - Set to 1 to pause for DISM servicing"
+	@echo "  NANO                 - Set to 1 for aggressive nano11 debloating"

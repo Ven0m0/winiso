@@ -373,7 +373,7 @@ def interactive_mode(output_dir):
             return False
 
 
-def main():
+def parse_args():
     parser = argparse.ArgumentParser(
         description="Download UUP files from uupdump.net for Windows 11 ISO building",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -408,7 +408,11 @@ For more information, visit: https://uupdump.net
         help="Maximum number of builds to list (default: 10)",
     )
 
-    args = parser.parse_args()
+    return parser.parse_args()
+
+
+def main():
+    args = parse_args()
 
     # Check dependencies
     if not check_dependencies():

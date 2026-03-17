@@ -568,9 +568,9 @@ if [[ -e ./ISODIR/sources/winpe.jpg ]]; then
 fi
 
 refglobs=false
-for file in "$(find "$tempDir" -type f -iname "*.esd")"; do
+if [[ -n $(find "$tempDir" -type f -iname "*.esd" | head -n 1) ]]; then
   refglobs=true
-done
+fi
 
 # Edition restriction: prefer ProfessionalWorkstation, fallback to Professional only
 # Set TARGET_EDITION env var to override (e.g., "Professional" or "Enterprise")

@@ -45,32 +45,52 @@ if [[ -z "$GH_REPO" ]]; then
     exit 1
 fi
 
+if [[ ! "$GH_REPO" =~ ^[^/]+/[^/]+$ ]]; then
+    log_error "GH_REPO must use the OWNER/REPO format."
+    exit 1
+fi
+
 if [[ -z "$GH_TOKEN" ]]; then
     log_error "GH_TOKEN or GITHUB_TOKEN must be set."
     exit 1
 fi
 
 if ! command -v gh &> /dev/null; then
-    log_error "GitHub CLI (gh) is required to auto-merge pull requests. Install it from https://cli.github.com/."
+    log_error "GitHub CLI (gh) is required but not found."
+    exit 1
+fi
+
+if ! command -v jq &> /dev/null; then
+    log_error "jq is required but not found."
     exit 1
 fi
 
 log_info "Scanning open pull requests for $GH_REPO..."
 
-if [[ "$INCLUDE_DRAFTS" == "true" ]]; then
-    jq_filter='.[] | .number'
-else
-    jq_filter='.[] | select(.isDraft | not) | .number'
-fi
+pr_numbers=()
+page=1
 
-mapfile -t pr_numbers < <(
-    gh pr list \
-        --repo "$GH_REPO" \
-        --state open \
-        --limit 1000 \
-        --json number,isDraft \
-        --jq "$jq_filter"
-)
+while :; do
+    page_data="$(gh api "repos/$GH_REPO/pulls?state=open&per_page=100&page=$page")"
+    page_size="$(jq 'length' <<<"$page_data")"
+
+    if [[ "$page_size" -eq 0 ]]; then
+        break
+    fi
+
+    if [[ "$INCLUDE_DRAFTS" == "true" ]]; then
+        jq_filter='.[] | .number'
+    else
+        jq_filter='.[] | select(.draft | not) | .number'
+    fi
+
+    while IFS= read -r pr_number; do
+        [[ -n "$pr_number" ]] || continue
+        pr_numbers+=("$pr_number")
+    done < <(jq -r "$jq_filter" <<<"$page_data")
+
+    ((page++))
+done
 
 if [[ "${#pr_numbers[@]}" -eq 0 ]]; then
     log_info "No eligible open pull requests found."
@@ -80,13 +100,13 @@ fi
 log_info "Found ${#pr_numbers[@]} eligible pull request(s)."
 
 failed_prs=()
-merge_flag="--$MERGE_METHOD"
+merge_method_flag="--$MERGE_METHOD"
 
 for pr_number in "${pr_numbers[@]}"; do
     [[ -n "$pr_number" ]] || continue
 
     log_info "Enabling auto-merge for PR #$pr_number using '$MERGE_METHOD'..."
-    if gh pr merge --repo "$GH_REPO" "$pr_number" --auto "$merge_flag"; then
+    if gh pr merge --repo "$GH_REPO" "$pr_number" --auto "$merge_method_flag"; then
         log_success "Auto-merge enabled for PR #$pr_number"
     else
         log_warn "Unable to enable auto-merge for PR #$pr_number"

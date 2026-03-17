@@ -1,4 +1,4 @@
-name: Bulk automerge open pull requests
+name: Bulk Auto-merge Open Pull Requests
 
 on:
   workflow_dispatch:

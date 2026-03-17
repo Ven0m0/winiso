@@ -1,9 +1,9 @@
 #!/bin/bash
+set -euo pipefail
+
 # =============================================================================
 # automerge_open_prs.sh - Enable auto-merge for all open pull requests
 # =============================================================================
-
-set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
@@ -51,7 +51,7 @@ if [[ -z "$GH_TOKEN" ]]; then
 fi
 
 if ! command -v gh &> /dev/null; then
-    log_error "GitHub CLI (gh) is required to auto-merge pull requests."
+    log_error "GitHub CLI (gh) is required to auto-merge pull requests. Install it from https://cli.github.com/."
     exit 1
 fi
 
@@ -60,10 +60,17 @@ log_info "Scanning open pull requests for $GH_REPO..."
 if [[ "$INCLUDE_DRAFTS" == "true" ]]; then
     jq_filter='.[] | .number'
 else
-    jq_filter='.[] | select(.draft | not) | .number'
+    jq_filter='.[] | select(.isDraft | not) | .number'
 fi
 
-mapfile -t pr_numbers < <(gh api --paginate "repos/$GH_REPO/pulls?state=open&per_page=100" --jq "$jq_filter")
+mapfile -t pr_numbers < <(
+    gh pr list \
+        --repo "$GH_REPO" \
+        --state open \
+        --limit 1000 \
+        --json number,isDraft \
+        --jq "$jq_filter"
+)
 
 if [[ "${#pr_numbers[@]}" -eq 0 ]]; then
     log_info "No eligible open pull requests found."

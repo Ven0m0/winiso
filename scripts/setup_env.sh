@@ -7,17 +7,8 @@
 
 set -euo pipefail
 
-# Colors
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-CYAN='\033[0;36m'
-NC='\033[0m'
-
-log_info() { echo -e "${CYAN}[INFO]${NC} $1"; }
-log_success() { echo -e "${GREEN}[OK]${NC} $1"; }
-log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
-log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
+SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+source "$SCRIPT_DIR/utils.sh"
 
 log_info "Checking and installing dependencies..."
 
@@ -47,18 +38,10 @@ log_info "Verifying tool availability..."
 
 MISSING_TOOLS=()
 
-check_tool() {
-    if ! command -v "$1" &> /dev/null; then
-        MISSING_TOOLS+=("$1")
-    else
-        log_success "$1 found: $(command -v "$1")"
-    fi
-}
-
-check_tool "aria2c"
-check_tool "cabextract"
-check_tool "wimlib-imagex"
-check_tool "chntpw"
+check_tool "aria2c" || MISSING_TOOLS+=("aria2c")
+check_tool "cabextract" || MISSING_TOOLS+=("cabextract")
+check_tool "wimlib-imagex" || MISSING_TOOLS+=("wimlib-imagex")
+check_tool "chntpw" || MISSING_TOOLS+=("chntpw")
 
 # Check for genisoimage or mkisofs
 if command -v genisoimage &> /dev/null; then

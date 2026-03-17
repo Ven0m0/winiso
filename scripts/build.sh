@@ -8,7 +8,6 @@
 #   TARGET_EDITION       - Preferred edition (default: ProfessionalWorkstation)
 #   FALLBACK_EDITION     - Fallback edition (default: Professional)
 #   PAUSE_FOR_WINDOWS_STAGE - Set to 1 to pause for Windows servicing
-#   NANO                 - Set to 1 for aggressive nano11-style debloating
 #
 # Usage:
 #   ./build.sh                    # Normal build
@@ -23,7 +22,7 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 UUP_DIR="$PROJECT_ROOT/uup_files"
 OUTPUT_DIR="$PROJECT_ROOT/output"
 
-source "$SCRIPT_DIR/common.sh"
+source "$SCRIPT_DIR/utils.sh"
 
 # Run prerequisite validation
 log_info "Running prerequisite validation..."
@@ -56,7 +55,6 @@ log_info "Source: $UUP_DIR"
 log_info "Output: $OUTPUT_DIR"
 log_info "Target Edition: ${TARGET_EDITION:-ProfessionalWorkstation}"
 log_info "Fallback Edition: ${FALLBACK_EDITION:-Professional}"
-log_info "Nano Mode: ${NANO:-0}"
 echo ""
 
 # Clean previous build artifacts
@@ -70,7 +68,6 @@ cd "$SCRIPT_DIR"
 export TARGET_EDITION="${TARGET_EDITION:-ProfessionalWorkstation}"
 export FALLBACK_EDITION="${FALLBACK_EDITION:-Professional}"
 export PAUSE_FOR_WINDOWS_STAGE="${PAUSE_FOR_WINDOWS_STAGE:-0}"
-export NANO="${NANO:-0}"
 export WIMLIB_IMAGEX_IGNORE_CASE=1
 
 # Run Custom Converter

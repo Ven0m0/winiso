@@ -1,0 +1,38 @@
+name: Bulk automerge open pull requests
+
+on:
+  workflow_dispatch:
+    inputs:
+      merge_method:
+        description: Merge strategy to use for eligible pull requests
+        required: false
+        default: squash
+        type: choice
+        options:
+          - squash
+          - merge
+          - rebase
+      include_drafts:
+        description: Include draft pull requests
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  automerge-open-prs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Enable auto-merge for open pull requests
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          MERGE_METHOD: ${{ inputs.merge_method }}
+          INCLUDE_DRAFTS: ${{ inputs.include_drafts }}
+        run: bash ./scripts/automerge_open_prs.sh

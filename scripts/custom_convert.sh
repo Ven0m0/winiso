@@ -422,9 +422,9 @@ extractDir="${tempDir}/extract"
 echo -e "\033[1m${scriptName}\033[0m"
 
 updatesDetected=false
-for file in "$(find "$uupDir" -type f -iname "*windows1*-kb*.cab" -or -iname "ssu-*.cab")"; do
+if find "$uupDir" -type f \( -iname "*windows1*-kb*.cab" -or -iname "ssu-*.cab" \) 2>/dev/null | grep -q .; then
   updatesDetected=true
-done
+fi
 
 if [[ $updatesDetected == true ]]; then
   echo -e "\033[33mNote: This script does not and cannot support the integration of updates.\nUse the Windows version of the converter to integrate updates."

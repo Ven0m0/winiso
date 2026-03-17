@@ -80,6 +80,10 @@ generate_commands() {
     done
 }
 
+# Create temp command file for debloat commands (generated once for all indexes)
+CMD_FILE=$(mktemp)
+generate_commands > "$CMD_FILE"
+
 # Process each index in the WIM
 for index in $(seq 1 "$IMAGE_COUNT"); do
     log_info "Processing index $index of $IMAGE_COUNT..."
@@ -87,10 +91,6 @@ for index in $(seq 1 "$IMAGE_COUNT"); do
     # Get edition name for logging
     EDITION=$(wimlib-imagex info "$WIM_FILE" "$index" 2>/dev/null | grep "^Name:" | sed 's/^Name:[[:space:]]*//' || echo "Unknown")
     log_info "Edition: $EDITION"
-
-    # Create temp command file
-    CMD_FILE=$(mktemp)
-    generate_commands > "$CMD_FILE"
 
     # Execute debloat commands
     # Note: wimlib returns non-zero if some files don't exist, which is expected
@@ -100,8 +100,10 @@ for index in $(seq 1 "$IMAGE_COUNT"); do
         log_warn "Some patterns may not have matched (this is normal for missing apps)"
     fi
 
-    rm -f "$CMD_FILE"
 done
+
+# Clean up temp command file
+rm -f "$CMD_FILE"
 
 # Optimize the WIM to reclaim space
 log_info "Optimizing WIM file to reclaim space..."

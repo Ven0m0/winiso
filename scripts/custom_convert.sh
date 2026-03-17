@@ -1,5 +1,4 @@
 #!/bin/bash
-# shellcheck disable=SC1091,SC2016,SC2034,SC2066,SC2129,SC2162,SC2166,SC2181,SC2219,SC2261
 scriptName="UUP Converter v0.7.3"
 UUP_CONVERTER_SCRIPT=1
 
@@ -423,9 +422,9 @@ extractDir="${tempDir}/extract"
 echo -e "\033[1m${scriptName}\033[0m"
 
 updatesDetected=false
-if find "$uupDir" -type f \( -iname "*windows1*-kb*.cab" -or -iname "ssu-*.cab" \) 2>/dev/null | grep -q .; then
+while IFS= read -r -d '' file; do
   updatesDetected=true
-fi
+done < <(find "$uupDir" -type f \( -iname "*windows1*-kb*.cab" -or -iname "ssu-*.cab" \) -print0)
 
 if [[ $updatesDetected == true ]]; then
   echo -e "\033[33mNote: This script does not and cannot support the integration of updates.\nUse the Windows version of the converter to integrate updates."
@@ -443,7 +442,7 @@ if [[ "$(version "$cabextractVersion")" -ge "$(version "1.10")" ]]; then
 else
   keepSymlinks=""
 fi
-for file in "$(find "$uupDir" -type f -iname "*.cab" -not -iname "*windows1*-kb*.cab" -not -iname "ssu-*.cab" -not -iname "*desktopdeployment*.cab" -not -iname "*aggregatedmetadata*.cab")"; do
+while IFS= read -r -d '' file; do
   fileName=$(basename "$file" .cab)
   echo -e "${infoColor}""CAB -> ESD:""$resetColor"" ${fileName}"
 
@@ -457,7 +456,7 @@ for file in "$(find "$uupDir" -type f -iname "*.cab" -not -iname "*windows1*-kb*
   errorHandler $? "Failed to create ${fileName}.esd"
 
   rm -rf "$extractDir"
-done
+done < <(find "$uupDir" -type f -iname "*.cab" -not -iname "*windows1*-kb*.cab" -not -iname "ssu-*.cab" -not -iname "*desktopdeployment*.cab" -not -iname "*aggregatedmetadata*.cab" -print0)
 
 fileName=
 file=
@@ -569,9 +568,9 @@ if [[ -e ./ISODIR/sources/winpe.jpg ]]; then
 fi
 
 refglobs=false
-for file in "$(find "$tempDir" -type f -iname "*.esd")"; do
+while IFS= read -r -d '' file; do
   refglobs=true
-done
+done < <(find "$tempDir" -type f -iname "*.esd" -print0)
 
 # Edition restriction: prefer ProfessionalWorkstation, fallback to Professional only
 # Set TARGET_EDITION env var to override (e.g., "Professional" or "Enterprise")
@@ -581,11 +580,9 @@ FALLBACK_EDITION="${FALLBACK_EDITION:-Professional}"
 # Pre-scan metadata to find target edition
 targetMetadata=""
 fallbackMetadata=""
-availableEditions=()
 for metadata in "${metadataFiles[@]}"; do
   scanInfo=$(wimlib-imagex info "$metadata" 3 2>/dev/null)
   scanEdition=$(grep -i "^Edition ID:" <<<"$scanInfo" | sed "s/.*  //g")
-  [[ -n "$scanEdition" ]] && availableEditions+=("$scanEdition")
   if [[ "$scanEdition" == "$TARGET_EDITION" ]]; then
     targetMetadata="$metadata"
     break
@@ -604,7 +601,9 @@ elif [[ -n "$fallbackMetadata" ]]; then
 else
   echo -e "${errorColor}""Neither ${TARGET_EDITION} nor ${FALLBACK_EDITION} found in UUP files.""$resetColor"
   echo "Available editions:"
-  for scanEdition in "${availableEditions[@]}"; do
+  for metadata in "${metadataFiles[@]}"; do
+    scanInfo=$(wimlib-imagex info "$metadata" 3 2>/dev/null)
+    scanEdition=$(grep -i "^Edition ID:" <<<"$scanInfo" | sed "s/.*  //g")
     echo "  - $scanEdition"
   done
   exit 1

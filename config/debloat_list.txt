@@ -53,6 +53,7 @@
 *MicrosoftStickyNotes*
 *Todos*
 *PowerAutomateDesktop*
+*PowerAutomate*
 *Whiteboard*
 
 # -----------------------------------------------------------------------------
@@ -64,12 +65,14 @@
 *Teams*
 *CommunicationsApps*
 *windowscommunicationsapps*
+*OutlookForWindows*
 
 # -----------------------------------------------------------------------------
 # MEDIA APPS
 # -----------------------------------------------------------------------------
 *ZuneMusic*
 *ZuneVideo*
+*Zune*
 *MixedReality*
 *3DViewer*
 *3DBuilder*
@@ -83,11 +86,16 @@
 *Getstarted*
 *QuickAssist*
 *People*
+*PeopleExperienceHost*
 *Cortana*
 *Copilot*
+*CoreAI*
+*PinningConfirmationDialog*
+*SecureAssessmentBrowser*
+*CompatibilityEnhancements*
 
 # -----------------------------------------------------------------------------
-# UTILITIES (Optional - uncomment if unwanted)
+# UTILITIES (Removed by default - comment out to keep)
 # -----------------------------------------------------------------------------
 *WindowsMaps*
 *WindowsAlarms*
@@ -96,12 +104,15 @@
 # *WindowsCamera*
 # *ScreenSketch*
 # *Photos*
+*Paint*
+*Notepad*
 
 # -----------------------------------------------------------------------------
 # BING & SEARCH
 # -----------------------------------------------------------------------------
 *BingSearch*
 *BingTranslator*
+*Bing*
 
 # -----------------------------------------------------------------------------
 # TELEMETRY & ADVERTISING
@@ -130,6 +141,17 @@
 *DevHome*
 
 # -----------------------------------------------------------------------------
+# EXTENSIONS & CODECS (Aggressive removal)
+# -----------------------------------------------------------------------------
+*AV1VideoExtension*
+*AVCEncoderVideoExtension*
+*HEIFImageExtension*
+*HEVCVideoExtension*
+*RawImageExtension*
+*VP9VideoExtensions*
+*WebpImageExtension*
+
+# -----------------------------------------------------------------------------
 # OPTIONAL - Uncomment to remove
 # -----------------------------------------------------------------------------
 # Widgets sidebar
@@ -143,3 +165,6 @@
 
 # Wallet/Pay
 # *Wallet*
+
+# Security Health UI
+# *SecHealthUI*

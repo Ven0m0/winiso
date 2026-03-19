@@ -50,6 +50,7 @@ reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\CloudContent" /v "DisableCloud
 :: -----------------------------------------------------------------------------
 echo [%DATE% %TIME%] Reducing telemetry... >> "%LOGFILE%"
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\DataCollection" /v "AllowTelemetry" /t REG_DWORD /d 0 /f >> "%LOGFILE%" 2>&1
+reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\DataCollection" /v "AllowTelemetry" /t REG_DWORD /d 0 /f >> "%LOGFILE%" 2>&1
 
 :: -----------------------------------------------------------------------------
 :: Disable Advertising ID
@@ -70,6 +71,13 @@ reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\System" /v "UploadUserActiviti
 :: -----------------------------------------------------------------------------
 echo [%DATE% %TIME%] Disabling Cortana... >> "%LOGFILE%"
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\Windows Search" /v "AllowCortana" /t REG_DWORD /d 0 /f >> "%LOGFILE%" 2>&1
+
+:: -----------------------------------------------------------------------------
+:: Disable Chat and Copilot
+:: -----------------------------------------------------------------------------
+echo [%DATE% %TIME%] Disabling Chat and Copilot... >> "%LOGFILE%"
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\Windows Chat" /v "ChatIcon" /t REG_DWORD /d 3 /f >> "%LOGFILE%" 2>&1
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot" /v "TurnOffWindowsCopilot" /t REG_DWORD /d 1 /f >> "%LOGFILE%" 2>&1
 
 :: -----------------------------------------------------------------------------
 :: Disable Windows Tips and Suggestions

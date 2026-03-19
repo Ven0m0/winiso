@@ -95,7 +95,7 @@
 *CompatibilityEnhancements*
 
 # -----------------------------------------------------------------------------
-# UTILITIES (Optional - uncomment if unwanted)
+# UTILITIES (Removed by default - comment out to keep)
 # -----------------------------------------------------------------------------
 *WindowsMaps*
 *WindowsAlarms*

@@ -91,44 +91,32 @@ generate_commands() {
         echo "delete --recursive --force \"/Windows/System32/InputMethod/CHT\""
         echo "delete --recursive --force \"/Windows/System32/InputMethod/JPN\""
         echo "delete --recursive --force \"/Windows/System32/InputMethod/KOR\""
-        echo "delete --recursive --force \"/ProgramData/Microsoft/Windows Defender/Definition Updates\""
         echo "delete --recursive --force \"/Program Files (x86)/Microsoft/Edge\""
         echo "delete --recursive --force \"/Program Files (x86)/Microsoft/EdgeUpdate\""
-        echo "delete --recursive --force \"/Program Files (x86)/Microsoft/EdgeWebView\""
-        echo "delete --recursive --force \"/Windows/System32/Microsoft-Edge-Webview\""
         echo "delete --force \"/Windows/System32/OneDriveSetup.exe\""
 
         # Slimming DriverStore (find and delete patterns)
         # Note: We use wimlib-imagex dir to find matches because delete doesn't support wildcards directly
         local driver_repo="/Windows/System32/DriverStore/FileRepository"
-        local driver_patterns="prn|scan|mfd|wscsmd.inf|tapdrv|rdpbus.inf|tdibth.inf"
+        local driver_patterns="prn|scan|mfd|wscsmd\.inf|tapdrv|rdpbus\.inf|tdibth\.inf"
 
         # Get matching directories in DriverStore
-        wimlib-imagex dir "$WIM_FILE" "$index" --path="$driver_repo" 2>/dev/null | grep -v "^$driver_repo$" | grep -iE "$driver_patterns" | while read -r full_path; do
+        { wimlib-imagex dir "$WIM_FILE" "$index" --path="$driver_repo" 2>/dev/null | grep -v "^$driver_repo$" | grep -iE "$driver_patterns" || true; } | while read -r full_path; do
             [[ -n "$full_path" ]] && echo "delete --recursive --force \"$full_path\""
         done
 
         # Slimming Fonts (Keep only core fonts)
         local fonts_dir="/Windows/Fonts"
         local keep_fonts="segoe|tahoma|marlett|8541oem|segui|consol|lucon|calibri|arial|times|cou|8.*"
-        wimlib-imagex dir "$WIM_FILE" "$index" --path="$fonts_dir" 2>/dev/null | grep -v "^$fonts_dir$" | grep -ivE "$keep_fonts" | while read -r font_path; do
+        { wimlib-imagex dir "$WIM_FILE" "$index" --path="$fonts_dir" 2>/dev/null | grep -v "^$fonts_dir$" | grep -ivE "$keep_fonts" || true; } | while read -r font_path; do
              [[ -n "$font_path" ]] && echo "delete --force \"$font_path\""
         done
 
-        # WinSxS Slimming (Extremely aggressive)
-        local winsxs_dir="/Windows/WinSxS"
-        # Whitelist patterns based on nano11
-        local keep_patterns="servicingstack|common-controls|gdiplus|isolationautomation|proxystub|vc80.crt|vc90.crt|Catalogs|FileMaps|Fusion|InstallTemp|Manifests|SettingsManifests|Temp"
-
-        # Use a more efficient approach: move whitelisted items to a temporary directory, delete the old one, and rename.
-        echo "mkdir /Windows/WinSxS_Nano"
-        wimlib-imagex dir "$WIM_FILE" "$index" --path="$winsxs_dir" 2>/dev/null | grep -v "^$winsxs_dir$" | grep -iE "$keep_patterns" | while read -r sxs_path; do
-            local sxs_name
-            sxs_name=$(basename "$sxs_path")
-            echo "rename \"$sxs_path\" \"/Windows/WinSxS_Nano/$sxs_name\""
-        done
-        echo "delete --recursive --force \"$winsxs_dir\""
-        echo "rename \"/Windows/WinSxS_Nano\" \"$winsxs_dir\""
+        # NOTE: WinSxS *structural* slimming has been disabled because
+        # aggressively whitelisting, moving, and deleting \Windows\WinSxS
+        # risks producing an unbootable image and can introduce basename
+        # collisions when flattening directories. NANO mode still applies
+        # other size optimizations above, but leaves WinSxS intact.
     fi
 }
 
@@ -178,8 +166,12 @@ apply_registry_tweaks() {
             echo "1"
 
             # Disable Services (Start=4)
-            local services="wuauserv UsoSvc WaaSMedicSvc WinDefend WdNisSvc Sense dmwappushservice Spooler Fax RemoteRegistry diagsvc WerSvc PcaSvc MapsBroker WalletService"
-            for svc in $services; do
+            local services=(
+                "wuauserv" "UsoSvc" "WaaSMedicSvc" "WinDefend" "WdNisSvc" "Sense"
+                "dmwappushservice" "Spooler" "Fax" "RemoteRegistry" "diagsvc"
+                "WerSvc" "PcaSvc" "MapsBroker" "WalletService"
+            )
+            for svc in "${services[@]}"; do
                 echo "cd \ControlSet001\Services\\$svc"
                 echo "ed Start"
                 echo "4"
@@ -187,9 +179,19 @@ apply_registry_tweaks() {
 
             echo "q"
             echo "y"
-        } | chntpw -e "$temp_reg_dir/SYSTEM" >/dev/null 2>&1
+        } | chntpw -e "$temp_reg_dir/SYSTEM"
 
-        wimlib-imagex update "$WIM_FILE" "$index" --command "add $temp_reg_dir/SYSTEM /Windows/System32/config/SYSTEM" >/dev/null 2>&1
+        if [[ $? -ne 0 ]]; then
+            log_error "Failed to apply registry tweaks to SYSTEM hive for index $index (chntpw). See error output above."
+            rm -rf "$temp_reg_dir"
+            return 1
+        fi
+
+        if ! wimlib-imagex update "$WIM_FILE" "$index" --command "add $temp_reg_dir/SYSTEM /Windows/System32/config/SYSTEM"; then
+            log_error "Failed to write modified SYSTEM hive back to WIM for index $index (wimlib-imagex update). See error output above."
+            rm -rf "$temp_reg_dir"
+            return 1
+        fi
     fi
 
     # 2. SOFTWARE TWEAKS
@@ -234,7 +236,7 @@ apply_registry_tweaks() {
             echo "nv 4 TurnOffWindowsCopilot"
             echo "ed TurnOffWindowsCopilot"
             echo "1"
-            echo "cd \Policies\Microsoft\Windows"
+            echo "cd .."
             echo "nk \"Windows Chat\""
             echo "cd \"Windows Chat\""
             echo "nv 4 ChatIcon"
@@ -243,9 +245,19 @@ apply_registry_tweaks() {
 
             echo "q"
             echo "y"
-        } | chntpw -e "$temp_reg_dir/SOFTWARE" >/dev/null 2>&1
+        } | chntpw -e "$temp_reg_dir/SOFTWARE"
 
-        wimlib-imagex update "$WIM_FILE" "$index" --command "add $temp_reg_dir/SOFTWARE /Windows/System32/config/SOFTWARE" >/dev/null 2>&1
+        if [[ $? -ne 0 ]]; then
+            log_error "Failed to apply registry tweaks to SOFTWARE hive for index $index (chntpw). See error output above."
+            rm -rf "$temp_reg_dir"
+            return 1
+        fi
+
+        if ! wimlib-imagex update "$WIM_FILE" "$index" --command "add $temp_reg_dir/SOFTWARE /Windows/System32/config/SOFTWARE"; then
+            log_error "Failed to write modified SOFTWARE hive back to WIM for index $index (wimlib-imagex update). See error output above."
+            rm -rf "$temp_reg_dir"
+            return 1
+        fi
     fi
 
     rm -rf "$temp_reg_dir"

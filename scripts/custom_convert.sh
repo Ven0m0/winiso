@@ -584,7 +584,7 @@ availableEditions=()
 for metadata in "${metadataFiles[@]}"; do
   scanInfo=$(wimlib-imagex info "$metadata" 3 2>/dev/null)
   scanEdition=$(grep -i "^Edition ID:" <<<"$scanInfo" | sed "s/.*  //g")
-  availableEditions+=("$scanEdition")
+  [[ -n "$scanEdition" ]] && availableEditions+=("$scanEdition")
   if [[ "$scanEdition" == "$TARGET_EDITION" ]]; then
     targetMetadata="$metadata"
     break

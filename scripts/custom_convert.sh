@@ -580,9 +580,11 @@ FALLBACK_EDITION="${FALLBACK_EDITION:-Professional}"
 # Pre-scan metadata to find target edition
 targetMetadata=""
 fallbackMetadata=""
+availableEditions=()
 for metadata in "${metadataFiles[@]}"; do
   scanInfo=$(wimlib-imagex info "$metadata" 3 2>/dev/null)
   scanEdition=$(grep -i "^Edition ID:" <<<"$scanInfo" | sed "s/.*  //g")
+  [[ -n "$scanEdition" ]] && availableEditions+=("$scanEdition")
   if [[ "$scanEdition" == "$TARGET_EDITION" ]]; then
     targetMetadata="$metadata"
     break
@@ -601,9 +603,7 @@ elif [[ -n "$fallbackMetadata" ]]; then
 else
   echo -e "${errorColor}""Neither ${TARGET_EDITION} nor ${FALLBACK_EDITION} found in UUP files.""$resetColor"
   echo "Available editions:"
-  for metadata in "${metadataFiles[@]}"; do
-    scanInfo=$(wimlib-imagex info "$metadata" 3 2>/dev/null)
-    scanEdition=$(grep -i "^Edition ID:" <<<"$scanInfo" | sed "s/.*  //g")
+  for scanEdition in "${availableEditions[@]}"; do
     echo "  - $scanEdition"
   done
   exit 1

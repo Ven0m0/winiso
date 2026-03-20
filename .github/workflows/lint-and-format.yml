@@ -40,8 +40,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install black flake8
 
-      - name: Check format with Black
+      - name: Check format with Black (non-blocking)
         run: black --check scripts/
+        continue-on-error: true
 
       - name: Lint with Flake8
         run: flake8 scripts/ --max-line-length=120

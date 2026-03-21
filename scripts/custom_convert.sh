@@ -580,8 +580,10 @@ FALLBACK_EDITION="${FALLBACK_EDITION:-Professional}"
 # Pre-scan metadata to find target edition
 targetMetadata=""
 fallbackMetadata=""
+declare -A cachedInfo
 for metadata in "${metadataFiles[@]}"; do
   scanInfo=$(wimlib-imagex info "$metadata" 3 2>/dev/null)
+  cachedInfo["$metadata"]="$scanInfo"
   scanEdition=$(grep -i "^Edition ID:" <<<"$scanInfo" | sed "s/.*  //g")
   if [[ "$scanEdition" == "$TARGET_EDITION" ]]; then
     targetMetadata="$metadata"
@@ -602,7 +604,11 @@ else
   echo -e "${errorColor}""Neither ${TARGET_EDITION} nor ${FALLBACK_EDITION} found in UUP files.""$resetColor"
   echo "Available editions:"
   for metadata in "${metadataFiles[@]}"; do
-    scanInfo=$(wimlib-imagex info "$metadata" 3 2>/dev/null)
+    scanInfo="${cachedInfo["$metadata"]}"
+    if [[ -z "$scanInfo" ]]; then
+      scanInfo=$(wimlib-imagex info "$metadata" 3 2>/dev/null)
+      cachedInfo["$metadata"]="$scanInfo"
+    fi
     scanEdition=$(grep -i "^Edition ID:" <<<"$scanInfo" | sed "s/.*  //g")
     echo "  - $scanEdition"
   done
@@ -612,7 +618,11 @@ fi
 echo ""
 indexesExported=0
 for metadata in "${metadataFiles[@]}"; do
-  currentInfo=$(wimlib-imagex info "$metadata" 3)
+  currentInfo="${cachedInfo["$metadata"]}"
+  if [[ -z "$currentInfo" ]]; then
+    currentInfo=$(wimlib-imagex info "$metadata" 3)
+    cachedInfo["$metadata"]="$currentInfo"
+  fi
 
   currentEdition=$(grep -i "^Edition ID:" <<<"$currentInfo" | sed "s/.*  //g")
   currentName=$(grep -i "^Name:" <<<"$currentInfo" | sed "s/.*  //g")

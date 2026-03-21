@@ -8,7 +8,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
-source "$SCRIPT_DIR/common.sh"
+source "$SCRIPT_DIR/utils.sh"
 
 log_info "Checking and installing dependencies..."
 
@@ -38,18 +38,10 @@ log_info "Verifying tool availability..."
 
 MISSING_TOOLS=()
 
-check_tool() {
-    if ! command -v "$1" &> /dev/null; then
-        MISSING_TOOLS+=("$1")
-    else
-        log_success "$1 found: $(command -v "$1")"
-    fi
-}
-
-check_tool "aria2c"
-check_tool "cabextract"
-check_tool "wimlib-imagex"
-check_tool "chntpw"
+check_tool "aria2c" || MISSING_TOOLS+=("aria2c")
+check_tool "cabextract" || MISSING_TOOLS+=("cabextract")
+check_tool "wimlib-imagex" || MISSING_TOOLS+=("wimlib-imagex")
+check_tool "chntpw" || MISSING_TOOLS+=("chntpw")
 
 # Check for genisoimage or mkisofs
 if command -v genisoimage &> /dev/null; then

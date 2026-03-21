@@ -11,7 +11,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
-source "$SCRIPT_DIR/common.sh"
+source "$SCRIPT_DIR/utils.sh"
 
 ERRORS=0
 WARNINGS=0
@@ -21,21 +21,12 @@ WARNINGS=0
 # =============================================================================
 log_info "Checking required tools..."
 
-check_tool() {
-    if ! command -v "$1" &> /dev/null; then
-        log_error "$1 not found. Run 'make deps' to install dependencies."
+for tool in aria2c cabextract wimlib-imagex chntpw; do
+    if ! check_tool "$tool"; then
+        log_error "$tool not found. Run 'make deps' to install dependencies."
         ((ERRORS++))
-        return 1
-    else
-        log_success "$1 found"
-        return 0
     fi
-}
-
-check_tool "aria2c"
-check_tool "cabextract"
-check_tool "wimlib-imagex"
-check_tool "chntpw"
+done
 
 # Check for genisoimage or mkisofs
 if command -v genisoimage &> /dev/null; then
@@ -111,7 +102,7 @@ if [[ -f "$PROJECT_ROOT/config/debloat_list.txt" ]]; then
     log_success "debloat_list.txt found"
 
     # Count non-empty, non-comment lines
-    pattern_count=$(grep -v "^#" "$PROJECT_ROOT/config/debloat_list.txt" | grep -cv "^[[:space:]]*$")
+    pattern_count=$(grep -v "^#" "$PROJECT_ROOT/config/debloat_list.txt" | grep -v "^[[:space:]]*$" | wc -l)
     log_info "  → $pattern_count debloat patterns configured"
 else
     log_warn "debloat_list.txt not found - no apps will be removed"

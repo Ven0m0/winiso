@@ -5,7 +5,7 @@ set -euo pipefail
 # automerge_open_prs.sh - Enable auto-merge for all open pull requests
 # =============================================================================
 
-SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+# SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'

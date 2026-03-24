@@ -22,6 +22,7 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 UUP_DIR="$PROJECT_ROOT/uup_files"
 OUTPUT_DIR="$PROJECT_ROOT/output"
 
+# shellcheck disable=SC1091
 source "$SCRIPT_DIR/utils.sh"
 
 # Run prerequisite validation

@@ -1,4 +1,5 @@
 #!/bin/bash
+# shellcheck disable=SC2034,SC1091,SC2166,SC2181,SC2066,SC2016,SC2129,SC2219,SC2162
 scriptName="UUP Converter v0.7.3"
 UUP_CONVERTER_SCRIPT=1
 

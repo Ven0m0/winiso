@@ -15,6 +15,7 @@ SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 CONFIG_FILE="$PROJECT_ROOT/config/debloat_list.txt"
 
+# shellcheck disable=SC1091
 source "$SCRIPT_DIR/utils.sh"
 
 

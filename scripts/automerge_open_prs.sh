@@ -7,6 +7,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
 
+# shellcheck disable=SC1091
 source "$SCRIPT_DIR/utils.sh"
 
 MERGE_METHOD="${MERGE_METHOD:-squash}"

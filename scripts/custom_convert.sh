@@ -396,18 +396,18 @@ if [[ -e ISODIR ]]; then
   rm -rf ISODIR
 fi
 
-list=
+grep_args=()
 for i in "${editions[@]}"; do
-  list="${list} -ie \"${i}""_..-.*.esd\""
+  grep_args+=("-ie" "${i}_..-.*.esd")
 done
 
-metadataFiles=$(find "$uupDir" 2>/dev/null | eval grep "$list")
+metadataFiles=$(find "$uupDir" 2>/dev/null | grep "${grep_args[@]}")
 if [[ $? != 0 ]]; then
   echo -e "${errorColor}""No metadata ESDs found.""$resetColor"
   exit 1
 fi
 
-list=
+unset grep_args
 
 firstMetadata=$(head -1 <<<"$metadataFiles")
 getLang=$(wimlib-imagex info "$firstMetadata" 3)
@@ -539,13 +539,13 @@ wimlib-imagex extract "$firstMetadata" 3 "/Windows/System32/xmllite.dll" \
 wimlib-imagex info ISODIR/sources/boot.wim 2 --image-property FLAGS=2 >/dev/null
 wimlib-imagex info ISODIR/sources/boot.wim 2 --boot >/dev/null
 
-list=
+grep_boot_args=()
 for i in "${bootSourcesList[@]}"; do
-  list="${list} -oie \"${i}\""
+  grep_boot_args+=("-oie" "${i}")
 done
 
-files=$(find ISODIR -regex ".*/sources/.*" | eval grep "$list")
-list=
+files=$(find ISODIR -regex ".*/sources/.*" | grep "${grep_boot_args[@]}")
+unset grep_boot_args
 
 echo "delete /Windows/System32/winpeshl.ini" >"${tempDir}/update.txt"
 echo "add ISODIR/setup.exe /setup.exe" >>"${tempDir}/update.txt"

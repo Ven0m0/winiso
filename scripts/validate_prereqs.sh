@@ -11,6 +11,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
+# shellcheck disable=SC1091
 source "$SCRIPT_DIR/utils.sh"
 
 ERRORS=0
@@ -102,7 +103,7 @@ if [[ -f "$PROJECT_ROOT/config/debloat_list.txt" ]]; then
     log_success "debloat_list.txt found"
 
     # Count non-empty, non-comment lines
-    pattern_count=$(grep -v "^#" "$PROJECT_ROOT/config/debloat_list.txt" | grep -v "^[[:space:]]*$" | wc -l)
+    pattern_count=$(grep -v "^#" "$PROJECT_ROOT/config/debloat_list.txt" | grep -c -v "^[[:space:]]*$")
     log_info "  → $pattern_count debloat patterns configured"
 else
     log_warn "debloat_list.txt not found - no apps will be removed"

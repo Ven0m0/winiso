@@ -171,10 +171,12 @@ def select_editions(build_info):
     EDITIONS = ("professional", "enterprise", "home", "core", "education")
 
     for filename, file_info in files.items():
-        if filename.endswith(".esd") and any(ed in filename.lower() for ed in EDITIONS):
-            # Extract edition name from filename
-            edition = filename.split("_")[0] if "_" in filename else filename
-            edition_files[edition] = filename
+        if filename.endswith(".esd"):
+            filename_lower = filename.lower()
+            if any(ed in filename_lower for ed in EDITIONS):
+                # Extract edition name from filename
+                edition = filename.split("_")[0] if "_" in filename else filename
+                edition_files[edition] = filename
 
     if not edition_files:
         log_warn("No edition-specific files found, will download all files")

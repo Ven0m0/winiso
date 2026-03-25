@@ -330,7 +330,7 @@ for prog in aria2c cabextract wimlib-imagex chntpw; do
   exit 1
 done
 
-if ! which genisoimage &>/dev/null && ! which mkisofs &>/dev/null; then
+if ! command -v genisoimage &>/dev/null && ! command -v mkisofs &>/dev/null; then
   echo "genisoimage nor mkisofs does seem to be installed"
   echo "Check the readme.md for details"
   exit 1

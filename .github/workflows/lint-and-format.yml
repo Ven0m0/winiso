@@ -23,6 +23,8 @@ jobs:
         with:
           scandir: './scripts'
           ignore_names: 'custom_convert.sh'
+          check_together: 'yes'
+
 
   lint-python:
     name: Lint Python Scripts

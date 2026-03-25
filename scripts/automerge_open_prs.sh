@@ -5,8 +5,7 @@ set -euo pipefail
 # automerge_open_prs.sh - Enable auto-merge for all open pull requests
 # =============================================================================
 
-# shellcheck disable=SC2034
-SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+# SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
 
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/utils.sh"

@@ -544,7 +544,7 @@ for i in "${bootSourcesList[@]}"; do
   grep_boot_args+=("-oie" "${i}")
 done
 
-files=$(find ISODIR -regex ".*/sources/.*" | grep "${grep_boot_args[@]}")
+mapfile -t files < <(find ISODIR -regex ".*/sources/.*" | grep "${grep_boot_args[@]}")
 unset grep_boot_args
 
 echo "delete /Windows/System32/winpeshl.ini" >"${tempDir}/update.txt"

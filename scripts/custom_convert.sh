@@ -1,4 +1,5 @@
 #!/bin/bash
+# shellcheck disable=SC2034,SC1091,SC2166,SC2181,SC2066,SC2016,SC2129,SC2219,SC2162
 scriptName="UUP Converter v0.7.3"
 UUP_CONVERTER_SCRIPT=1
 
@@ -329,11 +330,7 @@ for prog in aria2c cabextract wimlib-imagex chntpw; do
   exit 1
 done
 
-mkiso_present=0
-which genisoimage &>/dev/null && mkiso_present=1
-which mkisofs &>/dev/null && mkiso_present=1
-
-if [[ $mkiso_present -eq 0 ]]; then
+if ! command -v genisoimage &>/dev/null && ! command -v mkisofs &>/dev/null; then
   echo "genisoimage nor mkisofs does seem to be installed"
   echo "Check the readme.md for details"
   exit 1

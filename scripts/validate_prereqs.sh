@@ -11,6 +11,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
+# shellcheck disable=SC1091
 source "$SCRIPT_DIR/utils.sh"
 
 ERRORS=0

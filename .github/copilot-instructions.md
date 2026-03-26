@@ -1,119 +1,151 @@
-# GitHub Copilot Instructions
+# Copilot Instructions — Debloated Windows 11 ISO Builder
 
-## Project: Debloated Windows 11 ISO Builder
-
-A Linux shell/Python toolset that converts UUP dump files into debloated, unattended Windows 11 ISO images. The build pipeline is driven entirely by `make`.
+A Linux shell/Python toolset that converts UUP dump files into debloated, unattended Windows 11 ISO images. Build pipeline is driven by `make`; all logic lives in `scripts/`.
 
 ---
 
 ## Architecture
 
-| Layer | Files | Role |
+| Layer | File(s) | Role |
 |---|---|---|
 | User interface | `Makefile` | All user-facing commands |
 | Orchestration | `scripts/build.sh` | Drives the full pipeline |
 | Conversion | `scripts/custom_convert.sh` | UUP → WIM via wimlib |
 | Debloating | `scripts/debloat_wim.sh` | Removes AppX packages from WIM |
-| Validation | `scripts/validate_prereqs.sh` | Pre-build dependency/file checks |
-| Downloading | `scripts/download_uup.py` | Interactive UUP fetcher (uupdump.net) |
+| Validation | `scripts/validate_prereqs.sh` | Pre-build dependency and file checks |
+| Downloading | `scripts/download_uup.py` | Interactive UUP fetcher (uupdump.net API) |
 | Setup | `scripts/setup_env.sh` | Installs system packages |
-| Configuration | `config/autounattend.xml` | Windows unattended answer file |
-| Configuration | `config/debloat_list.txt` | Glob patterns for app removal |
+| Utilities | `scripts/utils.sh` | Shared color-coded log helpers |
+| Config | `config/autounattend.xml` | Windows unattended answer file |
+| Config | `config/debloat_list.txt` | Glob patterns for AppX removal |
 | First-boot | `config/oem/SetupComplete.cmd` | Post-install tweaks (telemetry, perf) |
 
 ---
 
-## Coding Conventions
+## Shell Script Conventions
 
-### Shell Scripts
-- Always start with `#!/bin/bash` and `set -euo pipefail`
-- Resolve script directory with: `SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"`
-- Use the four standard log helpers — **never raw `echo`** for user-facing messages:
-  ```bash
-  log_info()    { echo -e "${CYAN}[INFO]${NC} $1"; }
-  log_success() { echo -e "${GREEN}[OK]${NC} $1"; }
-  log_warn()    { echo -e "${YELLOW}[WARN]${NC} $1"; }
-  log_error()   { echo -e "${RED}[ERROR]${NC} $1"; }
-  ```
-- All paths must derive from `PROJECT_ROOT` — no hardcoded absolute paths
-- Validate syntax after any edit: `bash -n scripts/<file>.sh`
+Every script must start with:
+```bash
+#!/bin/bash
+set -euo pipefail
 
-### Python (download_uup.py)
-- Python 3 only; prefer stdlib; `requests` is optional
-- Preserve existing CLI argument interface
-- No root/sudo usage
+SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-### Makefile
-- New targets must be added to the `.PHONY` list
-- Include `chmod +x scripts/*.sh` before invoking shell scripts
-- Document every new target inside the `help` target
+source "$SCRIPT_DIR/utils.sh"
+```
 
-### XML (autounattend.xml)
-- Encoding must stay UTF-8, no BOM
-- Validate with: `xmllint --noout config/autounattend.xml`
+Use only these four log helpers for user-facing output — never raw `echo`:
+```bash
+log_info    "Starting conversion..."   # cyan  [INFO]
+log_success "ISO created."             # green [OK]
+log_warn    "Low disk space."          # yellow [WARN]
+log_error   "Missing dependency."      # red   [ERROR]
+```
+
+All file paths must derive from `PROJECT_ROOT` or `SCRIPT_DIR`. No hardcoded absolute paths.
+
+After any edit: `bash -n scripts/<file>.sh`
 
 ---
 
-## Critical Rules
+## Python Conventions
 
-### Never Remove These AppX Patterns
-When editing `config/debloat_list.txt` or `scripts/debloat_wim.sh`:
-- `*Store*`
-- `*WebView*`
-- `*VCLibs*`
-- `*UI.Xaml*`
-- `*Defender*`
-- `*DesktopAppInstaller*`
+- Python 3 only; stdlib preferred; `requests` is optional
+- No root/sudo usage anywhere
+- Do not change existing CLI argument names or flags in `download_uup.py`
+- External runtime dependency: `aria2c` (parallel downloads)
 
-These are hard dependencies. Removing them will break app installation and system functionality.
+---
 
-### Never Use Root During Build
-The main build pipeline must run as a regular user. wimlib FUSE mounts do not require root.
+## Makefile Conventions
 
-### UUP Files Must Be at the Root of uup_files/
-`.cab` and `.esd` files must be placed **directly** in `uup_files/` — not in subdirectories.
+When adding a target:
+1. Add it to `.PHONY`
+2. Add `chmod +x scripts/*.sh` before invoking shell scripts
+3. Document it in the `help` target
+
+---
+
+## XML (autounattend.xml)
+
+- UTF-8 encoding, no BOM
+- Validate: `xmllint --noout config/autounattend.xml`
+
+---
+
+## Hard Rules — Never Violate These
+
+### Protected AppX patterns
+Do not add patterns to `debloat_list.txt` that match any of these:
+```
+*Store*              *WebView*           *VCLibs*
+*UI.Xaml*            *Defender*          *DesktopAppInstaller*
+```
+Removing these breaks app installation and system functionality.
+
+### No root in build pipeline
+`wimlib` FUSE mounts work as a regular user. No `sudo` or `su` in `build.sh` or any script it calls.
+
+### UUP file placement
+`.cab` and `.esd` files must be directly in `uup_files/` — subdirectories are not scanned.
+
+### upstream/ is read-only
+`upstream/` contains reference copies of the UUP converter. Edit `scripts/convert_config.sh` for shared config, not files under `upstream/`.
+
+### No direct Microsoft server calls
+Route all downloads through `scripts/download_uup.py` which uses uupdump.net.
 
 ---
 
 ## Environment Variables
 
 ```bash
-TARGET_EDITION=ProfessionalWorkstation   # Preferred edition
-FALLBACK_EDITION=Professional            # Used if target not found
-PAUSE_FOR_WINDOWS_STAGE=0               # Set 1 to pause for DISM servicing
+TARGET_EDITION=ProfessionalWorkstation   # preferred edition
+FALLBACK_EDITION=Professional            # fallback if target not in WIM
+PAUSE_FOR_WINDOWS_STAGE=0               # set 1 to pause for DISM servicing
 ```
 
 ---
 
-## Validation Quick Reference
+## Validation
 
 ```bash
-# Syntax-check all shell scripts
+# Shell syntax
 for f in scripts/*.sh; do bash -n "$f" && echo "OK: $f"; done
 
-# Validate answer file XML
+# XML
 xmllint --noout config/autounattend.xml
 
-# Check prerequisites (no UUP files needed)
+# Prerequisites (no UUP files needed)
 make validate
 
-# Full build (requires UUP files + ~20 GB free disk space)
+# Unit tests
+python3 -m pytest tests/
+
+# Full build (requires UUP files + ~20 GB free disk)
 make build
 ```
 
 ---
 
-## What NOT to Do
+## CI Checks
 
-- Do not modify files under `upstream/` — they are reference-only
-- Do not add direct calls to Microsoft servers; use uupdump.net via `scripts/download_uup.py`
-- Do not introduce `sudo` or `su` calls into the build pipeline
-- Do not use `echo` for user-facing output — use the `log_*` helpers
-- Do not hardcode paths — derive everything from `SCRIPT_DIR` / `PROJECT_ROOT`
-- Do not silently swallow errors — let `set -euo pipefail` surface them
+| Tool | Scope | Notes |
+|---|---|---|
+| ShellCheck | `scripts/*.sh` | `custom_convert.sh` excluded (upstream) |
+| Flake8 + Black | `scripts/*.py` | max line length: 120 |
+| xmllint | `config/autounattend.xml` | Must be valid XML |
+| pytest | `tests/` | Python 3.9–3.12 on Ubuntu + macOS |
 
 ---
 
-## Supported Linux Distributions
+## Do Not
 
-Arch Linux, Debian/Ubuntu, Fedora — dependency installer at `scripts/setup_env.sh`.
+- Use `echo` for user-facing output — use `log_*` helpers from `utils.sh`
+- Hardcode paths — derive from `SCRIPT_DIR` / `PROJECT_ROOT`
+- Add `sudo`/`su` to the build pipeline
+- Modify files under `upstream/`
+- Add direct calls to Microsoft servers
+- Swallow errors — let `set -euo pipefail` surface them
+- Change existing CLI flags in `download_uup.py`

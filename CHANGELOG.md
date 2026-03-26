@@ -9,6 +9,11 @@ All notable changes to this project will be documented in this file.
   - Added `.github/workflows/automerge-open-prs.yml` to enable auto-merge for all open pull requests on demand
   - Added `scripts/automerge_open_prs.sh` to iterate open pull requests and configure auto-merge with the selected merge method
 
+### Changed
+- Synced the embedded upstream converter assets into `scripts/`
+- Added shared `scripts/convert_config.sh` to keep the upstream virtual-edition config in one place
+- Updated docs to reflect the upstream-synced converter layout
+
 ## [1.1.0] - 2026-01-08 - Automated UUP Download
 
 ### Added

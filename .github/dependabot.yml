@@ -1,43 +1,13 @@
 version: 2
 updates:
-  - package-ecosystem: "github-actions"
-    directory: "/"
+  - package-ecosystem: github-actions
+    directory: /
     schedule:
-      interval: "weekly"
+      interval: weekly
     groups:
       github-actions-all:
         patterns:
-          - "*"
+          - '*'
         update-types:
-          - "minor"
-          - "patch"
-  - package-ecosystem: "pip"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    ignore:
-      - dependency-name: "pip"
-    groups:
-      pip-all:
-        patterns:
-          - "*"
-        update-types:
-          - "minor"
-          - "patch"
-    allow:
-      - dependency-type: "all"
-  - package-ecosystem: "uv"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    ignore:
-      - dependency-name: "pip"
-    groups:
-      uv-all:
-        patterns:
-          - "*"
-        update-types:
-          - "minor"
-          - "patch"
-    allow:
-      - dependency-type: "all"
+          - minor
+          - patch

@@ -1,24 +1,19 @@
 # ─── Build artifacts ──────────────────────────────────────────────────────────
 scripts/ISODIR/
 *.iso
-output/*.iso
+output/*
+!output/.gitkeep
 
 # ─── UUP input files (user-provided, never committed) ────────────────────────
-uup_files/*.cab
-uup_files/*.esd
-uup_files/*.xml
-uup_files/*.txt
-uup_files/files/
-
-# Keep directory placeholders
+uup_files/*
 !uup_files/.gitkeep
-!output/.gitkeep
 
 # ─── Logs & traces ────────────────────────────────────────────────────────────
 *.log
 *.log[0-9]
 *.trace
 *.chk
+*.retry
 
 # ─── Temporary / scratch files ───────────────────────────────────────────────
 *.tmp
@@ -26,11 +21,13 @@ uup_files/files/
 *.old
 *.orig
 *.rej
+*~
+\#*\#
+__MACOSX/
 
 # ─── Editor & IDE ─────────────────────────────────────────────────────────────
 *.swp
 *.swo
-*~
 .vscode/
 .idea/
 *.iml
@@ -56,6 +53,3 @@ build/
 ehthumbs.db
 Thumbs.db
 desktop.ini
-
-# ─── Ventoy runtime state (if Ventoy USB is ever mounted locally) ────────────
-ventoy/ventoy/themes/

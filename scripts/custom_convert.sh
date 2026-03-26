@@ -735,44 +735,44 @@ fi
 DEBLOAT_SCRIPT="$(dirname "$0")/debloat_wim.sh"
 WIM_FILE="ISODIR/sources/install.$type"
 if [[ -f "$DEBLOAT_SCRIPT" ]] && [[ -f "$WIM_FILE" ]]; then
-    echo -e "${infoColor}""Running Debloater on $WIM_FILE...""$resetColor"
-    bash "$DEBLOAT_SCRIPT" "$WIM_FILE"
-    if [[ $? -ne 0 ]]; then
-        echo -e "${errorColor}""Debloating failed!""$resetColor"
-        exit 1
-    fi
+  echo -e "${infoColor}""Running Debloater on $WIM_FILE...""$resetColor"
+  bash "$DEBLOAT_SCRIPT" "$WIM_FILE"
+  if [[ $? -ne 0 ]]; then
+    echo -e "${errorColor}""Debloating failed!""$resetColor"
+    exit 1
+  fi
 fi
 
 # AUTOUNATTEND.XML INJECTION
 SCRIPT_ROOT="$(dirname "$0")/.."
 AUTOUNATTEND_FILE="$SCRIPT_ROOT/config/autounattend.xml"
 if [[ -f "$AUTOUNATTEND_FILE" ]]; then
-    echo -e "${infoColor}""Injecting autounattend.xml into ISO root...""$resetColor"
-    cp "$AUTOUNATTEND_FILE" ISODIR/autounattend.xml
+  echo -e "${infoColor}""Injecting autounattend.xml into ISO root...""$resetColor"
+  cp "$AUTOUNATTEND_FILE" ISODIR/autounattend.xml
 else
-    echo -e "${infoColor}""No autounattend.xml found at $AUTOUNATTEND_FILE, skipping injection.""$resetColor"
+  echo -e "${infoColor}""No autounattend.xml found at $AUTOUNATTEND_FILE, skipping injection.""$resetColor"
 fi
 
 # INJECT SETUP SCRIPTS ($OEM$ folder for SetupComplete.cmd etc.)
 OEM_SCRIPTS_DIR="$SCRIPT_ROOT/config/oem"
 if [[ -d "$OEM_SCRIPTS_DIR" ]]; then
-    echo -e "${infoColor}""Injecting OEM setup scripts into ISO...""$resetColor"
-    mkdir -p "ISODIR/sources/\$OEM\$/\$\$/Setup/Scripts"
-    cp -r "$OEM_SCRIPTS_DIR"/* "ISODIR/sources/\$OEM\$/\$\$/Setup/Scripts/" 2>/dev/null || true
+  echo -e "${infoColor}""Injecting OEM setup scripts into ISO...""$resetColor"
+  mkdir -p "ISODIR/sources/\$OEM\$/\$\$/Setup/Scripts"
+  cp -r "$OEM_SCRIPTS_DIR"/* "ISODIR/sources/\$OEM\$/\$\$/Setup/Scripts/" 2>/dev/null || true
 fi
 
 # WINDOWS SERVICING STAGE (optional pause)
 # Set PAUSE_FOR_WINDOWS_STAGE=1 to pause here and allow Windows-based DISM servicing
 if [[ "${PAUSE_FOR_WINDOWS_STAGE:-0}" == "1" ]]; then
-    echo ""
-    echo -e "${infoColor}""=== PAUSED FOR WINDOWS SERVICING STAGE ===""$resetColor"
-    echo "WIM file ready at: $(pwd)/ISODIR/sources/install.$type"
-    echo ""
-    echo "On Windows, run the servicing script against this WIM, then press Enter to continue."
-    echo "Example: scripts\\windows_service.cmd $(pwd)/ISODIR/sources/install.$type"
-    echo ""
-    read -p "Press Enter when Windows servicing is complete..."
-    echo ""
+  echo ""
+  echo -e "${infoColor}""=== PAUSED FOR WINDOWS SERVICING STAGE ===""$resetColor"
+  echo "WIM file ready at: $(pwd)/ISODIR/sources/install.$type"
+  echo ""
+  echo "On Windows, run the servicing script against this WIM, then press Enter to continue."
+  echo "Example: scripts\\windows_service.cmd $(pwd)/ISODIR/sources/install.$type"
+  echo ""
+  read -p "Press Enter when Windows servicing is complete..."
+  echo ""
 fi
 
 echo -e "${infoColor}""Creating ISO image...""$resetColor"

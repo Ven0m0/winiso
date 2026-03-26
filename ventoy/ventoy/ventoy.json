@@ -1,22 +1,22 @@
 {
-    "theme":{
-        "file":[
-            "/ventoy/themes/miku/theme.txt",
-            "/ventoy/themes/cachyos/theme.txt",
-            "/ventoy/themes/minegrub/theme.txt"
-        ],
-        "gfxmode": "1920x1080",
-        "fonts":[
-            "/ventoy/themes/cachyos/ubuntu_regular_20.pf2",
-            "/ventoy/themes/cachyos/terminus-18.pf2"
-        ]
-    },
-    "auto_install":[
-        {
-            "image": "/ISO/Win11.iso",
-            "template":[
-                "/answer/autounattend.xml"
-            ]
-        }
+  "theme": {
+    "file": [
+      "/ventoy/themes/miku/theme.txt",
+      "/ventoy/themes/cachyos/theme.txt",
+      "/ventoy/themes/minegrub/theme.txt"
+    ],
+    "gfxmode": "1920x1080",
+    "fonts": [
+      "/ventoy/themes/cachyos/ubuntu_regular_20.pf2",
+      "/ventoy/themes/cachyos/terminus-18.pf2"
     ]
+  },
+  "auto_install": [
+    {
+      "image": "/ISO/Win11.iso",
+      "template": [
+        "/answer/autounattend.xml"
+      ]
+    }
+  ]
 }

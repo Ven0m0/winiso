@@ -303,7 +303,7 @@ if [ "$1" == "-?" -o "$1" == "--help" -o "$1" == "-h" ]; then
   echo ""
   echo -e "${infoColor}create_virtual_editions options:${resetColor}"
   echo "0 - do not create virtual editions (default)"
-  echo "1 - create virtual edtitions"
+  echo "1 - create virtual editions"
   echo ""
   echo -e "${infoColor}convert_config.sh file${resetColor}"
   echo "Optional OS-specific compatibility files: convert_config_linux, convert_config_macos"
@@ -313,7 +313,7 @@ if [ "$1" == "-?" -o "$1" == "--help" -o "$1" == "-h" ]; then
   echo "Possible configuration options:"
   echo "VIRTUAL_EDITIONS_LIST='space delimited editions sequence'"
   echo ""
-  echo -e "${infoColor}List of editions created if you enable virtual edtitions creation:${resetColor}"
+  echo -e "${infoColor}List of editions created if you enable virtual editions creation:${resetColor}"
   for edition in "${VIRTUAL_EDITIONS_LIST[@]}"; do
     echo "- ${edition}"
   done

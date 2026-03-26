@@ -109,6 +109,7 @@ When paused:
 ├── scripts/
 │   ├── build.sh              # Main build orchestrator
 │   ├── custom_convert.sh     # Modified UUP converter
+│   ├── convert_config.sh     # Shared converter config
 │   ├── debloat_wim.sh        # WIM debloating logic
 │   ├── setup_env.sh          # Dependency installer
 │   └── windows_service.cmd   # Windows servicing script
@@ -119,6 +120,9 @@ When paused:
 ```
 
 ## Configuration
+
+The embedded converter is synced from the upstream UUP converter and uses `scripts/convert_config.sh`
+for shared converter-specific settings.
 
 ### Debloat Patterns
 

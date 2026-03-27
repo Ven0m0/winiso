@@ -104,8 +104,8 @@ def get_latest_builds(max_results=10):
 
         builds = data.get("response", {}).get("builds", {})
         if not builds:
-            log_warn("No builds found")
-            return None
+            log_warn("No builds found in API response")
+            return []
 
         # Convert to list and sort by date
         build_list = []
@@ -120,7 +120,7 @@ def get_latest_builds(max_results=10):
 
     except json.JSONDecodeError as e:
         log_error(f"Failed to parse JSON response: {e}")
-        return None
+        return []
 
 
 def display_builds(builds):

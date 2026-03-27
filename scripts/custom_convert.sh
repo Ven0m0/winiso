@@ -499,7 +499,7 @@ q
 y' | chntpw -e "${tempDir}/SOFTWARE" >/dev/null
 
 wimlib-imagex update ISODIR/sources/boot.wim 1 \
-  --command "add ${tempDir}/SOFTWARE /Windows/System32/config/SOFTWARE" >/dev/null
+  --command "add '${tempDir}/SOFTWARE' '/Windows/System32/config/SOFTWARE'" >/dev/null
 
 wimlib-imagex extract ISODIR/sources/boot.wim 1 "/Windows/System32/winpe.jpg" \
   --no-acls --dest-dir="ISODIR/sources" >/dev/null 2>/dev/null
@@ -516,10 +516,10 @@ elif [[ -e ./ISODIR/sources/winpe.jpg ]]; then
 fi
 
 wimlib-imagex update ISODIR/sources/boot.wim 1 \
-  --command "add ISODIR/sources/${bckimg} /Windows/system32/winpe.jpg" >/dev/null
+  --command "add 'ISODIR/sources/${bckimg}' '/Windows/system32/winpe.jpg'" >/dev/null
 
 wimlib-imagex update ISODIR/sources/boot.wim 1 \
-  --command "add ISODIR/sources/${bckimg} /Windows/system32/winre.jpg" >/dev/null
+  --command "add 'ISODIR/sources/${bckimg}' '/Windows/system32/winre.jpg'" >/dev/null
 
 wimlib-imagex update ISODIR/sources/boot.wim 1 \
   --command "delete /Windows/System32/winpeshl.ini" >/dev/null
@@ -544,14 +544,14 @@ mapfile -t files < <(find ISODIR -regex ".*/sources/.*" | grep "${grep_boot_args
 unset grep_boot_args
 
 echo "delete /Windows/System32/winpeshl.ini" >"${tempDir}/update.txt"
-echo "add ISODIR/setup.exe /setup.exe" >>"${tempDir}/update.txt"
-echo "add ISODIR/sources/inf/setup.cfg /sources/inf/setup.cfg" >>"${tempDir}/update.txt"
-echo "add ISODIR/sources/${bckimg} /sources/background.bmp" >>"${tempDir}/update.txt"
-echo "add ISODIR/sources/${bckimg} /Windows/system32/setup.bmp" >>"${tempDir}/update.txt"
-echo "add ISODIR/sources/${bckimg} /Windows/system32/winpe.jpg" >>"${tempDir}/update.txt"
-echo "add ISODIR/sources/${bckimg} /Windows/system32/winre.jpg" >>"${tempDir}/update.txt"
+echo "add 'ISODIR/setup.exe' '/setup.exe'" >>"${tempDir}/update.txt"
+echo "add 'ISODIR/sources/inf/setup.cfg' '/sources/inf/setup.cfg'" >>"${tempDir}/update.txt"
+echo "add 'ISODIR/sources/${bckimg}' '/sources/background.bmp'" >>"${tempDir}/update.txt"
+echo "add 'ISODIR/sources/${bckimg}' '/Windows/system32/setup.bmp'" >>"${tempDir}/update.txt"
+echo "add 'ISODIR/sources/${bckimg}' '/Windows/system32/winpe.jpg'" >>"${tempDir}/update.txt"
+echo "add 'ISODIR/sources/${bckimg}' '/Windows/system32/winre.jpg'" >>"${tempDir}/update.txt"
 for i in "${files[@]}"; do
-  echo "add ISODIR/${i} /${i}" >>"${tempDir}/update.txt"
+  echo "add 'ISODIR/${i}' '/${i}'" >>"${tempDir}/update.txt"
 done
 
 wimlib-imagex update ISODIR/sources/boot.wim 2 <"${tempDir}/update.txt" >/dev/null
@@ -670,7 +670,7 @@ for metadata in "${metadataFiles[@]}"; do
   echo ""
   echo -e "${infoColor}""Adding winre.wim for ${editionName}...""$resetColor"
   wimlib-imagex update ISODIR/sources/install."$type" "$indexesExported" \
-    --command "add ${tempDir}/winre.wim /Windows/System32/Recovery/winre.wim"
+    --command "add '${tempDir}/winre.wim' '/Windows/System32/Recovery/winre.wim'"
 
   echo ""
 done

@@ -565,9 +565,9 @@ if [[ -e ./ISODIR/sources/winpe.jpg ]]; then
 fi
 
 refglobs=false
-for file in "$(find "$tempDir" -type f -iname "*.esd")"; do
+if find "$tempDir" -type f -iname "*.esd" -print -quit | grep -q .; then
   refglobs=true
-done
+fi
 
 echo ""
 indexesExported=0

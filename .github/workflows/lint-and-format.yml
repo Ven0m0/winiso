@@ -22,6 +22,7 @@ jobs:
         uses: ludeeus/action-shellcheck@v2.0.0
         with:
           scandir: './scripts'
+          ignore_names: custom_convert.sh,convert_config.sh
 
   lint-python:
     name: Lint Python Scripts

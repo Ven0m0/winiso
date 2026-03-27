@@ -205,28 +205,15 @@ def select_editions(build_info):
     return None
 
 
-def download_build(build_id, output_dir, edition_filter=None):
-    """Download UUP files for a specific build"""
-    build_info = get_build_info(build_id)
-
-    if not build_info:
-        log_error("Failed to get build information")
-        return False
-
-    files = build_info.get("files", {})
-    if not files:
-        log_error("No files found for this build")
-        return False
-
-    # Create output directory
-    output_path = Path(output_dir)
+def _prepare_output_directory(output_path):
+    """Create output directory and optionally clear existing files"""
     output_path.mkdir(parents=True, exist_ok=True)
 
     # Clear existing files if user confirms
     existing_files = list(output_path.glob("*"))
     if existing_files:
         print(
-            f"\n{Colors.YELLOW}Warning:{Colors.RESET} {len(existing_files)} files exist in {output_dir}"
+            f"\n{Colors.YELLOW}Warning:{Colors.RESET} {len(existing_files)} files exist in {output_path}"
         )
         response = input("Clear existing files? [y/N]: ").strip().lower()
         if response == "y":
@@ -235,7 +222,9 @@ def download_build(build_id, output_dir, edition_filter=None):
                 if f.is_file() and f.name != ".gitkeep":
                     f.unlink()
 
-    # Prepare download list
+
+def _prepare_download_list(build_id, files, edition_filter):
+    """Construct the list of files to download"""
     download_list = []
     base_url = "https://uupdump.net/get.php"
 
@@ -251,15 +240,12 @@ def download_build(build_id, output_dir, edition_filter=None):
         download_list.append(
             {"url": file_url, "name": filename, "size": file_info.get("size", 0)}
         )
+    return download_list
 
-    if not download_list:
-        log_error("No files to download after filtering")
-        return False
 
-    log_success(f"Will download {len(download_list)} files")
-
+def _run_aria2_download(output_path, aria2_input, download_list):
+    """Manages the aria2c process and post-download reporting"""
     # Create aria2 input file
-    aria2_input = output_path / "aria2_input.txt"
     with open(aria2_input, "w") as f:
         for item in download_list:
             f.write(f"{item['url']}\n")
@@ -299,7 +285,7 @@ def download_build(build_id, output_dir, edition_filter=None):
         subprocess.run(aria2_cmd, check=True)
         aria2_input.unlink()  # Clean up input file
 
-        log_success(f"Download complete! Files saved to: {output_dir}")
+        log_success(f"Download complete! Files saved to: {output_path}")
 
         # Count downloaded files
         downloaded = sum(
@@ -316,6 +302,34 @@ def download_build(build_id, output_dir, edition_filter=None):
         log_warn("\nDownload interrupted by user")
         aria2_input.unlink(missing_ok=True)
         return False
+
+
+def download_build(build_id, output_dir, edition_filter=None):
+    """Download UUP files for a specific build"""
+    build_info = get_build_info(build_id)
+
+    if not build_info:
+        log_error("Failed to get build information")
+        return False
+
+    files = build_info.get("files", {})
+    if not files:
+        log_error("No files found for this build")
+        return False
+
+    output_path = Path(output_dir)
+    _prepare_output_directory(output_path)
+
+    download_list = _prepare_download_list(build_id, files, edition_filter)
+
+    if not download_list:
+        log_error("No files to download after filtering")
+        return False
+
+    log_success(f"Will download {len(download_list)} files")
+
+    aria2_input = output_path / "aria2_input.txt"
+    return _run_aria2_download(output_path, aria2_input, download_list)
 
 
 def interactive_mode(output_dir):

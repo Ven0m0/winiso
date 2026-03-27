@@ -1,4 +1,5 @@
 # AGENTS.md — Debloated Windows 11 ISO Builder
+> @.github/copilot-instructions.md
 
 Read this file fully before making any changes. It is the authoritative reference for AI coding agents working in this repository.
 

@@ -264,8 +264,9 @@ def download_build(build_id, output_dir, edition_filter=None, build_info=None):
     with open(aria2_input, "w") as f:
         for item in download_list:
             f.write(f"{item['url']}\n")
-            f.write(f"  out={item['name']}\n")
-
+            # Security: Sanitize filename to prevent path traversal
+            safe_name = Path(item["name"].replace("\\", "/")).name
+            f.write(f"  out={safe_name}\n")
     # Download using aria2
     log_info("Starting download with aria2c...")
     print(
@@ -368,7 +369,9 @@ def interactive_mode(output_dir):
                     .lower()
                 )
                 if confirm == "" or confirm == "y":
-                    return download_build(build_id, output_dir, edition_filter, build_info)
+                    return download_build(
+                        build_id, output_dir, edition_filter, build_info
+                    )
                 else:
                     log_info("Download cancelled")
                     return False

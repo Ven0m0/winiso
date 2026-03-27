@@ -43,5 +43,59 @@ class TestCheckDependencies(unittest.TestCase):
         mock_which.assert_called_once_with("aria2c")
 
 
+class TestSelectEditions(unittest.TestCase):
+    def setUp(self):
+        self.sample_build_info = {
+            "files": {
+                "Professional_en-us.esd": {"size": 100},
+                "Enterprise_en-us.esd": {"size": 100},
+                "Home_en-us.esd": {"size": 100},
+                "other_file.txt": {"size": 10},
+            }
+        }
+
+    @patch("download_uup.log_warn")
+    def test_no_edition_files(self, mock_log_warn):
+        build_info = {"files": {"random.txt": {}}}
+        result = download_uup.select_editions(build_info)
+        self.assertIsNone(result)
+        mock_log_warn.assert_called_with("No edition-specific files found, will download all files")
+
+    @patch("builtins.input", return_value="")
+    @patch("builtins.print")
+    def test_select_all_default(self, mock_print, mock_input):
+        result = download_uup.select_editions(self.sample_build_info)
+        self.assertIsNone(result)
+
+    @patch("builtins.input", return_value="A")
+    @patch("builtins.print")
+    def test_select_all_explicit(self, mock_print, mock_input):
+        result = download_uup.select_editions(self.sample_build_info)
+        self.assertIsNone(result)
+
+    @patch("builtins.input", return_value="1")
+    @patch("builtins.print")
+    def test_valid_selection(self, mock_print, mock_input):
+        result = download_uup.select_editions(self.sample_build_info)
+        # Editions in sample_build_info are ['professional', 'enterprise', 'home'] based on insertion order
+        self.assertEqual(result, ["Professional_en-us.esd"])
+
+    @patch("builtins.input", return_value="99")
+    @patch("builtins.print")
+    @patch("download_uup.log_warn")
+    def test_invalid_number(self, mock_log_warn, mock_print, mock_input):
+        result = download_uup.select_editions(self.sample_build_info)
+        self.assertIsNone(result)
+        mock_log_warn.assert_called_with("Invalid selection, downloading all editions")
+
+    @patch("builtins.input", return_value="invalid")
+    @patch("builtins.print")
+    @patch("download_uup.log_warn")
+    def test_invalid_input(self, mock_log_warn, mock_print, mock_input):
+        result = download_uup.select_editions(self.sample_build_info)
+        self.assertIsNone(result)
+        mock_log_warn.assert_called_with("Invalid selection, downloading all editions")
+
+
 if __name__ == "__main__":
     unittest.main()

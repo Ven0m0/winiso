@@ -263,6 +263,16 @@ def download_build(build_id, output_dir, edition_filter=None, build_info=None):
     aria2_input = output_path / "aria2_input.txt"
     with open(aria2_input, "w") as f:
         for item in download_list:
+            if (
+                "\n" in item["url"]
+                or "\r" in item["url"]
+                or "\n" in item["name"]
+                or "\r" in item["name"]
+            ):
+                raise ValueError(
+                    f"Invalid characters in URL or filename: {item['name']}"
+                )
+
             f.write(f"{item['url']}\n")
             f.write(f"  out={item['name']}\n")
 
@@ -368,7 +378,9 @@ def interactive_mode(output_dir):
                     .lower()
                 )
                 if confirm == "" or confirm == "y":
-                    return download_build(build_id, output_dir, edition_filter, build_info)
+                    return download_build(
+                        build_id, output_dir, edition_filter, build_info
+                    )
                 else:
                     log_info("Download cancelled")
                     return False

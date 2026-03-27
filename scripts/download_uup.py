@@ -114,7 +114,7 @@ def get_latest_builds(max_results=10):
             build_list.append(build_info)
 
         # Sort by created timestamp (newest first)
-        build_list.sort(key=lambda x: x.get("created", 0), reverse=True)
+        build_list.sort(key=lambda x: int(x.get("created") or 0), reverse=True)
 
         return build_list[:max_results]
 
@@ -167,16 +167,19 @@ def select_editions(build_info):
     # Find edition-specific ESD files
     edition_files = {}
 
-    # Define editions tuple outside loop for performance
-    EDITIONS = ("professional", "enterprise", "home", "core", "education")
-
     for filename, file_info in files.items():
         if filename.endswith(".esd"):
             filename_lower = filename.lower()
-            for edition in EDITIONS:
-                if edition in filename_lower:
-                    edition_files[edition] = filename
-                    break
+            if "professional" in filename_lower:
+                edition_files["professional"] = filename
+            elif "enterprise" in filename_lower:
+                edition_files["enterprise"] = filename
+            elif "home" in filename_lower:
+                edition_files["home"] = filename
+            elif "core" in filename_lower:
+                edition_files["core"] = filename
+            elif "education" in filename_lower:
+                edition_files["education"] = filename
 
     if not edition_files:
         log_warn("No edition-specific files found, will download all files")
@@ -368,7 +371,9 @@ def interactive_mode(output_dir):
                     .lower()
                 )
                 if confirm == "" or confirm == "y":
-                    return download_build(build_id, output_dir, edition_filter, build_info)
+                    return download_build(
+                        build_id, output_dir, edition_filter, build_info
+                    )
                 else:
                     log_info("Download cancelled")
                     return False

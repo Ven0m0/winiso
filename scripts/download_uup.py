@@ -205,9 +205,10 @@ def select_editions(build_info):
     return None
 
 
-def download_build(build_id, output_dir, edition_filter=None):
+def download_build(build_id, output_dir, edition_filter=None, build_info=None):
     """Download UUP files for a specific build"""
-    build_info = get_build_info(build_id)
+    if build_info is None:
+        build_info = get_build_info(build_id)
 
     if not build_info:
         log_error("Failed to get build information")
@@ -350,8 +351,14 @@ def interactive_mode(output_dir):
                 )
                 print(f"{Colors.BOLD}Build ID:{Colors.RESET} {build_id}")
 
+                # Fetch build info once
+                build_info = get_build_info(build_id)
+                if not build_info:
+                    log_error("Failed to get build information")
+                    return False
+
                 # Ask for edition selection
-                edition_filter = select_editions(get_build_info(build_id))
+                edition_filter = select_editions(build_info)
 
                 confirm = (
                     input(
@@ -361,7 +368,7 @@ def interactive_mode(output_dir):
                     .lower()
                 )
                 if confirm == "" or confirm == "y":
-                    return download_build(build_id, output_dir, edition_filter)
+                    return download_build(build_id, output_dir, edition_filter, build_info)
                 else:
                     log_info("Download cancelled")
                     return False

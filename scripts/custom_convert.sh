@@ -13,278 +13,284 @@ if [[ -f "$(dirname "$0")"/convert_config_linux ]] && [[ "$(uname)" == "Linux" ]
 elif [[ -f "$(dirname "$0")"/convert_config_macos ]] && [[ "$(uname)" == "Darwin" ]]; then
   . "$(dirname "$0")"/convert_config_macos
 else
-  VIRTUAL_EDITIONS_LIST="CoreSingleLanguage Enterprise EnterpriseN Education \
-  EducationN ProfessionalEducation ProfessionalEducationN \
-  ProfessionalWorkstation ProfessionalWorkstationN ServerRdsh IoTEnterprise \
-  CloudEdition CloudEditionN"
+  VIRTUAL_EDITIONS_LIST=(
+    CoreSingleLanguage Enterprise EnterpriseN Education
+    EducationN ProfessionalEducation ProfessionalEducationN
+    ProfessionalWorkstation ProfessionalWorkstationN ServerRdsh IoTEnterprise
+    CloudEdition CloudEditionN
+  )
 fi
 
-editions='analogonecore
-andromeda
-cloud
-cloude
-clouden
-cloudn
-cloudedition
-cloudeditionn
-core
-corecountryspecific
-coren
-coresinglelanguage
-coresystemserver
-education
-educationn
-embedded
-embeddede
-embeddedeeval
-embeddedeval
-enterprise
-enterpriseeval
-enterpriseg
-enterprisegn
-enterprisen
-enterpriseneval
-enterprises
-enterpriseseval
-enterprisesn
-enterprisesneval
-holographic
-hubos
-iotenterprise
-iotenterprisek
-iotenterprises
-iotenterprisesk
-iotos
-iotuap
-lite
-mobilecore
-onecoreupdateos
-ppipro
-professional
-professionalcountryspecific
-professionaleducation
-professionaleducationn
-professionaln
-professionalsinglelanguage
-professionalworkstation
-professionalworkstationn
-serverarm64
-serverarm64core
-serverazurecor
-serverazurecorcore
-serverazurenano
-serverazurenanocore
-serverazurestackhcicor
-servercloudstorage
-servercloudstoragecore
-serverdatacenter
-serverdatacenteracor
-serverdatacenteracorcore
-serverdatacentercor
-serverdatacentercorcore
-serverdatacentercore
-serverdatacentereval
-serverdatacenterevalcor
-serverdatacenterevalcorcore
-serverdatacenterevalcore
-serverdatacenternano
-serverdatacenternanocore
-serverhypercore
-serverrdsh
-serverrdshcore
-serversolution
-serversolutioncore
-serverstandard
-serverstandardacor
-serverstandardacorcore
-serverstandardcor
-serverstandardcorcore
-serverstandardcore
-serverstandardeval
-serverstandardevalcor
-serverstandardevalcorcore
-serverstandardevalcore
-serverstandardnano
-serverstandardnanocore
-serverstoragestandard
-serverstoragestandardcore
-serverstoragestandardeval
-serverstoragestandardevalcore
-serverstorageworkgroup
-serverstorageworkgroupcore
-serverstorageworkgroupeval
-serverstorageworkgroupevalcore
-serverturbine
-serverturbinecor
-serverweb
-serverwebcore
-starter
-startern
-wnc'
+editions=(
+  analogonecore
+  andromeda
+  cloud
+  cloude
+  clouden
+  cloudn
+  cloudedition
+  cloudeditionn
+  core
+  corecountryspecific
+  coren
+  coresinglelanguage
+  coresystemserver
+  education
+  educationn
+  embedded
+  embeddede
+  embeddedeeval
+  embeddedeval
+  enterprise
+  enterpriseeval
+  enterpriseg
+  enterprisegn
+  enterprisen
+  enterpriseneval
+  enterprises
+  enterpriseseval
+  enterprisesn
+  enterprisesneval
+  holographic
+  hubos
+  iotenterprise
+  iotenterprisek
+  iotenterprises
+  iotenterprisesk
+  iotos
+  iotuap
+  lite
+  mobilecore
+  onecoreupdateos
+  ppipro
+  professional
+  professionalcountryspecific
+  professionaleducation
+  professionaleducationn
+  professionaln
+  professionalsinglelanguage
+  professionalworkstation
+  professionalworkstationn
+  serverarm64
+  serverarm64core
+  serverazurecor
+  serverazurecorcore
+  serverazurenano
+  serverazurenanocore
+  serverazurestackhcicor
+  servercloudstorage
+  servercloudstoragecore
+  serverdatacenter
+  serverdatacenteracor
+  serverdatacenteracorcore
+  serverdatacentercor
+  serverdatacentercorcore
+  serverdatacentercore
+  serverdatacentereval
+  serverdatacenterevalcor
+  serverdatacenterevalcorcore
+  serverdatacenterevalcore
+  serverdatacenternano
+  serverdatacenternanocore
+  serverhypercore
+  serverrdsh
+  serverrdshcore
+  serversolution
+  serversolutioncore
+  serverstandard
+  serverstandardacor
+  serverstandardacorcore
+  serverstandardcor
+  serverstandardcorcore
+  serverstandardcore
+  serverstandardeval
+  serverstandardevalcor
+  serverstandardevalcorcore
+  serverstandardevalcore
+  serverstandardnano
+  serverstandardnanocore
+  serverstoragestandard
+  serverstoragestandardcore
+  serverstoragestandardeval
+  serverstoragestandardevalcore
+  serverstorageworkgroup
+  serverstorageworkgroupcore
+  serverstorageworkgroupeval
+  serverstorageworkgroupevalcore
+  serverturbine
+  serverturbinecor
+  serverweb
+  serverwebcore
+  starter
+  startern
+  wnc
+)
 
-bootSourcesList='sources/alert.gif
-sources/api-ms-win-core-apiquery-l1-1-0.dll
-sources/api-ms-win-downlevel-advapi32-l1-1-0.dll
-sources/api-ms-win-downlevel-advapi32-l1-1-1.dll
-sources/api-ms-win-downlevel-advapi32-l2-1-0.dll
-sources/api-ms-win-downlevel-advapi32-l2-1-1.dll
-sources/api-ms-win-downlevel-advapi32-l3-1-0.dll
-sources/api-ms-win-downlevel-advapi32-l4-1-0.dll
-sources/api-ms-win-downlevel-kernel32-l1-1-0.dll
-sources/api-ms-win-downlevel-kernel32-l2-1-0.dll
-sources/api-ms-win-downlevel-ole32-l1-1-0.dll
-sources/api-ms-win-downlevel-ole32-l1-1-1.dll
-sources/api-ms-win-downlevel-shlwapi-l1-1-0.dll
-sources/api-ms-win-downlevel-shlwapi-l1-1-1.dll
-sources/api-ms-win-downlevel-user32-l1-1-0.dll
-sources/api-ms-win-downlevel-user32-l1-1-1.dll
-sources/api-ms-win-downlevel-version-l1-1-0.dll
-sources/appcompat.xsl
-sources/appcompat_bidi.xsl
-sources/appcompat_detailed_bidi_txt.xsl
-sources/appcompat_detailed_txt.xsl
-sources/appraiser.dll
-sources/ARUNIMG.dll
-sources/arunres.dll
-sources/autorun.dll
-sources/bcd.dll
-sources/bootsvc.dll
-sources/cmisetup.dll
-sources/compatctrl.dll
-sources/compatprovider.dll
-sources/compliance.ini
-sources/cryptosetup.dll
-sources/diager.dll
-sources/diagnostic.dll
-sources/diagtrack.dll
-sources/diagtrackrunner.exe
-sources/dism.exe
-sources/dismapi.dll
-sources/dismcore.dll
-sources/dismcoreps.dll
-sources/dismprov.dll
-sources/ext-ms-win-advapi32-encryptedfile-l1-1-0.dll
-sources/folderprovider.dll
-sources/hwcompat.dll
-sources/hwcompat.txt
-sources/hwcompatPE.txt
-sources/hwexclude.txt
-sources/hwexcludePE.txt
-sources/hwreqchk.dll
-sources/idwbinfo.txt
-sources/imagelib.dll
-sources/imagingprovider.dll
-sources/input.dll
-sources/lang.ini
-sources/locale.nls
-sources/logprovider.dll
-sources/MediaSetupUIMgr.dll
-sources/ndiscompl.dll
-sources/nlsbres.dll
-sources/ntdsupg.dll
-sources/offline.xml
-sources/pnpibs.dll
-sources/reagent.admx
-sources/reagent.dll
-sources/reagent.xml
-sources/rollback.exe
-sources/schema.dat
-sources/segoeui.ttf
-sources/ServicingCommon.dll
-sources/setup.exe
-sources/setupcompat.dll
-sources/SetupCore.dll
-sources/SetupHost.exe
-sources/SetupMgr.dll
-sources/SetupPlatform.cfg
-sources/SetupPlatform.dll
-sources/SetupPlatform.exe
-sources/SetupPrep.exe
-sources/SmiEngine.dll
-sources/spflvrnt.dll
-sources/spprgrss.dll
-sources/spwizeng.dll
-sources/spwizimg.dll
-sources/spwizres.dll
-sources/sqmapi.dll
-sources/testplugin.dll
-sources/unattend.dll
-sources/unbcl.dll
-sources/upgloader.dll
-sources/upgrade_frmwrk.xml
-sources/utcapi.dll
-sources/uxlib.dll
-sources/uxlibres.dll
-sources/vhdprovider.dll
-sources/w32uiimg.dll
-sources/w32uires.dll
-sources/warning.gif
-sources/wdsclient.dll
-sources/wdsclientapi.dll
-sources/wdscommonlib.dll
-sources/wdscore.dll
-sources/wdscsl.dll
-sources/wdsimage.dll
-sources/wdstptc.dll
-sources/wdsutil.dll
-sources/wimgapi.dll
-sources/wimprovider.dll
-sources/win32ui.dll
-sources/WinDlp.dll
-sources/winsetup.dll
-sources/wpx.dll
-sources/xmllite.dll
-sources/deployprovider.dll
-sources/osimageprovider.dll
-sources/pnppropmig.dll
-sources/UnattendMgr.dll
-sources/UpdateCompression.dll
-sources/WinSetupBoot.hiv
-sources/WinSetupBoot.sys
-sources/WinSetupMon.hiv
-sources/WinSetupMon.sys
-sources/..-.*/appraiser.dll.mui
-sources/..-.*/arunres.dll.mui
-sources/..-.*/cmisetup.dll.mui
-sources/..-.*/compatctrl.dll.mui
-sources/..-.*/compatprovider.dll.mui
-sources/..-.*/deployprovider.dll.mui
-sources/..-.*/dism.exe.mui
-sources/..-.*/dismapi.dll.mui
-sources/..-.*/dismcore.dll.mui
-sources/..-.*/dismprov.dll.mui
-sources/..-.*/folderprovider.dll.mui
-sources/..-.*/imagingprovider.dll.mui
-sources/..-.*/input.dll.mui
-sources/..-.*/logprovider.dll.mui
-sources/..-.*/MediaSetupUIMgr.dll.mui
-sources/..-.*/nlsbres.dll.mui
-sources/..-.*/osimageprovider.dll.mui
-sources/..-.*/pnpibs.dll.mui
-sources/..-.*/reagent.adml
-sources/..-.*/reagent.dll.mui
-sources/..-.*/rollback.exe.mui
-sources/..-.*/setup.exe.mui
-sources/..-.*/setup_help_upgrade_or_custom.rtf
-sources/..-.*/setupcompat.dll.mui
-sources/..-.*/SetupCore.dll.mui
-sources/..-.*/SetupMgr.dll.mui
-sources/..-.*/setupplatform.exe.mui
-sources/..-.*/SetupPrep.exe.mui
-sources/..-.*/smiengine.dll.mui
-sources/..-.*/spwizres.dll.mui
-sources/..-.*/upgloader.dll.mui
-sources/..-.*/uxlibres.dll.mui
-sources/..-.*/vhdprovider.dll.mui
-sources/..-.*/vofflps.rtf
-sources/..-.*/vofflps_server.rtf
-sources/..-.*/w32uires.dll.mui
-sources/..-.*/wdsclient.dll.mui
-sources/..-.*/wdsimage.dll.mui
-sources/..-.*/wimgapi.dll.mui
-sources/..-.*/wimprovider.dll.mui
-sources/..-.*/WinDlp.dll.mui
-sources/..-.*/winsetup.dll.mui'
+bootSourcesList=(
+  sources/alert.gif
+  sources/api-ms-win-core-apiquery-l1-1-0.dll
+  sources/api-ms-win-downlevel-advapi32-l1-1-0.dll
+  sources/api-ms-win-downlevel-advapi32-l1-1-1.dll
+  sources/api-ms-win-downlevel-advapi32-l2-1-0.dll
+  sources/api-ms-win-downlevel-advapi32-l2-1-1.dll
+  sources/api-ms-win-downlevel-advapi32-l3-1-0.dll
+  sources/api-ms-win-downlevel-advapi32-l4-1-0.dll
+  sources/api-ms-win-downlevel-kernel32-l1-1-0.dll
+  sources/api-ms-win-downlevel-kernel32-l2-1-0.dll
+  sources/api-ms-win-downlevel-ole32-l1-1-0.dll
+  sources/api-ms-win-downlevel-ole32-l1-1-1.dll
+  sources/api-ms-win-downlevel-shlwapi-l1-1-0.dll
+  sources/api-ms-win-downlevel-shlwapi-l1-1-1.dll
+  sources/api-ms-win-downlevel-user32-l1-1-0.dll
+  sources/api-ms-win-downlevel-user32-l1-1-1.dll
+  sources/api-ms-win-downlevel-version-l1-1-0.dll
+  sources/appcompat.xsl
+  sources/appcompat_bidi.xsl
+  sources/appcompat_detailed_bidi_txt.xsl
+  sources/appcompat_detailed_txt.xsl
+  sources/appraiser.dll
+  sources/ARUNIMG.dll
+  sources/arunres.dll
+  sources/autorun.dll
+  sources/bcd.dll
+  sources/bootsvc.dll
+  sources/cmisetup.dll
+  sources/compatctrl.dll
+  sources/compatprovider.dll
+  sources/compliance.ini
+  sources/cryptosetup.dll
+  sources/diager.dll
+  sources/diagnostic.dll
+  sources/diagtrack.dll
+  sources/diagtrackrunner.exe
+  sources/dism.exe
+  sources/dismapi.dll
+  sources/dismcore.dll
+  sources/dismcoreps.dll
+  sources/dismprov.dll
+  sources/ext-ms-win-advapi32-encryptedfile-l1-1-0.dll
+  sources/folderprovider.dll
+  sources/hwcompat.dll
+  sources/hwcompat.txt
+  sources/hwcompatPE.txt
+  sources/hwexclude.txt
+  sources/hwexcludePE.txt
+  sources/hwreqchk.dll
+  sources/idwbinfo.txt
+  sources/imagelib.dll
+  sources/imagingprovider.dll
+  sources/input.dll
+  sources/lang.ini
+  sources/locale.nls
+  sources/logprovider.dll
+  sources/MediaSetupUIMgr.dll
+  sources/ndiscompl.dll
+  sources/nlsbres.dll
+  sources/ntdsupg.dll
+  sources/offline.xml
+  sources/pnpibs.dll
+  sources/reagent.admx
+  sources/reagent.dll
+  sources/reagent.xml
+  sources/rollback.exe
+  sources/schema.dat
+  sources/segoeui.ttf
+  sources/ServicingCommon.dll
+  sources/setup.exe
+  sources/setupcompat.dll
+  sources/SetupCore.dll
+  sources/SetupHost.exe
+  sources/SetupMgr.dll
+  sources/SetupPlatform.cfg
+  sources/SetupPlatform.dll
+  sources/SetupPlatform.exe
+  sources/SetupPrep.exe
+  sources/SmiEngine.dll
+  sources/spflvrnt.dll
+  sources/spprgrss.dll
+  sources/spwizeng.dll
+  sources/spwizimg.dll
+  sources/spwizres.dll
+  sources/sqmapi.dll
+  sources/testplugin.dll
+  sources/unattend.dll
+  sources/unbcl.dll
+  sources/upgloader.dll
+  sources/upgrade_frmwrk.xml
+  sources/utcapi.dll
+  sources/uxlib.dll
+  sources/uxlibres.dll
+  sources/vhdprovider.dll
+  sources/w32uiimg.dll
+  sources/w32uires.dll
+  sources/warning.gif
+  sources/wdsclient.dll
+  sources/wdsclientapi.dll
+  sources/wdscommonlib.dll
+  sources/wdscore.dll
+  sources/wdscsl.dll
+  sources/wdsimage.dll
+  sources/wdstptc.dll
+  sources/wdsutil.dll
+  sources/wimgapi.dll
+  sources/wimprovider.dll
+  sources/win32ui.dll
+  sources/WinDlp.dll
+  sources/winsetup.dll
+  sources/wpx.dll
+  sources/xmllite.dll
+  sources/deployprovider.dll
+  sources/osimageprovider.dll
+  sources/pnppropmig.dll
+  sources/UnattendMgr.dll
+  sources/UpdateCompression.dll
+  sources/WinSetupBoot.hiv
+  sources/WinSetupBoot.sys
+  sources/WinSetupMon.hiv
+  sources/WinSetupMon.sys
+  "sources/..-.*/appraiser.dll.mui"
+  "sources/..-.*/arunres.dll.mui"
+  "sources/..-.*/cmisetup.dll.mui"
+  "sources/..-.*/compatctrl.dll.mui"
+  "sources/..-.*/compatprovider.dll.mui"
+  "sources/..-.*/deployprovider.dll.mui"
+  "sources/..-.*/dism.exe.mui"
+  "sources/..-.*/dismapi.dll.mui"
+  "sources/..-.*/dismcore.dll.mui"
+  "sources/..-.*/dismprov.dll.mui"
+  "sources/..-.*/folderprovider.dll.mui"
+  "sources/..-.*/imagingprovider.dll.mui"
+  "sources/..-.*/input.dll.mui"
+  "sources/..-.*/logprovider.dll.mui"
+  "sources/..-.*/MediaSetupUIMgr.dll.mui"
+  "sources/..-.*/nlsbres.dll.mui"
+  "sources/..-.*/osimageprovider.dll.mui"
+  "sources/..-.*/pnpibs.dll.mui"
+  "sources/..-.*/reagent.adml"
+  "sources/..-.*/reagent.dll.mui"
+  "sources/..-.*/rollback.exe.mui"
+  "sources/..-.*/setup.exe.mui"
+  "sources/..-.*/setup_help_upgrade_or_custom.rtf"
+  "sources/..-.*/setupcompat.dll.mui"
+  "sources/..-.*/SetupCore.dll.mui"
+  "sources/..-.*/SetupMgr.dll.mui"
+  "sources/..-.*/setupplatform.exe.mui"
+  "sources/..-.*/SetupPrep.exe.mui"
+  "sources/..-.*/smiengine.dll.mui"
+  "sources/..-.*/spwizres.dll.mui"
+  "sources/..-.*/upgloader.dll.mui"
+  "sources/..-.*/uxlibres.dll.mui"
+  "sources/..-.*/vhdprovider.dll.mui"
+  "sources/..-.*/vofflps.rtf"
+  "sources/..-.*/vofflps_server.rtf"
+  "sources/..-.*/w32uires.dll.mui"
+  "sources/..-.*/wdsclient.dll.mui"
+  "sources/..-.*/wdsimage.dll.mui"
+  "sources/..-.*/wimgapi.dll.mui"
+  "sources/..-.*/wimprovider.dll.mui"
+  "sources/..-.*/WinDlp.dll.mui"
+  "sources/..-.*/winsetup.dll.mui"
+)
 
 infoColor="\033[1;94m"
 errorColor="\033[1;91m"
@@ -396,25 +402,25 @@ if [[ -e ISODIR ]]; then
   rm -rf ISODIR
 fi
 
-list=
+list=()
 for i in "${editions[@]}"; do
-  list="${list} -ie \"${i}""_..-.*.esd\""
+  list+=("-ie" "${i}_..-.*.esd")
 done
 
-metadataFiles=$(find "$uupDir" 2>/dev/null | eval grep "$list")
-if [[ $? != 0 ]]; then
+mapfile -t metadataFiles < <(find "$uupDir" 2>/dev/null | grep "${list[@]}")
+if [[ ${#metadataFiles[@]} -eq 0 ]]; then
   echo -e "${errorColor}""No metadata ESDs found.""$resetColor"
   exit 1
 fi
 
-list=
+list=()
 
-firstMetadata=$(head -1 <<<"$metadataFiles")
+firstMetadata="${metadataFiles[0]}"
 getLang=$(wimlib-imagex info "$firstMetadata" 3)
 lang=$(grep -i "^Default Language:" <<<"$getLang" | sed "s/.*  //g")
-#lang=$(grep -i "_..-.*.esd" <<< "$metadataFiles" | head -1 | tr '[:upper:]' '[:lower:]' | sed 's/.*_//g;s/.esd//g')
-metadataFiles=$(grep -i "$lang" <<<"$metadataFiles" | sort | uniq)
-firstMetadata=$(head -1 <<<"$metadataFiles")
+#lang=$(grep -i "_..-.*.esd" <<< "${metadataFiles[@]}" | head -1 | tr '[:upper:]' '[:lower:]' | sed 's/.*_//g;s/.esd//g')
+mapfile -t metadataFiles < <(printf '%s\n' "${metadataFiles[@]}" | grep -i "$lang" | sort | uniq)
+firstMetadata="${metadataFiles[0]}"
 
 tempDir=$(mktemp -d)
 extractDir="${tempDir}/extract"
@@ -539,13 +545,13 @@ wimlib-imagex extract "$firstMetadata" 3 "/Windows/System32/xmllite.dll" \
 wimlib-imagex info ISODIR/sources/boot.wim 2 --image-property FLAGS=2 >/dev/null
 wimlib-imagex info ISODIR/sources/boot.wim 2 --boot >/dev/null
 
-list=
+list=()
 for i in "${bootSourcesList[@]}"; do
-  list="${list} -oie \"${i}\""
+  list+=("-oie" "${i}")
 done
 
-files=$(find ISODIR -regex ".*/sources/.*" | eval grep "$list")
-list=
+mapfile -t files < <(find ISODIR -regex ".*/sources/.*" | grep "${list[@]}")
+list=()
 
 echo "delete /Windows/System32/winpeshl.ini" >"${tempDir}/update.txt"
 echo "add ISODIR/setup.exe /setup.exe" >>"${tempDir}/update.txt"

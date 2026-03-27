@@ -37,12 +37,28 @@ fi
 # Ensure case-insensitive matching (like Windows NTFS)
 export WIMLIB_IMAGEX_IGNORE_CASE=1
 
-# Get number of indexes in the WIM
-IMAGE_COUNT=$(wimlib-imagex info "$WIM_FILE" | grep -c "^Index:" || echo "0")
+# Get number of indexes in the WIM and pre-fetch edition names
+WIM_INFO_OUTPUT=$(wimlib-imagex info "$WIM_FILE" 2>/dev/null || echo "")
+
+IMAGE_COUNT=$(echo "$WIM_INFO_OUTPUT" | grep -c "^Index:" || echo "0")
 if [[ "$IMAGE_COUNT" -eq 0 ]]; then
   # Fallback: count via parsing
-  IMAGE_COUNT=$(wimlib-imagex info "$WIM_FILE" | grep "^Image Count:" | sed 's/.*: *//')
+  IMAGE_COUNT=$(echo "$WIM_INFO_OUTPUT" | grep "^Image Count:" | sed 's/.*: *//' || echo "0")
 fi
+
+declare -a EDITION_NAMES
+CURRENT_INDEX=""
+while IFS= read -r line; do
+  if [[ "$line" =~ ^Index:[[:space:]]+([0-9]+)$ ]]; then
+    CURRENT_INDEX="${BASH_REMATCH[1]}"
+  elif [[ "$line" =~ ^Name:[[:space:]]+(.*)$ ]] && [[ -n "${CURRENT_INDEX:-}" ]]; then
+    name="${BASH_REMATCH[1]}"
+    name="${name%$'\r'}"
+    EDITION_NAMES[CURRENT_INDEX]="$name"
+    CURRENT_INDEX=""
+  fi
+done <<< "$WIM_INFO_OUTPUT"
+
 
 log_info "WIM file: $WIM_FILE"
 log_info "Image count: $IMAGE_COUNT"
@@ -80,7 +96,7 @@ for index in $(seq 1 "$IMAGE_COUNT"); do
   log_info "Processing index $index of $IMAGE_COUNT..."
 
   # Get edition name for logging
-  EDITION=$(wimlib-imagex info "$WIM_FILE" "$index" 2>/dev/null | grep "^Name:" | sed 's/^Name:[[:space:]]*//' || echo "Unknown")
+  EDITION="${EDITION_NAMES[$index]:-Unknown}"
   log_info "Edition: $EDITION"
 
   # Execute debloat commands

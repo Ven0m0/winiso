@@ -4,7 +4,7 @@ from urllib.error import HTTPError, URLError
 import sys
 import os
 
-# Add scripts directory to path to import download_uup
+# Add project root to path to import scripts.download_uup
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from scripts.download_uup import fetch_url  # noqa: E402
 

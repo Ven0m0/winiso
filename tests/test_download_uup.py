@@ -163,5 +163,42 @@ class TestHelpers(unittest.TestCase):
         mock_log_success.assert_called()
 
 
+
+class TestGetLatestBuilds(unittest.TestCase):
+    @patch("download_uup.fetch_url")
+    @patch("download_uup.log_error")
+    def test_get_latest_builds_api_error(self, mock_log_error, mock_fetch_url):
+        # Simulate API returning a JSON string with an error field
+        mock_fetch_url.return_value = '{"response": {"error": "Invalid request"}}'
+
+        result = download_uup.get_latest_builds()
+
+        self.assertIsNone(result)
+        mock_log_error.assert_called_with("API Error: Invalid request")
+
+    @patch("download_uup.fetch_url")
+    @patch("download_uup.log_error")
+    def test_get_latest_builds_no_response(self, mock_log_error, mock_fetch_url):
+        # Simulate no response from the URL fetch
+        mock_fetch_url.return_value = None
+
+        result = download_uup.get_latest_builds()
+
+        self.assertIsNone(result)
+        mock_log_error.assert_called_with("Failed to fetch builds from uupdump.net")
+
+    @patch("download_uup.fetch_url")
+    @patch("download_uup.log_error")
+    def test_get_latest_builds_json_decode_error(self, mock_log_error, mock_fetch_url):
+        # Simulate an invalid JSON string
+        mock_fetch_url.return_value = 'Not a JSON string'
+
+        result = download_uup.get_latest_builds()
+
+        self.assertIsNone(result)
+        # Since the error message includes the exception string, we just check that it starts correctly
+        mock_log_error.assert_called_once()
+        self.assertTrue(mock_log_error.call_args[0][0].startswith("Failed to parse JSON response:"))
+
 if __name__ == "__main__":
     unittest.main()

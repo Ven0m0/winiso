@@ -7,6 +7,29 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'scripts')))
 import download_uup
 
+
+class TestDownloadBuildBuildInfoFastPath(unittest.TestCase):
+    """Tests that download_build reuses a supplied build_info and skips the API call."""
+
+    @patch('download_uup.get_build_info')
+    def test_build_info_provided_skips_api_call(self, mock_get_build_info):
+        """When build_info is passed in, get_build_info must not be called."""
+        # Passing an empty files dict causes an early return ("No files found"),
+        # so no filesystem or network activity is needed.
+        build_info = {"files": {}}
+        result = download_uup.download_build("fake-id", "/tmp/out", build_info=build_info)
+
+        mock_get_build_info.assert_not_called()
+        self.assertFalse(result)
+
+    @patch('download_uup.get_build_info', return_value=None)
+    def test_no_build_info_calls_api(self, mock_get_build_info):
+        """When build_info is not passed, get_build_info is called."""
+        result = download_uup.download_build("fake-id", "/tmp/out")
+        mock_get_build_info.assert_called_once_with("fake-id")
+        self.assertFalse(result)
+
+
 class TestCheckDependencies(unittest.TestCase):
     @patch('shutil.which')
     @patch('download_uup.log_error')

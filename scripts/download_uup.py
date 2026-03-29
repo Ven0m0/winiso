@@ -365,7 +365,7 @@ def interactive_mode(output_dir):
                     .lower()
                 )
                 if confirm == "" or confirm == "y":
-                    return download_build(build_id, output_dir, edition_filter, build_info)
+                    return download_build(build_id, output_dir, edition_filter, build_info=build_info)
                 else:
                     log_info("Download cancelled")
                     return False

@@ -551,7 +551,7 @@ echo "add 'ISODIR/sources/${bckimg}' '/Windows/system32/setup.bmp'" >>"${tempDir
 echo "add 'ISODIR/sources/${bckimg}' '/Windows/system32/winpe.jpg'" >>"${tempDir}/update.txt"
 echo "add 'ISODIR/sources/${bckimg}' '/Windows/system32/winre.jpg'" >>"${tempDir}/update.txt"
 for i in "${files[@]}"; do
-  echo "add 'ISODIR/${i}' '/${i}'" >>"${tempDir}/update.txt"
+  echo "add '${i}' '/${i#ISODIR/}'" >>"${tempDir}/update.txt"
 done
 
 wimlib-imagex update ISODIR/sources/boot.wim 2 <"${tempDir}/update.txt" >/dev/null

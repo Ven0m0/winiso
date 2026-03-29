@@ -22,13 +22,14 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 UUP_DIR="$PROJECT_ROOT/uup_files"
 OUTPUT_DIR="$PROJECT_ROOT/output"
 
+# shellcheck disable=SC1091
 source "$SCRIPT_DIR/utils.sh"
 
 # Run prerequisite validation
 log_info "Running prerequisite validation..."
 if ! bash "$SCRIPT_DIR/validate_prereqs.sh"; then
-    log_error "Prerequisite validation failed. Please fix errors and try again."
-    exit 1
+  log_error "Prerequisite validation failed. Please fix errors and try again."
+  exit 1
 fi
 echo ""
 
@@ -40,14 +41,14 @@ count_cab=$(find "$UUP_DIR" -maxdepth 1 -name "*.cab" 2>/dev/null | wc -l)
 count_esd=$(find "$UUP_DIR" -maxdepth 1 -iname "*.esd" 2>/dev/null | wc -l)
 
 if [[ $count_cab -eq 0 ]] && [[ $count_esd -eq 0 ]]; then
-    log_error "No UUP files (.cab or .esd) found in $UUP_DIR"
-    echo ""
-    echo "To get UUP files:"
-    echo "  1. Visit https://uupdump.net and select your Windows 11 build"
-    echo "  2. Download the UUP package"
-    echo "  3. Extract or move files to: $UUP_DIR"
-    echo ""
-    exit 1
+  log_error "No UUP files (.cab or .esd) found in $UUP_DIR"
+  echo ""
+  echo "To get UUP files:"
+  echo "  1. Visit https://uupdump.net and select your Windows 11 build"
+  echo "  2. Download the UUP package"
+  echo "  3. Extract or move files to: $UUP_DIR"
+  echo ""
+  exit 1
 fi
 
 log_info "Starting Build Process..."
@@ -75,8 +76,8 @@ export WIMLIB_IMAGEX_IGNORE_CASE=1
 # We force 'wim' compression because 'esd' cannot be reliably modified
 log_info "Running UUP converter with debloating..."
 if ! bash "$SCRIPT_DIR/custom_convert.sh" wim "$UUP_DIR" 0; then
-    log_error "Build failed during conversion."
-    exit 1
+  log_error "Build failed during conversion."
+  exit 1
 fi
 
 # Find the ISO file (converter creates it in current directory)
@@ -84,31 +85,31 @@ ISO_FILE=$(find "$SCRIPT_DIR" -maxdepth 1 -name "*.iso" -type f 2>/dev/null | he
 
 # Also check current directory if different
 if [[ -z "$ISO_FILE" ]]; then
-    ISO_FILE=$(find "$(pwd)" -maxdepth 1 -name "*.iso" -type f 2>/dev/null | head -n 1)
+  ISO_FILE=$(find "$(pwd)" -maxdepth 1 -name "*.iso" -type f 2>/dev/null | head -n 1)
 fi
 
 if [[ -f "$ISO_FILE" ]]; then
-    ISO_NAME=$(basename "$ISO_FILE")
-    log_success "ISO created: $ISO_NAME"
+  ISO_NAME=$(basename "$ISO_FILE")
+  log_success "ISO created: $ISO_NAME"
 
-    # Move to output directory
-    log_info "Moving $ISO_NAME to $OUTPUT_DIR..."
-    mv "$ISO_FILE" "$OUTPUT_DIR/"
+  # Move to output directory
+  log_info "Moving $ISO_NAME to $OUTPUT_DIR..."
+  mv "$ISO_FILE" "$OUTPUT_DIR/"
 
-    # Get final size
-    FINAL_SIZE=$(du -h "$OUTPUT_DIR/$ISO_NAME" | cut -f1)
+  # Get final size
+  FINAL_SIZE=$(du -h "$OUTPUT_DIR/$ISO_NAME" | cut -f1)
 
-    echo ""
-    log_success "======================================"
-    log_success "Build Complete!"
-    log_success "======================================"
-    echo "  ISO: $OUTPUT_DIR/$ISO_NAME"
-    echo "  Size: $FINAL_SIZE"
-    echo ""
+  echo ""
+  log_success "======================================"
+  log_success "Build Complete!"
+  log_success "======================================"
+  echo "  ISO: $OUTPUT_DIR/$ISO_NAME"
+  echo "  Size: $FINAL_SIZE"
+  echo ""
 else
-    log_error "ISO file not found after conversion."
-    log_warn "Check for errors above. The converter may have failed."
-    exit 1
+  log_error "ISO file not found after conversion."
+  log_warn "Check for errors above. The converter may have failed."
+  exit 1
 fi
 
 # Cleanup

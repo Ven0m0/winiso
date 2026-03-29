@@ -8,6 +8,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+# shellcheck disable=SC1091
 source "$SCRIPT_DIR/utils.sh"
 
 log_info "Checking and installing dependencies..."

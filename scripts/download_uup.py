@@ -108,13 +108,11 @@ def get_latest_builds(max_results=10):
             return []
 
         # Convert to list and sort by date
-        build_list = []
-        for build_id, build_info in builds.items():
-            build_info["id"] = build_id
-            build_list.append(build_info)
-
-        # Sort by created timestamp (newest first)
-        build_list.sort(key=lambda x: x.get("created", 0), reverse=True)
+        build_list = sorted(
+            ({**build_info, "id": build_id} for build_id, build_info in builds.items()),
+            key=lambda x: x.get("created", 0),
+            reverse=True,
+        )
 
         return build_list[:max_results]
 
@@ -171,10 +169,12 @@ def select_editions(build_info):
     EDITIONS = ("professional", "enterprise", "home", "core", "education")
 
     for filename, file_info in files.items():
-        if filename.endswith(".esd") and any(ed in filename.lower() for ed in EDITIONS):
-            # Extract edition name from filename
-            edition = filename.split("_")[0] if "_" in filename else filename
-            edition_files[edition] = filename
+        if filename.endswith(".esd"):
+            filename_lower = filename.lower()
+            for edition in EDITIONS:
+                if edition in filename_lower:
+                    edition_files[edition] = filename
+                    break
 
     if not edition_files:
         log_warn("No edition-specific files found, will download all files")
@@ -203,9 +203,10 @@ def select_editions(build_info):
     return None
 
 
-def download_build(build_id, output_dir, edition_filter=None):
+def download_build(build_id, output_dir, edition_filter=None, build_info=None):
     """Download UUP files for a specific build"""
-    build_info = get_build_info(build_id)
+    if build_info is None:
+        build_info = get_build_info(build_id)
 
     if not build_info:
         log_error("Failed to get build information")
@@ -260,9 +261,21 @@ def download_build(build_id, output_dir, edition_filter=None):
     aria2_input = output_path / "aria2_input.txt"
     with open(aria2_input, "w") as f:
         for item in download_list:
-            f.write(f"{item['url']}\n")
-            f.write(f"  out={item['name']}\n")
+            if (
+                "\n" in item["url"]
+                or "\r" in item["url"]
+                or "\n" in item["name"]
+                or "\r" in item["name"]
+            ):
+                log_error(
+                    f"Invalid characters in URL or filename: {item['name']}"
+                )
+                return False
 
+            f.write(f"{item['url']}\n")
+            # Security: Sanitize filename to prevent path traversal
+            safe_name = Path(item["name"].replace("\\", "/")).name
+            f.write(f"  out={safe_name}\n")
     # Download using aria2
     log_info("Starting download with aria2c...")
     print(
@@ -348,8 +361,14 @@ def interactive_mode(output_dir):
                 )
                 print(f"{Colors.BOLD}Build ID:{Colors.RESET} {build_id}")
 
+                # Fetch build info once
+                build_info = get_build_info(build_id)
+                if not build_info:
+                    log_error("Failed to get build information")
+                    return False
+
                 # Ask for edition selection
-                edition_filter = select_editions(get_build_info(build_id))
+                edition_filter = select_editions(build_info)
 
                 confirm = (
                     input(
@@ -359,7 +378,9 @@ def interactive_mode(output_dir):
                     .lower()
                 )
                 if confirm == "" or confirm == "y":
-                    return download_build(build_id, output_dir, edition_filter)
+                    return download_build(
+                        build_id, output_dir, edition_filter, build_info
+                    )
                 else:
                     log_info("Download cancelled")
                     return False

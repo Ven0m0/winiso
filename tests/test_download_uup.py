@@ -86,5 +86,64 @@ class TestGetLatestBuilds(unittest.TestCase):
         self.assertEqual(result[0]["id"], "uuid2")
         self.assertEqual(result[0]["title"], "Build 2")
 
-if __name__ == '__main__':
+class TestSelectEditions(unittest.TestCase):
+    def setUp(self):
+        self.sample_build_info = {
+            "files": {
+                "Professional_en-us.esd": {"size": 100},
+                "Enterprise_en-us.esd": {"size": 100},
+                "Home_en-us.esd": {"size": 100},
+                "other_file.txt": {"size": 10},
+            }
+        }
+
+    @patch("download_uup.log_warn")
+    def test_no_edition_files(self, mock_log_warn):
+        build_info = {"files": {"random.txt": {}}}
+        result = download_uup.select_editions(build_info)
+        self.assertIsNone(result)
+        mock_log_warn.assert_called_with("No edition-specific files found, will download all files")
+
+    @patch("builtins.input", return_value="")
+    @patch("builtins.print")
+    def test_select_all_default(self, mock_print, mock_input):
+        result = download_uup.select_editions(self.sample_build_info)
+        self.assertIsNone(result)
+
+    @patch("builtins.input", return_value="A")
+    @patch("builtins.print")
+    def test_select_all_explicit(self, mock_print, mock_input):
+        result = download_uup.select_editions(self.sample_build_info)
+        self.assertIsNone(result)
+
+    @patch("builtins.print")
+    def test_valid_selections(self, _mock_print):
+        """Tests that valid numeric selections return the correct edition file."""
+        test_cases = [
+            ("1", "Professional_en-us.esd"),
+            ("2", "Enterprise_en-us.esd"),
+            ("3", "Home_en-us.esd"),
+        ]
+
+        for choice, expected_file in test_cases:
+            with self.subTest(choice=choice):
+                with patch("builtins.input", return_value=choice):
+                    result = download_uup.select_editions(self.sample_build_info)
+                    self.assertEqual(result, [expected_file])
+
+    @patch("builtins.print")
+    @patch("download_uup.log_warn")
+    def test_invalid_selection_inputs(self, mock_log_warn, _mock_print):
+        """Tests that invalid selections are handled correctly."""
+        for choice in ["99", "invalid"]:
+            with self.subTest(choice=choice):
+                with patch("builtins.input", return_value=choice):
+                    result = download_uup.select_editions(self.sample_build_info)
+                    self.assertIsNone(result)
+                    mock_log_warn.assert_called_with("Invalid selection, downloading all editions")
+                # Reset mock for next subtest to ensure assertion is specific to the subtest
+                mock_log_warn.reset_mock()
+
+
+if __name__ == "__main__":
     unittest.main()

@@ -19,3 +19,16 @@ class TestDownloadUUP(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+import os
+import unittest
+from pathlib import Path
+from importlib.machinery import SourceFileLoader
+from importlib.util import module_from_spec, spec_from_loader
+
+scripts_dir = Path(__file__).resolve().parent.parent / "scripts"
+download_uup_path = scripts_dir / "download_uup.py"
+_loader = SourceFileLoader("download_uup", str(download_uup_path))
+_spec = spec_from_loader("download_uup", _loader)
+download_uup = module_from_spec(_spec)
+_loader.exec_module(download_uup)
+parse_args = download_uup.parse_args

@@ -1641,9 +1641,9 @@ function createVirtualEdition() {
   chntpw -e "${tmpDir}/SOFTWARE" "${tmpDir}/SYSTEM" <<< "${chntpwScript}" >/dev/null
 
   printf "%s\n%s\n%s\n" \
-    "add '${tmpDir}/SOFTWARE' '/Windows/System32/config/SOFTWARE'" \
-    "add '${tmpDir}/SYSTEM' '/Windows/System32/config/SYSTEM'" \
-    "add '${tmpDir}/${edition}Edition.xml' '/Windows/${edition}.xml'" \
+    "add \"${tmpDir}/SOFTWARE\" \"/Windows/System32/config/SOFTWARE\"" \
+    "add \"${tmpDir}/SYSTEM\" \"/Windows/System32/config/SYSTEM\"" \
+    "add \"${tmpDir}/${edition}Edition.xml\" \"/Windows/${edition}.xml\"" \
     | wimlib-imagex update ISODIR/sources/install."${type}" "${newName}" >/dev/null
 
   if [[ $? != 0 ]]; then

@@ -670,7 +670,7 @@ for metadata in "${metadataFiles[@]}"; do
   echo ""
   echo -e "${infoColor}""Adding winre.wim for ${editionName}...""$resetColor"
   wimlib-imagex update ISODIR/sources/install."$type" "$indexesExported" \
-    --command "add '${tempDir}/winre.wim' '/Windows/System32/Recovery/winre.wim'"
+    --command "add \"${tempDir}/winre.wim\" \"/Windows/System32/Recovery/winre.wim\""
 
   echo ""
 done

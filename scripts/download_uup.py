@@ -269,9 +269,10 @@ def download_build(build_id, output_dir, edition_filter=None, build_info=None):
                 or "\n" in item["name"]
                 or "\r" in item["name"]
             ):
-                raise ValueError(
+                log_error(
                     f"Invalid characters in URL or filename: {item['name']}"
                 )
+                return False
 
             f.write(f"{item['url']}\n")
             f.write(f"  out={item['name']}\n")

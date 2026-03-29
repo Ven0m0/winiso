@@ -261,6 +261,17 @@ def download_build(build_id, output_dir, edition_filter=None, build_info=None):
     aria2_input = output_path / "aria2_input.txt"
     with open(aria2_input, "w") as f:
         for item in download_list:
+            if (
+                "\n" in item["url"]
+                or "\r" in item["url"]
+                or "\n" in item["name"]
+                or "\r" in item["name"]
+            ):
+                log_error(
+                    f"Invalid characters in URL or filename: {item['name']}"
+                )
+                return False
+
             f.write(f"{item['url']}\n")
             # Security: Sanitize filename to prevent path traversal
             safe_name = Path(item["name"].replace("\\", "/")).name

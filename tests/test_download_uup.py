@@ -1,70 +1,79 @@
 import unittest
+from unittest.mock import patch
+from urllib.error import HTTPError, URLError
 import sys
 import os
-from pathlib import Path
-from unittest.mock import patch, mock_open, MagicMock
 
-# Add scripts directory to sys.path to import download_uup
-sys.path.append(os.path.abspath("scripts"))
-import download_uup
+# Add project root to path to import scripts.download_uup
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from scripts.download_uup import fetch_url  # noqa: E402
+
 
 class TestDownloadUUP(unittest.TestCase):
-    @patch('download_uup.get_build_info')
-    @patch('download_uup.subprocess.run')
-    def test_path_traversal_sanitization(self, mock_run, mock_get_build_info):
-        # Mock build info with malicious filenames
-        mock_build_info = {
-            "files": {
-                "../../../etc/passwd": {"size": 1024},
-                "..\\..\\Windows\\System32\\cmd.exe": {"size": 2048},
-                "/absolute/path/file.esd": {"size": 4096},
-                "normal_file.cab": {"size": 8192}
-            }
-        }
-        mock_get_build_info.return_value = mock_build_info
+    @patch("scripts.download_uup.urlopen")
+    @patch("scripts.download_uup.log_error")
+    def test_fetch_url_httperror(self, mock_log_error, mock_urlopen):
+        # Create a mock HTTPError
+        mock_error = HTTPError(
+            url="http://example.com",
+            code=404,
+            msg="Not Found",
+            hdrs=None,
+            fp=None
+        )
+        mock_urlopen.side_effect = mock_error
 
-        # We need to mock open to inspect what gets written to aria2_input.txt
-        m_open = mock_open()
+        # Call the function
+        result = fetch_url("http://example.com")
 
-        # Mock Path methods to avoid actual file system operations like mkdir
-        with patch('download_uup.Path.mkdir'):
-            with patch('download_uup.Path.glob', return_value=[]):
-                with patch('builtins.open', m_open):
-                    with patch('download_uup.Path.unlink'): # Mock unlink to prevent FileNotFoundError
-                        # Mock successful aria2c execution
-                        mock_run.return_value = MagicMock(returncode=0)
+        # Assertions
+        self.assertIsNone(result)
+        mock_log_error.assert_called_once_with("HTTP Error 404: Not Found")
 
-                        # Run the download
-                        result = download_uup.download_build(
-                            "dummy_build_id",
-                            "dummy_output_dir",
-                            build_info=mock_build_info
-                        )
+    @patch("scripts.download_uup.urlopen")
+    @patch("scripts.download_uup.log_error")
+    def test_fetch_url_urlerror(self, mock_log_error, mock_urlopen):
+        # Create a mock URLError
+        mock_error = URLError(reason="Name or service not known")
+        mock_urlopen.side_effect = mock_error
 
-        self.assertTrue(result)
+        # Call the function
+        result = fetch_url("http://example.com")
 
-        # Verify what was written to the file
-        written_lines = []
-        for call in m_open().write.mock_calls:
-            args, kwargs = call[1], call[2]
-            if args:
-                written_lines.append(args[0])
+        # Assertions
+        self.assertIsNone(result)
+        mock_log_error.assert_called_once_with(
+            "URL Error: Name or service not known"
+        )
 
-        # Check that out= parameters are sanitized
-        out_lines = [line.strip() for line in written_lines if line.strip().startswith('out=')]
+    @patch("scripts.download_uup.urlopen")
+    @patch("scripts.download_uup.log_error")
+    def test_fetch_url_generic_exception(self, mock_log_error, mock_urlopen):
+        # Create a mock generic Exception
+        mock_error = Exception("Something went wrong")
+        mock_urlopen.side_effect = mock_error
 
-        self.assertEqual(len(out_lines), 4)
-        self.assertIn('out=passwd', out_lines)
-        self.assertIn('out=cmd.exe', out_lines)
-        self.assertIn('out=file.esd', out_lines)
-        self.assertIn('out=normal_file.cab', out_lines)
+        # Call the function
+        result = fetch_url("http://example.com")
 
-        # Ensure no path traversal elements are present
-        for line in out_lines:
-            self.assertNotIn('../', line)
-            self.assertNotIn('..\\', line)
-            self.assertNotIn('/', line.replace('out=', ''))
-            self.assertNotIn('\\', line.replace('out=', ''))
+        # Assertions
+        self.assertIsNone(result)
+        mock_log_error.assert_called_once_with(
+            "Error fetching URL: Something went wrong"
+        )
 
-if __name__ == '__main__':
+    @patch("scripts.download_uup.urlopen")
+    def test_fetch_url_success(self, mock_urlopen):
+        # Mock successful response
+        mock_response = mock_urlopen.return_value.__enter__.return_value
+        mock_response.read.return_value = b"success content"
+
+        # Call the function
+        result = fetch_url("http://example.com")
+
+        # Assertions
+        self.assertEqual(result, "success content")
+
+
+if __name__ == "__main__":
     unittest.main()

@@ -108,10 +108,11 @@ def get_latest_builds(max_results=10):
             return None
 
         # Convert to list and sort by date
-        build_list = [{**build_info, "id": build_id} for build_id, build_info in builds.items()]
-
-        # Sort by created timestamp (newest first)
-        build_list.sort(key=lambda x: x.get("created", 0), reverse=True)
+        build_list = sorted(
+            ({**build_info, "id": build_id} for build_id, build_info in builds.items()),
+            key=lambda x: x.get("created", 0),
+            reverse=True,
+        )
 
         return build_list[:max_results]
 

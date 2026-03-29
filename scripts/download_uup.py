@@ -319,9 +319,10 @@ def _run_aria2_download(output_path, aria2_input, download_list):
         return False
 
 
-def download_build(build_id, output_dir, edition_filter=None):
+def download_build(build_id, output_dir, edition_filter=None, build_info=None):
     """Download UUP files for a specific build"""
-    build_info = get_build_info(build_id)
+    if build_info is None:
+        build_info = get_build_info(build_id)
 
     if not build_info:
         log_error("Failed to get build information")
@@ -396,9 +397,7 @@ def interactive_mode(output_dir):
                     .lower()
                 )
                 if confirm == "" or confirm == "y":
-                    return download_build(
-                        build_id, output_dir, edition_filter, build_info
-                    )
+                    return download_build(build_id, output_dir, edition_filter, build_info=build_info)
                 else:
                     log_info("Download cancelled")
                     return False

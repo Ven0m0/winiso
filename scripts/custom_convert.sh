@@ -1,4 +1,5 @@
 #!/bin/bash
+# shellcheck disable=SC2034,SC1091,SC2166,SC2181,SC2066,SC2016,SC2129,SC2219,SC2162
 scriptName="UUP Converter v0.7.3"
 UUP_CONVERTER_SCRIPT=1
 
@@ -8,7 +9,9 @@ if [[ -f "$(dirname "$0")"/convert_ve_plugin ]]; then
   . "$(dirname "$0")"/convert_ve_plugin
 fi
 
-if [[ -f "$(dirname "$0")"/convert_config_linux ]] && [[ "$(uname)" == "Linux" ]]; then
+if [[ -f "$(dirname "$0")"/convert_config.sh ]]; then
+  . "$(dirname "$0")"/convert_config.sh
+elif [[ -f "$(dirname "$0")"/convert_config_linux ]] && [[ "$(uname)" == "Linux" ]]; then
   . "$(dirname "$0")"/convert_config_linux
 elif [[ -f "$(dirname "$0")"/convert_config_macos ]] && [[ "$(uname)" == "Darwin" ]]; then
   . "$(dirname "$0")"/convert_config_macos
@@ -300,20 +303,17 @@ if [ "$1" == "-?" -o "$1" == "--help" -o "$1" == "-h" ]; then
   echo ""
   echo -e "${infoColor}create_virtual_editions options:${resetColor}"
   echo "0 - do not create virtual editions (default)"
-  echo "1 - create virtual edtitions"
+  echo "1 - create virtual editions"
   echo ""
-  if [[ "$(uname)" == "Linux" ]]; then
-    echo -e "${infoColor}convert_config_linux file${resetColor}"
-  elif [[ "$(uname)" == "Darwin" ]]; then
-    echo -e "${infoColor}convert_config_macos file${resetColor}"
-  fi
+  echo -e "${infoColor}convert_config.sh file${resetColor}"
+  echo "Optional OS-specific compatibility files: convert_config_linux, convert_config_macos"
   echo "This file can be used to configure some advanced options of this script."
   echo "It is required to place configuration in the same directory as script."
   echo ""
   echo "Possible configuration options:"
   echo "VIRTUAL_EDITIONS_LIST='space delimited editions sequence'"
   echo ""
-  echo -e "${infoColor}List of editions created if you enable virtual edtitions creation:${resetColor}"
+  echo -e "${infoColor}List of editions created if you enable virtual editions creation:${resetColor}"
   for edition in "${VIRTUAL_EDITIONS_LIST[@]}"; do
     echo "- ${edition}"
   done
@@ -329,11 +329,7 @@ for prog in aria2c cabextract wimlib-imagex chntpw; do
   exit 1
 done
 
-mkiso_present=0
-which genisoimage &>/dev/null && mkiso_present=1
-which mkisofs &>/dev/null && mkiso_present=1
-
-if [[ $mkiso_present -eq 0 ]]; then
+if ! command -v genisoimage &>/dev/null && ! command -v mkisofs &>/dev/null; then
   echo "genisoimage nor mkisofs does seem to be installed"
   echo "Check the readme.md for details"
   exit 1
@@ -396,18 +392,18 @@ if [[ -e ISODIR ]]; then
   rm -rf ISODIR
 fi
 
-list=
+grep_args=()
 for i in "${editions[@]}"; do
-  list="${list} -ie \"${i}""_..-.*.esd\""
+  grep_args+=("-ie" "${i}_..-.*.esd")
 done
 
-metadataFiles=$(find "$uupDir" 2>/dev/null | eval grep "$list")
+metadataFiles=$(find "$uupDir" 2>/dev/null | grep "${grep_args[@]}")
 if [[ $? != 0 ]]; then
   echo -e "${errorColor}""No metadata ESDs found.""$resetColor"
   exit 1
 fi
 
-list=
+unset grep_args
 
 firstMetadata=$(head -1 <<<"$metadataFiles")
 getLang=$(wimlib-imagex info "$firstMetadata" 3)
@@ -503,7 +499,7 @@ q
 y' | chntpw -e "${tempDir}/SOFTWARE" >/dev/null
 
 wimlib-imagex update ISODIR/sources/boot.wim 1 \
-  --command "add ${tempDir}/SOFTWARE /Windows/System32/config/SOFTWARE" >/dev/null
+  --command "add \"${tempDir}/SOFTWARE\" \"/Windows/System32/config/SOFTWARE\"" >/dev/null
 
 wimlib-imagex extract ISODIR/sources/boot.wim 1 "/Windows/System32/winpe.jpg" \
   --no-acls --dest-dir="ISODIR/sources" >/dev/null 2>/dev/null
@@ -520,10 +516,10 @@ elif [[ -e ./ISODIR/sources/winpe.jpg ]]; then
 fi
 
 wimlib-imagex update ISODIR/sources/boot.wim 1 \
-  --command "add ISODIR/sources/${bckimg} /Windows/system32/winpe.jpg" >/dev/null
+  --command "add 'ISODIR/sources/${bckimg}' '/Windows/system32/winpe.jpg'" >/dev/null
 
 wimlib-imagex update ISODIR/sources/boot.wim 1 \
-  --command "add ISODIR/sources/${bckimg} /Windows/system32/winre.jpg" >/dev/null
+  --command "add 'ISODIR/sources/${bckimg}' '/Windows/system32/winre.jpg'" >/dev/null
 
 wimlib-imagex update ISODIR/sources/boot.wim 1 \
   --command "delete /Windows/System32/winpeshl.ini" >/dev/null
@@ -539,23 +535,23 @@ wimlib-imagex extract "$firstMetadata" 3 "/Windows/System32/xmllite.dll" \
 wimlib-imagex info ISODIR/sources/boot.wim 2 --image-property FLAGS=2 >/dev/null
 wimlib-imagex info ISODIR/sources/boot.wim 2 --boot >/dev/null
 
-list=
+grep_boot_args=()
 for i in "${bootSourcesList[@]}"; do
-  list="${list} -oie \"${i}\""
+  grep_boot_args+=("-oie" "${i}")
 done
 
-files=$(find ISODIR -regex ".*/sources/.*" | eval grep "$list")
-list=
+mapfile -t files < <(find ISODIR -regex ".*/sources/.*" | grep "${grep_boot_args[@]}")
+unset grep_boot_args
 
 echo "delete /Windows/System32/winpeshl.ini" >"${tempDir}/update.txt"
-echo "add ISODIR/setup.exe /setup.exe" >>"${tempDir}/update.txt"
-echo "add ISODIR/sources/inf/setup.cfg /sources/inf/setup.cfg" >>"${tempDir}/update.txt"
-echo "add ISODIR/sources/${bckimg} /sources/background.bmp" >>"${tempDir}/update.txt"
-echo "add ISODIR/sources/${bckimg} /Windows/system32/setup.bmp" >>"${tempDir}/update.txt"
-echo "add ISODIR/sources/${bckimg} /Windows/system32/winpe.jpg" >>"${tempDir}/update.txt"
-echo "add ISODIR/sources/${bckimg} /Windows/system32/winre.jpg" >>"${tempDir}/update.txt"
+echo "add 'ISODIR/setup.exe' '/setup.exe'" >>"${tempDir}/update.txt"
+echo "add 'ISODIR/sources/inf/setup.cfg' '/sources/inf/setup.cfg'" >>"${tempDir}/update.txt"
+echo "add 'ISODIR/sources/${bckimg}' '/sources/background.bmp'" >>"${tempDir}/update.txt"
+echo "add 'ISODIR/sources/${bckimg}' '/Windows/system32/setup.bmp'" >>"${tempDir}/update.txt"
+echo "add 'ISODIR/sources/${bckimg}' '/Windows/system32/winpe.jpg'" >>"${tempDir}/update.txt"
+echo "add 'ISODIR/sources/${bckimg}' '/Windows/system32/winre.jpg'" >>"${tempDir}/update.txt"
 for i in "${files[@]}"; do
-  echo "add ISODIR/${i} /${i}" >>"${tempDir}/update.txt"
+  echo "add '${i}' '/${i#ISODIR/}'" >>"${tempDir}/update.txt"
 done
 
 wimlib-imagex update ISODIR/sources/boot.wim 2 <"${tempDir}/update.txt" >/dev/null
@@ -674,7 +670,7 @@ for metadata in "${metadataFiles[@]}"; do
   echo ""
   echo -e "${infoColor}""Adding winre.wim for ${editionName}...""$resetColor"
   wimlib-imagex update ISODIR/sources/install."$type" "$indexesExported" \
-    --command "add ${tempDir}/winre.wim /Windows/System32/Recovery/winre.wim"
+    --command "add \"${tempDir}/winre.wim\" \"/Windows/System32/Recovery/winre.wim\""
 
   echo ""
 done
@@ -738,44 +734,44 @@ fi
 DEBLOAT_SCRIPT="$(dirname "$0")/debloat_wim.sh"
 WIM_FILE="ISODIR/sources/install.$type"
 if [[ -f "$DEBLOAT_SCRIPT" ]] && [[ -f "$WIM_FILE" ]]; then
-    echo -e "${infoColor}""Running Debloater on $WIM_FILE...""$resetColor"
-    bash "$DEBLOAT_SCRIPT" "$WIM_FILE"
-    if [[ $? -ne 0 ]]; then
-        echo -e "${errorColor}""Debloating failed!""$resetColor"
-        exit 1
-    fi
+  echo -e "${infoColor}""Running Debloater on $WIM_FILE...""$resetColor"
+  bash "$DEBLOAT_SCRIPT" "$WIM_FILE"
+  if [[ $? -ne 0 ]]; then
+    echo -e "${errorColor}""Debloating failed!""$resetColor"
+    exit 1
+  fi
 fi
 
 # AUTOUNATTEND.XML INJECTION
 SCRIPT_ROOT="$(dirname "$0")/.."
 AUTOUNATTEND_FILE="$SCRIPT_ROOT/config/autounattend.xml"
 if [[ -f "$AUTOUNATTEND_FILE" ]]; then
-    echo -e "${infoColor}""Injecting autounattend.xml into ISO root...""$resetColor"
-    cp "$AUTOUNATTEND_FILE" ISODIR/autounattend.xml
+  echo -e "${infoColor}""Injecting autounattend.xml into ISO root...""$resetColor"
+  cp "$AUTOUNATTEND_FILE" ISODIR/autounattend.xml
 else
-    echo -e "${infoColor}""No autounattend.xml found at $AUTOUNATTEND_FILE, skipping injection.""$resetColor"
+  echo -e "${infoColor}""No autounattend.xml found at $AUTOUNATTEND_FILE, skipping injection.""$resetColor"
 fi
 
 # INJECT SETUP SCRIPTS ($OEM$ folder for SetupComplete.cmd etc.)
 OEM_SCRIPTS_DIR="$SCRIPT_ROOT/config/oem"
 if [[ -d "$OEM_SCRIPTS_DIR" ]]; then
-    echo -e "${infoColor}""Injecting OEM setup scripts into ISO...""$resetColor"
-    mkdir -p "ISODIR/sources/\$OEM\$/\$\$/Setup/Scripts"
-    cp -r "$OEM_SCRIPTS_DIR"/* "ISODIR/sources/\$OEM\$/\$\$/Setup/Scripts/" 2>/dev/null || true
+  echo -e "${infoColor}""Injecting OEM setup scripts into ISO...""$resetColor"
+  mkdir -p "ISODIR/sources/\$OEM\$/\$\$/Setup/Scripts"
+  cp -r "$OEM_SCRIPTS_DIR"/* "ISODIR/sources/\$OEM\$/\$\$/Setup/Scripts/" 2>/dev/null || true
 fi
 
 # WINDOWS SERVICING STAGE (optional pause)
 # Set PAUSE_FOR_WINDOWS_STAGE=1 to pause here and allow Windows-based DISM servicing
 if [[ "${PAUSE_FOR_WINDOWS_STAGE:-0}" == "1" ]]; then
-    echo ""
-    echo -e "${infoColor}""=== PAUSED FOR WINDOWS SERVICING STAGE ===""$resetColor"
-    echo "WIM file ready at: $(pwd)/ISODIR/sources/install.$type"
-    echo ""
-    echo "On Windows, run the servicing script against this WIM, then press Enter to continue."
-    echo "Example: scripts\\windows_service.cmd $(pwd)/ISODIR/sources/install.$type"
-    echo ""
-    read -p "Press Enter when Windows servicing is complete..."
-    echo ""
+  echo ""
+  echo -e "${infoColor}""=== PAUSED FOR WINDOWS SERVICING STAGE ===""$resetColor"
+  echo "WIM file ready at: $(pwd)/ISODIR/sources/install.$type"
+  echo ""
+  echo "On Windows, run the servicing script against this WIM, then press Enter to continue."
+  echo "Example: scripts\\windows_service.cmd $(pwd)/ISODIR/sources/install.$type"
+  echo ""
+  read -p "Press Enter when Windows servicing is complete..."
+  echo ""
 fi
 
 echo -e "${infoColor}""Creating ISO image...""$resetColor"

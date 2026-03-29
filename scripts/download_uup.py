@@ -171,10 +171,12 @@ def select_editions(build_info):
     EDITIONS = ("professional", "enterprise", "home", "core", "education")
 
     for filename, file_info in files.items():
-        if filename.endswith(".esd") and any(ed in filename.lower() for ed in EDITIONS):
-            # Extract edition name from filename
-            edition = filename.split("_")[0] if "_" in filename else filename
-            edition_files[edition] = filename
+        if filename.endswith(".esd"):
+            filename_lower = filename.lower()
+            for edition in EDITIONS:
+                if edition in filename_lower:
+                    edition_files[edition] = filename
+                    break
 
     if not edition_files:
         log_warn("No edition-specific files found, will download all files")
@@ -203,9 +205,10 @@ def select_editions(build_info):
     return None
 
 
-def download_build(build_id, output_dir, edition_filter=None):
+def download_build(build_id, output_dir, edition_filter=None, build_info=None):
     """Download UUP files for a specific build"""
-    build_info = get_build_info(build_id)
+    if build_info is None:
+        build_info = get_build_info(build_id)
 
     if not build_info:
         log_error("Failed to get build information")
@@ -261,8 +264,9 @@ def download_build(build_id, output_dir, edition_filter=None):
     with open(aria2_input, "w") as f:
         for item in download_list:
             f.write(f"{item['url']}\n")
-            f.write(f"  out={item['name']}\n")
-
+            # Security: Sanitize filename to prevent path traversal
+            safe_name = Path(item["name"].replace("\\", "/")).name
+            f.write(f"  out={safe_name}\n")
     # Download using aria2
     log_info("Starting download with aria2c...")
     print(
@@ -348,8 +352,14 @@ def interactive_mode(output_dir):
                 )
                 print(f"{Colors.BOLD}Build ID:{Colors.RESET} {build_id}")
 
+                # Fetch build info once
+                build_info = get_build_info(build_id)
+                if not build_info:
+                    log_error("Failed to get build information")
+                    return False
+
                 # Ask for edition selection
-                edition_filter = select_editions(get_build_info(build_id))
+                edition_filter = select_editions(build_info)
 
                 confirm = (
                     input(
@@ -359,7 +369,9 @@ def interactive_mode(output_dir):
                     .lower()
                 )
                 if confirm == "" or confirm == "y":
-                    return download_build(build_id, output_dir, edition_filter)
+                    return download_build(
+                        build_id, output_dir, edition_filter, build_info
+                    )
                 else:
                     log_info("Download cancelled")
                     return False

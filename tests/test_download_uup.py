@@ -88,21 +88,18 @@ class TestSelectEditions(unittest.TestCase):
                     result = download_uup.select_editions(self.sample_build_info)
                     self.assertEqual(result, [expected_file])
 
-    @patch("builtins.input", return_value="99")
     @patch("builtins.print")
     @patch("download_uup.log_warn")
-    def test_invalid_number(self, mock_log_warn, mock_print, mock_input):
-        result = download_uup.select_editions(self.sample_build_info)
-        self.assertIsNone(result)
-        mock_log_warn.assert_called_with("Invalid selection, downloading all editions")
-
-    @patch("builtins.input", return_value="invalid")
-    @patch("builtins.print")
-    @patch("download_uup.log_warn")
-    def test_invalid_input(self, mock_log_warn, mock_print, mock_input):
-        result = download_uup.select_editions(self.sample_build_info)
-        self.assertIsNone(result)
-        mock_log_warn.assert_called_with("Invalid selection, downloading all editions")
+    def test_invalid_selection_inputs(self, mock_log_warn, _mock_print):
+        """Tests that invalid selections are handled correctly."""
+        for choice in ["99", "invalid"]:
+            with self.subTest(choice=choice):
+                with patch("builtins.input", return_value=choice):
+                    result = download_uup.select_editions(self.sample_build_info)
+                    self.assertIsNone(result)
+                    mock_log_warn.assert_called_with("Invalid selection, downloading all editions")
+                # Reset mock for next subtest to ensure assertion is specific to the subtest
+                mock_log_warn.reset_mock()
 
 
 if __name__ == "__main__":

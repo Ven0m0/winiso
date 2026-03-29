@@ -163,5 +163,71 @@ class TestHelpers(unittest.TestCase):
         mock_log_success.assert_called()
 
 
+
+class TestFetchUrl(unittest.TestCase):
+    @patch("download_uup.urlopen")
+    @patch("download_uup.Request")
+    def test_fetch_url_success(self, mock_request, mock_urlopen):
+        mock_response = unittest.mock.MagicMock()
+        mock_response.read.return_value = b"success data"
+        mock_context_manager = mock_urlopen.return_value
+        mock_context_manager.__enter__.return_value = mock_response
+
+        result = download_uup.fetch_url("http://example.com")
+        self.assertEqual(result, "success data")
+        mock_request.assert_called_once()
+        mock_urlopen.assert_called_once()
+
+    @patch("download_uup.urlopen")
+    @patch("download_uup.Request")
+    def test_fetch_url_success_with_data(self, mock_request, mock_urlopen):
+        mock_response = unittest.mock.MagicMock()
+        mock_response.read.return_value = b"success data"
+        mock_context_manager = mock_urlopen.return_value
+        mock_context_manager.__enter__.return_value = mock_response
+
+        data = {"key": "value"}
+        result = download_uup.fetch_url("http://example.com", data=data)
+
+        self.assertEqual(result, "success data")
+        # Ensure urlencode was called implicitly via the data encoding
+        # The exact assert depends on how Request was initialized
+        # We can check that data parameter to Request was urlencoded
+        mock_request.assert_called_once()
+        args, kwargs = mock_request.call_args
+        self.assertEqual(kwargs.get("data"), b"key=value")
+
+    @patch("download_uup.urlopen")
+    @patch("download_uup.log_error")
+    def test_fetch_url_http_error(self, mock_log_error, mock_urlopen):
+        from urllib.error import HTTPError
+        mock_urlopen.side_effect = HTTPError(
+            url="http://example.com", code=404, msg="Not Found", hdrs={}, fp=None
+        )
+
+        result = download_uup.fetch_url("http://example.com")
+        self.assertIsNone(result)
+        mock_log_error.assert_called_once_with("HTTP Error 404: Not Found")
+
+    @patch("download_uup.urlopen")
+    @patch("download_uup.log_error")
+    def test_fetch_url_url_error(self, mock_log_error, mock_urlopen):
+        from urllib.error import URLError
+        mock_urlopen.side_effect = URLError("Connection refused")
+
+        result = download_uup.fetch_url("http://example.com")
+        self.assertIsNone(result)
+        mock_log_error.assert_called_once_with("URL Error: Connection refused")
+
+    @patch("download_uup.urlopen")
+    @patch("download_uup.log_error")
+    def test_fetch_url_generic_error(self, mock_log_error, mock_urlopen):
+        mock_urlopen.side_effect = Exception("Some weird error")
+
+        result = download_uup.fetch_url("http://example.com")
+        self.assertIsNone(result)
+        mock_log_error.assert_called_once_with("Error fetching URL: Some weird error")
+
+
 if __name__ == "__main__":
     unittest.main()

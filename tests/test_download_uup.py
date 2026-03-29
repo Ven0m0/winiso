@@ -86,7 +86,7 @@ class TestDownloadBuild(unittest.TestCase):
 class TestHelpers(unittest.TestCase):
     @patch("download_uup.Path.mkdir")
     @patch("download_uup.Path.glob")
-    @patch("download_uup.input")
+    @patch("builtins.input")
     @patch("download_uup.log_info")
     def test_prepare_output_directory_clears(
         self, mock_log_info, mock_input, mock_glob, mock_mkdir

@@ -499,7 +499,7 @@ q
 y' | chntpw -e "${tempDir}/SOFTWARE" >/dev/null
 
 wimlib-imagex update ISODIR/sources/boot.wim 1 \
-  --command "add '${tempDir}/SOFTWARE' '/Windows/System32/config/SOFTWARE'" >/dev/null
+  --command "add \"${tempDir}/SOFTWARE\" \"/Windows/System32/config/SOFTWARE\"" >/dev/null
 
 wimlib-imagex extract ISODIR/sources/boot.wim 1 "/Windows/System32/winpe.jpg" \
   --no-acls --dest-dir="ISODIR/sources" >/dev/null 2>/dev/null

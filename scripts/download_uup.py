@@ -104,8 +104,8 @@ def get_latest_builds(max_results=10):
 
         builds = data.get("response", {}).get("builds", {})
         if not builds:
-            log_warn("No builds found")
-            return None
+            log_warn("No builds found in API response")
+            return []
 
         # Convert to list and sort by date
         build_list = []
@@ -114,13 +114,13 @@ def get_latest_builds(max_results=10):
             build_list.append(build_info)
 
         # Sort by created timestamp (newest first)
-        build_list.sort(key=lambda x: x.get("created", 0), reverse=True)
+        build_list.sort(key=lambda x: int(x.get("created") or 0), reverse=True)
 
         return build_list[:max_results]
 
     except json.JSONDecodeError as e:
         log_error(f"Failed to parse JSON response: {e}")
-        return None
+        return []
 
 
 def display_builds(builds):
@@ -167,16 +167,19 @@ def select_editions(build_info):
     # Find edition-specific ESD files
     edition_files = {}
 
-    # Define editions tuple outside loop for performance
-    EDITIONS = ("professional", "enterprise", "home", "core", "education")
-
     for filename, file_info in files.items():
         if filename.endswith(".esd"):
             filename_lower = filename.lower()
-            for edition in EDITIONS:
-                if edition in filename_lower:
-                    edition_files[edition] = filename
-                    break
+            if "professional" in filename_lower:
+                edition_files["professional"] = filename
+            elif "enterprise" in filename_lower:
+                edition_files["enterprise"] = filename
+            elif "home" in filename_lower:
+                edition_files["home"] = filename
+            elif "core" in filename_lower:
+                edition_files["core"] = filename
+            elif "education" in filename_lower:
+                edition_files["education"] = filename
 
     if not edition_files:
         log_warn("No edition-specific files found, will download all files")
@@ -263,9 +266,21 @@ def download_build(build_id, output_dir, edition_filter=None, build_info=None):
     aria2_input = output_path / "aria2_input.txt"
     with open(aria2_input, "w") as f:
         for item in download_list:
-            f.write(f"{item['url']}\n")
-            f.write(f"  out={item['name']}\n")
+            if (
+                "\n" in item["url"]
+                or "\r" in item["url"]
+                or "\n" in item["name"]
+                or "\r" in item["name"]
+            ):
+                log_error(
+                    f"Invalid characters in URL or filename: {item['name']}"
+                )
+                return False
 
+            f.write(f"{item['url']}\n")
+            # Security: Sanitize filename to prevent path traversal
+            safe_name = Path(item["name"].replace("\\", "/")).name
+            f.write(f"  out={safe_name}\n")
     # Download using aria2
     log_info("Starting download with aria2c...")
     print(
@@ -368,7 +383,9 @@ def interactive_mode(output_dir):
                     .lower()
                 )
                 if confirm == "" or confirm == "y":
-                    return download_build(build_id, output_dir, edition_filter, build_info)
+                    return download_build(
+                        build_id, output_dir, edition_filter, build_info
+                    )
                 else:
                     log_info("Download cancelled")
                     return False

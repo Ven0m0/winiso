@@ -73,12 +73,20 @@ class TestSelectEditions(unittest.TestCase):
         result = download_uup.select_editions(self.sample_build_info)
         self.assertIsNone(result)
 
-    @patch("builtins.input", return_value="1")
     @patch("builtins.print")
-    def test_valid_selection(self, mock_print, mock_input):
-        result = download_uup.select_editions(self.sample_build_info)
-        # Editions in sample_build_info are ['professional', 'enterprise', 'home'] based on insertion order
-        self.assertEqual(result, ["Professional_en-us.esd"])
+    def test_valid_selections(self, _mock_print):
+        """Tests that valid numeric selections return the correct edition file."""
+        test_cases = [
+            ("1", "Professional_en-us.esd"),
+            ("2", "Enterprise_en-us.esd"),
+            ("3", "Home_en-us.esd"),
+        ]
+
+        for choice, expected_file in test_cases:
+            with self.subTest(choice=choice):
+                with patch("builtins.input", return_value=choice):
+                    result = download_uup.select_editions(self.sample_build_info)
+                    self.assertEqual(result, [expected_file])
 
     @patch("builtins.input", return_value="99")
     @patch("builtins.print")

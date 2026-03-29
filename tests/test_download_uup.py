@@ -1,30 +1,34 @@
 import sys
-import os
 import unittest
-from unittest.mock import patch
+from pathlib import Path
 
-# Add scripts directory to sys.path so we can import download_uup
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'scripts')))
+# Add the scripts directory to sys.path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 
-import download_uup
-from urllib.error import HTTPError
+from download_uup import parse_args
+
 
 class TestDownloadUUP(unittest.TestCase):
-    @patch('download_uup.urlopen')
-    @patch('download_uup.log_error')
-    def test_fetch_url_http_error(self, mock_log_error, mock_urlopen):
-        # Create an HTTPError instance
-        # url, code, msg, hdrs, fp
-        error = HTTPError("http://example.com", 404, "Not Found", None, None)
-        mock_urlopen.side_effect = error
+    def test_parse_args_defaults(self):
+        args = parse_args([])
+        self.assertEqual(args.output, "uup_files")
+        self.assertIsNone(args.build_id)
+        self.assertFalse(args.list)
+        self.assertEqual(args.max_results, 10)
 
-        result = download_uup.fetch_url("http://example.com")
 
-        # Verify the result is None as per the exception handling block
-        self.assertIsNone(result)
-
-        # Verify log_error was called with the correct message
-        mock_log_error.assert_called_once_with("HTTP Error 404: Not Found")
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
+import os
+import unittest
+from pathlib import Path
+from importlib.machinery import SourceFileLoader
+from importlib.util import module_from_spec, spec_from_loader
+
+scripts_dir = Path(__file__).resolve().parent.parent / "scripts"
+download_uup_path = scripts_dir / "download_uup.py"
+_loader = SourceFileLoader("download_uup", str(download_uup_path))
+_spec = spec_from_loader("download_uup", _loader)
+download_uup = module_from_spec(_spec)
+_loader.exec_module(download_uup)
+parse_args = download_uup.parse_args

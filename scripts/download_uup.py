@@ -352,7 +352,6 @@ def interactive_mode(output_dir):
                 # Fetch build info once
                 build_info = get_build_info(build_id)
                 if not build_info:
-                    log_error("Failed to get build information")
                     return False
 
                 # Ask for edition selection

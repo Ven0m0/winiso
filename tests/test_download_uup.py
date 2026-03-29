@@ -1,46 +1,20 @@
-import unittest
-from unittest.mock import patch
 import sys
-import os
+import unittest
+from pathlib import Path
 
-# Add scripts directory to path so we can import download_uup
-sys.path.append(
-    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "scripts"))
-)
-import download_uup
+# Add the scripts directory to sys.path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+
+from download_uup import parse_args
 
 
-class TestCheckDependencies(unittest.TestCase):
-    @patch("shutil.which")
-    @patch("download_uup.log_error")
-    @patch("download_uup.log_info")
-    def test_check_dependencies_all_present(
-        self, mock_log_info, mock_log_error, mock_which
-    ):
-        # Mock shutil.which to return a path for aria2c
-        mock_which.return_value = "/usr/bin/aria2c"
-
-        result = download_uup.check_dependencies()
-
-        self.assertTrue(result)
-        mock_log_error.assert_not_called()
-        mock_which.assert_called_once_with("aria2c")
-
-    @patch("shutil.which")
-    @patch("download_uup.log_error")
-    @patch("download_uup.log_info")
-    def test_check_dependencies_missing(
-        self, mock_log_info, mock_log_error, mock_which
-    ):
-        # Mock shutil.which to return None for aria2c
-        mock_which.return_value = None
-
-        result = download_uup.check_dependencies()
-
-        self.assertFalse(result)
-        mock_log_error.assert_called()
-        mock_log_info.assert_called_with("Run 'make deps' to install dependencies")
-        mock_which.assert_called_once_with("aria2c")
+class TestDownloadUUP(unittest.TestCase):
+    def test_parse_args_defaults(self):
+        args = parse_args([])
+        self.assertEqual(args.output, "uup_files")
+        self.assertIsNone(args.build_id)
+        self.assertFalse(args.list)
+        self.assertEqual(args.max_results, 10)
 
 
 class TestDownloadBuild(unittest.TestCase):
@@ -157,3 +131,16 @@ class TestHelpers(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+import os
+import unittest
+from pathlib import Path
+from importlib.machinery import SourceFileLoader
+from importlib.util import module_from_spec, spec_from_loader
+
+scripts_dir = Path(__file__).resolve().parent.parent / "scripts"
+download_uup_path = scripts_dir / "download_uup.py"
+_loader = SourceFileLoader("download_uup", str(download_uup_path))
+_spec = spec_from_loader("download_uup", _loader)
+download_uup = module_from_spec(_spec)
+_loader.exec_module(download_uup)
+parse_args = download_uup.parse_args

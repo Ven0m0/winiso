@@ -120,7 +120,7 @@ def get_latest_builds(max_results=10):
 
     except json.JSONDecodeError as e:
         log_error(f"Failed to parse JSON response: {e}")
-        return []
+        return None
 
 
 def display_builds(builds):

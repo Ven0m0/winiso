@@ -88,11 +88,26 @@
 *People*
 *PeopleExperienceHost*
 *Cortana*
-*Copilot*
-*CoreAI*
 *PinningConfirmationDialog*
 *SecureAssessmentBrowser*
 *CompatibilityEnhancements*
+
+# -----------------------------------------------------------------------------
+# AI & COPILOT
+# -----------------------------------------------------------------------------
+*Copilot*
+*CoreAI*
+*WritingAssistant*
+*GameAssist*
+*ActionsServer*
+*aimgr*
+*Recall*
+*WindowsWorkload*
+*VoiceExtraction*
+*SpeechIntegration*
+*LiveCaptions*
+*InputApp*
+*FileSuggestions*
 
 # -----------------------------------------------------------------------------
 # UTILITIES (Removed by default - comment out to keep)

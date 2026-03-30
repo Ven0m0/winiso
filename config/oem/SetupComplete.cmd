@@ -99,6 +99,19 @@ echo [%DATE% %TIME%] Configuring background apps... >> "%LOGFILE%"
 reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\BackgroundAccessApplications" /v "GlobalUserDisabled" /t REG_DWORD /d 1 /f >> "%LOGFILE%" 2>&1
 
 :: -----------------------------------------------------------------------------
+:: UI/UX Tweaks
+:: -----------------------------------------------------------------------------
+echo [%DATE% %TIME%] Applying UI/UX tweaks... >> "%LOGFILE%"
+:: Enable Classic Context Menu
+reg add "HKCU\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32" /f /ve >> "%LOGFILE%" 2>&1
+:: Hide Task View Button
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v "ShowTaskViewButton" /t REG_DWORD /d 0 /f >> "%LOGFILE%" 2>&1
+:: Disable Bing Search in Start Menu
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Search" /v "BingSearchEnabled" /t REG_DWORD /d 0 /f >> "%LOGFILE%" 2>&1
+:: Hide "Recommended" section in Start Menu (best effort)
+reg add "HKLM\SOFTWARE\Microsoft\PolicyManager\current\device\Start" /v "HideRecommendedSection" /t REG_DWORD /d 1 /f >> "%LOGFILE%" 2>&1
+
+:: -----------------------------------------------------------------------------
 :: Clean up temporary files
 :: -----------------------------------------------------------------------------
 echo [%DATE% %TIME%] Cleaning temporary files... >> "%LOGFILE%"

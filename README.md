@@ -1,5 +1,7 @@
 # Debloated Windows 11 ISO Builder
 
+[![Maintainability](https://qlty.sh/gh/Ven0m0/projects/winiso/maintainability.svg)](https://qlty.sh/gh/Ven0m0/projects/winiso)
+
 A Linux-based automation toolset for creating debloated Windows 11 ISO files from UUP (Unified Update Platform) dump files. Removes bloatware, injects unattended setup configuration, and applies performance tweaks—all while preserving essential system components.
 
 ## Features

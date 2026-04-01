@@ -180,8 +180,6 @@ generate_commands() {
     echo "delete --recursive --force \"/Program Files (x86)/Microsoft/Edge\""
     echo "delete --recursive --force \"/Program Files (x86)/Microsoft/EdgeCore\""
     echo "delete --recursive --force \"/Program Files (x86)/Microsoft/EdgeUpdate\""
-    echo "delete --recursive --force \"/Program Files (x86)/Microsoft/EdgeWebView\""
-    echo "delete --recursive --force \"/Windows/System32/Microsoft-Edge-Webview\""
     # DriverStore deletion removed as it is too risky/destructive for a general builder
     echo "delete --recursive --force \"/Windows/Fonts/malgun.ttf\""
     echo "delete --recursive --force \"/Windows/Fonts/msjh.ttc\""

@@ -585,7 +585,15 @@ ed BypassCPUCheck
 1
 q
 y' | chntpw -e "${tempDir}/SYSTEM" >/dev/null
+if [[ $? -ne 0 ]]; then
+  echo "Error: Failed to apply registry tweaks to SYSTEM hive; aborting." >&2
+  exit 1
+fi
 wimlib-imagex update ISODIR/sources/boot.wim 2 --command "add '${tempDir}/SYSTEM' '/Windows/System32/config/SYSTEM'" >/dev/null
+if [[ $? -ne 0 ]]; then
+  echo "Error: Failed to update boot.wim with modified SYSTEM hive; aborting." >&2
+  exit 1
+fi
 
 wimlib-imagex optimize ISODIR/sources/boot.wim
 rm "ISODIR/sources/xmllite.dll"

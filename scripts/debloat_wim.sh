@@ -115,20 +115,27 @@ EOF
   # 2. SYSTEM HIVE
   wimlib-imagex extract "$WIM_FILE" "$index" "/Windows/System32/config/SYSTEM" --dest-dir="$temp_reg_dir" --no-acls >/dev/null 2>&1 || true
   if [[ -f "$temp_reg_dir/SYSTEM" ]]; then
-    # Disable DiagTrack service and apply Hardware Bypasses
+    # Disable DiagTrack and dmwappushservice across common control sets
+    CONTROL_SETS=("ControlSet001" "ControlSet002" "ControlSet003")
+    for cs in "${CONTROL_SETS[@]}"; do
+      chntpw -e "$temp_reg_dir/SYSTEM" <<EOF >/dev/null 2>&1
+nk $cs\Services\DiagTrack
+cd $cs\Services\DiagTrack
+nv 4 Start
+ed Start
+4
+cd \
+nk $cs\Services\dmwappushservice
+cd $cs\Services\dmwappushservice
+nv 4 Start
+ed Start
+4
+cd \
+EOF
+    done
+
+    # Apply hardware bypasses (root-level Setup\LabConfig)
     chntpw -e "$temp_reg_dir/SYSTEM" <<EOF >/dev/null 2>&1
-nk ControlSet001\Services\DiagTrack
-cd ControlSet001\Services\DiagTrack
-nv 4 Start
-ed Start
-4
-cd \
-nk ControlSet001\Services\dmwappushservice
-cd ControlSet001\Services\dmwappushservice
-nv 4 Start
-ed Start
-4
-cd \
 nk Setup\LabConfig
 cd Setup\LabConfig
 nv 4 BypassTPMCheck

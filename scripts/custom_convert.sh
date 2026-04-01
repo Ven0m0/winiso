@@ -563,6 +563,38 @@ done
 wimlib-imagex update ISODIR/sources/boot.wim 2 <"${tempDir}/update.txt" >/dev/null
 errorHandler $? "Failed to add required files to second index of boot.wim"
 
+# Apply Hardware Bypasses to boot.wim (Setup environment)
+echo -e "${infoColor}""Applying hardware bypasses to boot.wim...""$resetColor"
+wimlib-imagex extract ISODIR/sources/boot.wim 2 "/Windows/System32/config/SYSTEM" --dest-dir="$tempDir" --no-acls >/dev/null
+echo 'nk LabConfig
+cd LabConfig
+nv 4 BypassTPMCheck
+ed BypassTPMCheck
+1
+nv 4 BypassSecureBootCheck
+ed BypassSecureBootCheck
+1
+nv 4 BypassRAMCheck
+ed BypassRAMCheck
+1
+nv 4 BypassStorageCheck
+ed BypassStorageCheck
+1
+nv 4 BypassCPUCheck
+ed BypassCPUCheck
+1
+q
+y' | chntpw -e "${tempDir}/SYSTEM" >/dev/null
+if [[ $? -ne 0 ]]; then
+  echo "Error: Failed to apply registry tweaks to SYSTEM hive; aborting." >&2
+  exit 1
+fi
+wimlib-imagex update ISODIR/sources/boot.wim 2 --command "add '${tempDir}/SYSTEM' '/Windows/System32/config/SYSTEM'" >/dev/null
+if [[ $? -ne 0 ]]; then
+  echo "Error: Failed to update boot.wim with modified SYSTEM hive; aborting." >&2
+  exit 1
+fi
+
 wimlib-imagex optimize ISODIR/sources/boot.wim
 rm "ISODIR/sources/xmllite.dll"
 if [[ -e ./ISODIR/sources/winpe.jpg ]]; then

@@ -69,6 +69,7 @@ cd "$SCRIPT_DIR"
 export TARGET_EDITION="${TARGET_EDITION:-ProfessionalWorkstation}"
 export FALLBACK_EDITION="${FALLBACK_EDITION:-Professional}"
 export PAUSE_FOR_WINDOWS_STAGE="${PAUSE_FOR_WINDOWS_STAGE:-0}"
+export NANO="${NANO:-0}"
 export WIMLIB_IMAGEX_IGNORE_CASE=1
 
 # Run Custom Converter

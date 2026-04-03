@@ -1,6 +1,6 @@
 # Autounattend.xml Configuration Guide
 
-This directory contains the `autounattend.xml` file that automates Windows installation.
+`config/autounattend.xml` is the answer file that automates Windows installation.
 
 ## What is autounattend.xml?
 
@@ -24,7 +24,7 @@ The included `autounattend.xml` is configured with:
 
 ### Option 1: Use Schneegans Generator (Recommended)
 
-The easiest way to create a custom autounattend.xml:
+To create a custom autounattend.xml:
 
 1. Visit https://schneegans.de/windows/unattend-generator/
 2. Configure your preferences:

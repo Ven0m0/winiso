@@ -7,7 +7,7 @@ A Linux-based automation toolset for creating debloated Windows 11 ISO files fro
 ## Features
 
 - **Automated UUP Download:** Interactive downloader for fetching Windows 11 builds from uupdump.net
-- **Pre-Build Validation:** Comprehensive checks for dependencies, files, and configuration
+- **Pre-Build Validation:** Checks dependencies, files, and configuration before starting
 - **Targeted Edition:** Builds Windows 11 Pro for Workstations (fallback to Pro)
 - **70+ Apps Removed:** Xbox, Cortana, Clipchamp, Solitaire, news/weather apps, and more
 - **Unattended Setup:** Injects `autounattend.xml` for OOBE bypass and privacy settings
@@ -108,6 +108,8 @@ When paused:
 │   ├── debloat_list.txt      # App removal patterns
 │   └── oem/
 │       └── SetupComplete.cmd # First-boot tweaks script
+├── docs/
+│   └── autounattend.md       # Guide for autounattend.xml customization
 ├── scripts/
 │   ├── build.sh              # Main build orchestrator
 │   ├── custom_convert.sh     # Modified UUP converter

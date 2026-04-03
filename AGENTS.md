@@ -41,9 +41,6 @@ When touching `config/debloat_list.txt` or `scripts/debloat_wim.sh`:
 ### UUP files must be at the root of `uup_files/`
 `.cab` and `.esd` files go directly in `uup_files/` — **no subdirectories**.
 
-### Do not touch `upstream/`
-Files under `upstream/` are reference-only copies of the upstream UUP converter. Treat them as read-only.
-
 ---
 
 ## Repository Layout
@@ -52,9 +49,11 @@ Files under `upstream/` are reference-only copies of the upstream UUP converter.
 config/
   autounattend.xml          # Windows unattended answer file (OOBE bypass)
   debloat_list.txt          # Glob patterns for AppX packages to remove
-  README_AUTOUNATTEND.md    # Guide for editing autounattend.xml
   oem/
     SetupComplete.cmd        # First-boot tweaks (telemetry, perf, advertising)
+
+docs/
+  autounattend.md           # Guide for editing autounattend.xml
 
 scripts/
   build.sh                  # Main orchestrator — start here
@@ -64,17 +63,14 @@ scripts/
   setup_env.sh              # Installs system deps (Arch / Debian / Fedora)
   validate_prereqs.sh       # Pre-build validation (deps, files, disk space)
   convert_config.sh         # Shared converter config (synced from upstream)
-  automerge_open_prs.sh     # GitHub PR auto-merge helper
   utils.sh                  # Color-coded log helpers (source this, don't copy)
   windows_service.cmd       # Optional Windows-side DISM servicing (run as Admin)
-  README_DOWNLOAD.md        # Downloader usage docs
 
 tests/
   test_download_uup.py      # Unit tests for download_uup.py
 
 uup_files/                  # INPUT — place .cab / .esd files here (gitignored)
 output/                     # OUTPUT — final ISO lands here (gitignored)
-upstream/                   # Reference-only upstream converter files (do not modify)
 ventoy/                     # Ventoy multi-boot plugin and themes
 
 Makefile                    # Primary user interface
@@ -218,8 +214,6 @@ black --check scripts/*.py
 | `lint-and-format.yml` | push / PR | ShellCheck, Flake8, Black, xmllint |
 | `test-matrix.yml` | push / PR | Python unit tests on Ubuntu + macOS, Python 3.9–3.12 |
 | `build-and-deploy.yml` | push / PR | Mock build; uploads ISO artifact (7-day retention) |
-| `automerge-open-prs.yml` | manual dispatch | Merges open PRs via `scripts/automerge_open_prs.sh` |
-
 All workflows use concurrency groups to cancel in-progress runs on new pushes to the same branch.
 
 **Note:** `custom_convert.sh` is excluded from ShellCheck — it is synced from upstream and not modified directly.
@@ -243,7 +237,6 @@ All workflows use concurrency groups to cancel in-progress runs on new pushes to
 | Running build as root | Build as regular user — FUSE mounts don't need elevation |
 | UUP files in a subdirectory | Place `.cab`/`.esd` directly in `uup_files/` |
 | Raw `echo` in shell scripts | Use `log_info` / `log_warn` / `log_error` / `log_success` from `utils.sh` |
-| Editing `upstream/` files | Those are reference-only — edit `scripts/convert_config.sh` instead |
 | Hardcoded absolute paths | Always derive paths from `SCRIPT_DIR` / `PROJECT_ROOT` |
 | Forgetting CRLF on `.cmd` files | `.gitattributes` enforces it — don't override |
 
@@ -252,7 +245,6 @@ All workflows use concurrency groups to cancel in-progress runs on new pushes to
 ## Out of Scope
 
 Do not add or modify:
-- Files under `upstream/` — reference-only
 - Any code that contacts Microsoft servers directly (use uupdump.net via `download_uup.py`)
 - Any feature requiring root/sudo in the main build pipeline
 

@@ -5,6 +5,7 @@ Automates the download of UUP files from uupdump.net
 """
 
 import sys
+import os
 import json
 import subprocess
 import argparse
@@ -249,23 +250,23 @@ def _prepare_download_list(build_id, files, edition_filter):
 def _run_aria2_download(output_path, aria2_input, download_list):
     """Manages the aria2c process and post-download reporting"""
     # Create aria2 input file
-    with open(aria2_input, "w") as f:
-        for item in download_list:
-            if (
-                "\n" in item["url"]
-                or "\r" in item["url"]
-                or "\n" in item["name"]
-                or "\r" in item["name"]
-            ):
-                log_error(
-                    f"Invalid characters in URL or filename: {item['name']}"
-                )
-                return False
+    lines = []
+    for item in download_list:
+        if (
+            "\n" in item["url"]
+            or "\r" in item["url"]
+            or "\n" in item["name"]
+            or "\r" in item["name"]
+        ):
+            log_error(f"Invalid characters in URL or filename: {item['name']}")
+            return False
 
-            f.write(f"{item['url']}\n")
-            # Security: Sanitize filename to prevent path traversal
-            safe_name = Path(item["name"].replace("\\", "/")).name
-            f.write(f"  out={safe_name}\n")
+        # Security: Sanitize filename to prevent path traversal
+        safe_name = os.path.basename(item["name"].replace("\\", "/"))
+        lines.append(f"{item['url']}\n  out={safe_name}\n")
+
+    with open(aria2_input, "w") as f:
+        f.writelines(lines)
     # Download using aria2
     log_info("Starting download with aria2c...")
     print(
@@ -397,7 +398,9 @@ def interactive_mode(output_dir):
                     .lower()
                 )
                 if confirm == "" or confirm == "y":
-                    return download_build(build_id, output_dir, edition_filter, build_info=build_info)
+                    return download_build(
+                        build_id, output_dir, edition_filter, build_info=build_info
+                    )
                 else:
                     log_info("Download cancelled")
                     return False

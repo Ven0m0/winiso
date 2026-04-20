@@ -39,19 +39,13 @@ log_info "Verifying tool availability..."
 
 MISSING_TOOLS=()
 
-check_tool "aria2c" || MISSING_TOOLS+=("aria2c")
-check_tool "cabextract" || MISSING_TOOLS+=("cabextract")
-check_tool "wimlib-imagex" || MISSING_TOOLS+=("wimlib-imagex")
-check_tool "chntpw" || MISSING_TOOLS+=("chntpw")
+# Check primary tools
+for tool in "${REQUIRED_TOOLS[@]}"; do
+    check_tool "$tool" || MISSING_TOOLS+=("$tool")
+done
 
-# Check for genisoimage or mkisofs
-if command -v genisoimage &> /dev/null; then
-    log_success "genisoimage found: $(command -v genisoimage)"
-elif command -v mkisofs &> /dev/null; then
-    log_success "mkisofs found: $(command -v mkisofs)"
-else
-    MISSING_TOOLS+=("genisoimage/mkisofs")
-fi
+# Check ISO creation tools
+check_iso_tool || MISSING_TOOLS+=("genisoimage/mkisofs")
 
 if [[ ${#MISSING_TOOLS[@]} -gt 0 ]]; then
     log_error "Missing tools: ${MISSING_TOOLS[*]}"

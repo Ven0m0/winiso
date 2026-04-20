@@ -5,6 +5,9 @@ UUP_CONVERTER_SCRIPT=1
 
 export PATH=${PATH}:/usr/sbin
 
+# shellcheck disable=SC1091
+source "$(cd "$(dirname "$(readlink -f "$0")")" && pwd)/utils.sh"
+
 if [[ -f "$(dirname "$0")"/convert_ve_plugin ]]; then
   . "$(dirname "$0")"/convert_ve_plugin
 fi
@@ -327,15 +330,15 @@ if [ "$1" == "-?" -o "$1" == "--help" -o "$1" == "-h" ]; then
   exit
 fi
 
-for prog in aria2c cabextract wimlib-imagex chntpw; do
-  which "$prog" &>/dev/null 2>&1 && continue
+for prog in "${REQUIRED_TOOLS[@]}"; do
+  command -v "$prog" &>/dev/null && continue
 
   echo "${prog} does not seem to be installed"
   echo "Check the readme.md for details"
   exit 1
 done
 
-if ! command -v genisoimage &>/dev/null && ! command -v mkisofs &>/dev/null; then
+if ! check_iso_tool >/dev/null; then
   echo "genisoimage nor mkisofs does seem to be installed"
   echo "Check the readme.md for details"
   exit 1

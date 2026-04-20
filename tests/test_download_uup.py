@@ -200,5 +200,17 @@ class TestGetLatestBuilds(unittest.TestCase):
         mock_log_error.assert_called_once()
         self.assertTrue(mock_log_error.call_args[0][0].startswith("Failed to parse JSON response:"))
 
+
+class TestGetBuildInfo(unittest.TestCase):
+    @patch("download_uup.fetch_url")
+    def test_get_build_info_success(self, mock_fetch_url):
+        import json
+        mock_fetch_url.return_value = json.dumps({"response": {"build": "info", "files": {}}})
+
+        result = download_uup.get_build_info("fake-id")
+
+        self.assertEqual(result, {"build": "info", "files": {}})
+        mock_fetch_url.assert_called_once_with("https://api.uupdump.net/get.php?id=fake-id")
+
 if __name__ == "__main__":
     unittest.main()

@@ -16,6 +16,7 @@ log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
 # Required tools for the build process
+# shellcheck disable=SC2034
 REQUIRED_TOOLS=("aria2c" "cabextract" "wimlib-imagex" "chntpw")
 
 # =============================================================================

@@ -19,8 +19,8 @@ if command -v pacman &> /dev/null; then
     sudo pacman -S --needed aria2 cabextract wimlib chntpw cdrtools
 elif command -v apt &> /dev/null; then
     log_info "Detected Debian/Ubuntu (apt)"
-    sudo apt update
-    sudo apt install -y aria2 cabextract wimtools chntpw genisoimage
+    sudo apt-get update -qq
+    sudo apt-get install -yqq aria2 python3-apt cabextract wimtools chntpw genisoimage
 elif command -v dnf &> /dev/null; then
     log_info "Detected Fedora (dnf)"
     sudo dnf install -y aria2 cabextract wimlib-utils chntpw genisoimage

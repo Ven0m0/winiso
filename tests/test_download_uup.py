@@ -14,18 +14,20 @@ from download_uup import parse_args
 class TestDownloadBuildBuildInfoFastPath(unittest.TestCase):
     """Tests that download_build reuses a supplied build_info and skips the API call."""
 
-    @patch('download_uup.get_build_info')
+    @patch("download_uup.get_build_info")
     def test_build_info_provided_skips_api_call(self, mock_get_build_info):
         """When build_info is passed in, get_build_info must not be called."""
         # Passing an empty files dict causes an early return ("No files found"),
         # so no filesystem or network activity is needed.
         build_info = {"files": {}}
-        result = download_uup.download_build("fake-id", "/tmp/out", build_info=build_info)
+        result = download_uup.download_build(
+            "fake-id", "/tmp/out", build_info=build_info
+        )
 
         mock_get_build_info.assert_not_called()
         self.assertFalse(result)
 
-    @patch('download_uup.get_build_info', return_value=None)
+    @patch("download_uup.get_build_info", return_value=None)
     def test_no_build_info_calls_api(self, mock_get_build_info):
         """When build_info is not passed, get_build_info is called."""
         result = download_uup.download_build("fake-id", "/tmp/out")
@@ -34,12 +36,14 @@ class TestDownloadBuildBuildInfoFastPath(unittest.TestCase):
 
 
 class TestCheckDependencies(unittest.TestCase):
-    @patch('shutil.which')
-    @patch('download_uup.log_error')
-    @patch('download_uup.log_info')
-    def test_check_dependencies_all_present(self, mock_log_info, mock_log_error, mock_which):
+    @patch("shutil.which")
+    @patch("download_uup.log_error")
+    @patch("download_uup.log_info")
+    def test_check_dependencies_all_present(
+        self, mock_log_info, mock_log_error, mock_which
+    ):
         # Mock shutil.which to return a path for aria2c
-        mock_which.return_value = '/usr/bin/aria2c'
+        mock_which.return_value = "/usr/bin/aria2c"
 
 
 class TestDownloadUUP(unittest.TestCase):
@@ -99,8 +103,6 @@ class TestHelpers(unittest.TestCase):
     def test_prepare_output_directory_clears(
         self, mock_log_info, mock_input, mock_glob, mock_mkdir
     ):
-        from pathlib import Path
-
         mock_input.return_value = "y"
         mock_file = unittest.mock.MagicMock(spec=Path)
         mock_file.is_file.return_value = True
@@ -148,20 +150,15 @@ class TestHelpers(unittest.TestCase):
         mock_run,
         mock_open,
     ):
-        from pathlib import Path
-
         dl_list = [{"url": "http://test", "name": "test.esd"}]
         mock_glob.return_value = [Path("test.esd")]
 
-        result = download_uup._run_aria2_download(
-            Path("out"), Path("in.txt"), dl_list
-        )
+        result = download_uup._run_aria2_download(Path("out"), Path("in.txt"), dl_list)
 
         self.assertTrue(result)
         mock_run.assert_called_once()
         mock_unlink.assert_called_once()
         mock_log_success.assert_called()
-
 
 
 class TestGetLatestBuilds(unittest.TestCase):
@@ -191,14 +188,17 @@ class TestGetLatestBuilds(unittest.TestCase):
     @patch("download_uup.log_error")
     def test_get_latest_builds_json_decode_error(self, mock_log_error, mock_fetch_url):
         # Simulate an invalid JSON string
-        mock_fetch_url.return_value = 'Not a JSON string'
+        mock_fetch_url.return_value = "Not a JSON string"
 
         result = download_uup.get_latest_builds()
 
         self.assertIsNone(result)
         # Since the error message includes the exception string, we just check that it starts correctly
         mock_log_error.assert_called_once()
-        self.assertTrue(mock_log_error.call_args[0][0].startswith("Failed to parse JSON response:"))
+        self.assertTrue(
+            mock_log_error.call_args[0][0].startswith("Failed to parse JSON response:")
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

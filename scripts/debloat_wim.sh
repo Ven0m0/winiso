@@ -115,53 +115,52 @@ EOF
   # 2. SYSTEM HIVE
   wimlib-imagex extract "$WIM_FILE" "$index" "/Windows/System32/config/SYSTEM" --dest-dir="$temp_reg_dir" --no-acls >/dev/null 2>&1 || true
   if [[ -f "$temp_reg_dir/SYSTEM" ]]; then
-    # Disable DiagTrack and dmwappushservice across common control sets
-    CONTROL_SETS=("ControlSet001" "ControlSet002" "ControlSet003")
-    for cs in "${CONTROL_SETS[@]}"; do
-      chntpw -e "$temp_reg_dir/SYSTEM" <<EOF >/dev/null 2>&1
-nk $cs\Services\DiagTrack
-cd $cs\Services\DiagTrack
-nv 4 Start
-ed Start
-4
-cd \
-nk $cs\Services\dmwappushservice
-cd $cs\Services\dmwappushservice
-nv 4 Start
-ed Start
-4
-cd \
-EOF
-    done
+    # Apply registry tweaks to SYSTEM hive (merged for performance)
+    {
+      # Disable DiagTrack and dmwappushservice across common control sets
+      CONTROL_SETS=("ControlSet001" "ControlSet002" "ControlSet003")
+      for cs in "${CONTROL_SETS[@]}"; do
+        echo "nk $cs\Services\DiagTrack"
+        echo "cd $cs\Services\DiagTrack"
+        echo "nv 4 Start"
+        echo "ed Start"
+        echo "4"
+        echo "cd \\"
+        echo "nk $cs\Services\dmwappushservice"
+        echo "cd $cs\Services\dmwappushservice"
+        echo "nv 4 Start"
+        echo "ed Start"
+        echo "4"
+        echo "cd \\"
+      done
 
-    # Apply hardware bypasses (root-level Setup\LabConfig)
-    chntpw -e "$temp_reg_dir/SYSTEM" <<EOF >/dev/null 2>&1
-nk Setup\LabConfig
-cd Setup\LabConfig
-nv 4 BypassTPMCheck
-ed BypassTPMCheck
-1
-nv 4 BypassSecureBootCheck
-ed BypassSecureBootCheck
-1
-nv 4 BypassRAMCheck
-ed BypassRAMCheck
-1
-nv 4 BypassStorageCheck
-ed BypassStorageCheck
-1
-nv 4 BypassCPUCheck
-ed BypassCPUCheck
-1
-cd \
-nk Setup\MoSetup
-cd Setup\MoSetup
-nv 4 AllowUpgradesWithUnsupportedTPMOrCPU
-ed AllowUpgradesWithUnsupportedTPMOrCPU
-1
-q
-y
-EOF
+      # Apply hardware bypasses (root-level Setup\LabConfig)
+      echo "nk Setup\\LabConfig"
+      echo "cd Setup\\LabConfig"
+      echo "nv 4 BypassTPMCheck"
+      echo "ed BypassTPMCheck"
+      echo "1"
+      echo "nv 4 BypassSecureBootCheck"
+      echo "ed BypassSecureBootCheck"
+      echo "1"
+      echo "nv 4 BypassRAMCheck"
+      echo "ed BypassRAMCheck"
+      echo "1"
+      echo "nv 4 BypassStorageCheck"
+      echo "ed BypassStorageCheck"
+      echo "1"
+      echo "nv 4 BypassCPUCheck"
+      echo "ed BypassCPUCheck"
+      echo "1"
+      echo "cd \\"
+      echo "nk Setup\\MoSetup"
+      echo "cd Setup\\MoSetup"
+      echo "nv 4 AllowUpgradesWithUnsupportedTPMOrCPU"
+      echo "ed AllowUpgradesWithUnsupportedTPMOrCPU"
+      echo "1"
+      echo "q"
+      echo "y"
+    } | chntpw -e "$temp_reg_dir/SYSTEM" >/dev/null 2>&1
     wimlib-imagex update "$WIM_FILE" "$index" --command "add '$temp_reg_dir/SYSTEM' '/Windows/System32/config/SYSTEM'" >/dev/null 2>&1
   fi
 

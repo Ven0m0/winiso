@@ -257,14 +257,27 @@ def _run_aria2_download(output_path, aria2_input, download_list):
                 or "\n" in item["name"]
                 or "\r" in item["name"]
             ):
-                log_error(
-                    f"Invalid characters in URL or filename: {item['name']}"
-                )
+                log_error(f"Invalid characters in URL or filename: {item['name']}")
                 return False
 
             f.write(f"{item['url']}\n")
-            # Security: Sanitize filename to prevent path traversal
+            # Security: Sanitize filename and prevent path traversal
             safe_name = Path(item["name"].replace("\\", "/")).name
+
+            if not safe_name or safe_name in (".", ".."):
+                log_error(f"Invalid filename detected: {item['name']}")
+                return False
+
+            try:
+                resolved_output = output_path.resolve()
+                target_path = resolved_output.joinpath(safe_name).resolve()
+                target_path.relative_to(resolved_output)
+            except (ValueError, RuntimeError):
+                log_error(
+                    f"Path traversal attempt detected in filename: {item['name']}"
+                )
+                return False
+
             f.write(f"  out={safe_name}\n")
     # Download using aria2
     log_info("Starting download with aria2c...")
@@ -397,7 +410,9 @@ def interactive_mode(output_dir):
                     .lower()
                 )
                 if confirm == "" or confirm == "y":
-                    return download_build(build_id, output_dir, edition_filter, build_info=build_info)
+                    return download_build(
+                        build_id, output_dir, edition_filter, build_info=build_info
+                    )
                 else:
                     log_info("Download cancelled")
                     return False

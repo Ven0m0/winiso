@@ -466,7 +466,9 @@ def main():
     if not output_dir.is_absolute():
         output_dir = project_root.joinpath(output_dir)
 
-    if not str(output_dir.resolve()).startswith(str(project_root.resolve())):
+    try:
+        output_dir.resolve().relative_to(project_root.resolve())
+    except (ValueError, RuntimeError):
         log_error(f"Path traversal attempt detected for output: {args.output}")
         return 1
 

@@ -200,5 +200,74 @@ class TestGetLatestBuilds(unittest.TestCase):
         mock_log_error.assert_called_once()
         self.assertTrue(mock_log_error.call_args[0][0].startswith("Failed to parse JSON response:"))
 
+
+class TestFetchUrl(unittest.TestCase):
+    @patch("download_uup.urlopen")
+    def test_fetch_url_success_get(self, mock_urlopen):
+        # Setup mock response
+        mock_response = unittest.mock.MagicMock()
+        mock_response.read.return_value = b"success content"
+        mock_response.__enter__.return_value = mock_response
+        mock_urlopen.return_value = mock_response
+
+        result = download_uup.fetch_url("http://example.com")
+
+        self.assertEqual(result, "success content")
+        mock_urlopen.assert_called_once()
+
+    @patch("download_uup.urlopen")
+    @patch("download_uup.Request")
+    def test_fetch_url_success_post(self, mock_request, mock_urlopen):
+        # Setup mock response
+        mock_response = unittest.mock.MagicMock()
+        mock_response.read.return_value = b"post success"
+        mock_response.__enter__.return_value = mock_response
+        mock_urlopen.return_value = mock_response
+
+        data = {"key": "value"}
+        result = download_uup.fetch_url("http://example.com", data=data)
+
+        self.assertEqual(result, "post success")
+        mock_request.assert_called_once()
+        # Verify data was encoded and passed to Request
+        kwargs = mock_request.call_args.kwargs
+        self.assertEqual(kwargs["data"], b"key=value")
+
+    @patch("download_uup.urlopen")
+    @patch("download_uup.log_error")
+    def test_fetch_url_http_error(self, mock_log_error, mock_urlopen):
+        from urllib.error import HTTPError
+        mock_urlopen.side_effect = HTTPError("http://example.com", 404, "Not Found", {}, None)
+
+        result = download_uup.fetch_url("http://example.com")
+
+        self.assertIsNone(result)
+        mock_log_error.assert_called_once()
+        self.assertIn("HTTP Error 404", mock_log_error.call_args[0][0])
+
+    @patch("download_uup.urlopen")
+    @patch("download_uup.log_error")
+    def test_fetch_url_url_error(self, mock_log_error, mock_urlopen):
+        from urllib.error import URLError
+        mock_urlopen.side_effect = URLError("reason")
+
+        result = download_uup.fetch_url("http://example.com")
+
+        self.assertIsNone(result)
+        mock_log_error.assert_called_once()
+        self.assertIn("URL Error", mock_log_error.call_args[0][0])
+
+    @patch("download_uup.urlopen")
+    @patch("download_uup.log_error")
+    def test_fetch_url_generic_exception(self, mock_log_error, mock_urlopen):
+        mock_urlopen.side_effect = Exception("generic error")
+
+        result = download_uup.fetch_url("http://example.com")
+
+        self.assertIsNone(result)
+        mock_log_error.assert_called_once()
+        self.assertIn("Error fetching URL", mock_log_error.call_args[0][0])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -28,3 +28,38 @@ check_tool() {
         return 0
     fi
 }
+
+# Required tools for the build process
+# shellcheck disable=SC2034
+REQUIRED_TOOLS=("aria2c" "cabextract" "wimlib-imagex" "chntpw")
+
+# =============================================================================
+# ISO creation tool check
+# Returns 0 if genisoimage or mkisofs is found, 1 otherwise.
+# =============================================================================
+check_iso_tool() {
+    if command -v genisoimage &> /dev/null; then
+        log_success "genisoimage found"
+        return 0
+    elif command -v mkisofs &> /dev/null; then
+        log_success "mkisofs found"
+        return 0
+    else
+        return 1
+    fi
+}
+
+# =============================================================================
+# Check multiple required tools
+# Arguments: List of tools to check
+# Returns: Number of missing tools.
+# =============================================================================
+check_required_tools() {
+    local missing_count=0
+    for tool in "$@"; do
+        if ! check_tool "$tool"; then
+            ((missing_count++))
+        fi
+    done
+    return "$missing_count"
+}

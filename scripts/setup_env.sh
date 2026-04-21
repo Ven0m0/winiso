@@ -19,8 +19,8 @@ if command -v pacman &> /dev/null; then
     sudo pacman -S --needed aria2 cabextract wimlib chntpw cdrtools
 elif command -v apt &> /dev/null; then
     log_info "Detected Debian/Ubuntu (apt)"
-    sudo apt-get update -qq
-    sudo apt-get install -yqq aria2 python3-apt cabextract wimtools chntpw genisoimage
+    sudo apt update
+    sudo apt install -y aria2 cabextract wimtools chntpw genisoimage
 elif command -v dnf &> /dev/null; then
     log_info "Detected Fedora (dnf)"
     sudo dnf install -y aria2 cabextract wimlib-utils chntpw genisoimage
@@ -39,19 +39,13 @@ log_info "Verifying tool availability..."
 
 MISSING_TOOLS=()
 
-check_tool "aria2c" || MISSING_TOOLS+=("aria2c")
-check_tool "cabextract" || MISSING_TOOLS+=("cabextract")
-check_tool "wimlib-imagex" || MISSING_TOOLS+=("wimlib-imagex")
-check_tool "chntpw" || MISSING_TOOLS+=("chntpw")
+# Check primary tools using centralized list
+for tool in "${REQUIRED_TOOLS[@]}"; do
+    check_tool "$tool" || MISSING_TOOLS+=("$tool")
+done
 
-# Check for genisoimage or mkisofs
-if command -v genisoimage &> /dev/null; then
-    log_success "genisoimage found: $(command -v genisoimage)"
-elif command -v mkisofs &> /dev/null; then
-    log_success "mkisofs found: $(command -v mkisofs)"
-else
-    MISSING_TOOLS+=("genisoimage/mkisofs")
-fi
+# Check ISO creation tools
+check_iso_tool || MISSING_TOOLS+=("genisoimage/mkisofs")
 
 if [[ ${#MISSING_TOOLS[@]} -gt 0 ]]; then
     log_error "Missing tools: ${MISSING_TOOLS[*]}"

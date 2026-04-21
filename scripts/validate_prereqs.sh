@@ -22,19 +22,13 @@ WARNINGS=0
 # =============================================================================
 log_info "Checking required tools..."
 
-for tool in aria2c cabextract wimlib-imagex chntpw; do
-  if ! check_tool "$tool"; then
-    log_error "$tool not found. Run 'make deps' to install dependencies."
-    ((ERRORS++))
-  fi
-done
+# Use centralized tool list
+if ! check_required_tools "${REQUIRED_TOOLS[@]}"; then
+    ERRORS=$((ERRORS + $?))
+fi
 
 # Check for genisoimage or mkisofs
-if command -v genisoimage &>/dev/null; then
-  log_success "genisoimage found"
-elif command -v mkisofs &>/dev/null; then
-  log_success "mkisofs found"
-else
+if ! check_iso_tool; then
   log_error "Neither genisoimage nor mkisofs found. Run 'make deps' to install."
   ((ERRORS++))
 fi

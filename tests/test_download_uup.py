@@ -1,5 +1,4 @@
 import sys
-import os
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -162,6 +161,26 @@ class TestHelpers(unittest.TestCase):
         mock_unlink.assert_called_once()
         mock_log_success.assert_called()
 
+    @patch("builtins.open", new_callable=unittest.mock.mock_open)
+    @patch("download_uup.log_error")
+    def test_run_aria2_download_path_traversal(self, mock_log_error, mock_open):
+        """Ensure path traversal attempts in filename are rejected."""
+        test_cases = [
+            {"url": "http://test", "name": ".."},
+            {"url": "http://test", "name": "a/.."},
+            {"url": "http://test", "name": "."},
+            {"url": "http://test", "name": ""},
+        ]
+
+        for idx, item in enumerate(test_cases):
+            with self.subTest(name=item["name"]):
+                result = download_uup._run_aria2_download(
+                    Path("/tmp/out"), Path("in.txt"), [item]
+                )
+                self.assertFalse(result)
+                mock_log_error.assert_called()
+                mock_log_error.reset_mock()
+
 
 class TestGetLatestBuilds(unittest.TestCase):
     @patch("download_uup.fetch_url")
@@ -202,6 +221,92 @@ class TestGetLatestBuilds(unittest.TestCase):
         )
 
 
+class TestGetBuildInfo(unittest.TestCase):
+    @patch("download_uup.fetch_url")
+    def test_get_build_info_success(self, mock_fetch_url):
+        import json
+
+        mock_fetch_url.return_value = json.dumps(
+            {"response": {"build": "info", "files": {}}}
+        )
+
+        result = download_uup.get_build_info("fake-id")
+
+        self.assertEqual(result, {"build": "info", "files": {}})
+        mock_fetch_url.assert_called_once_with(
+            "https://api.uupdump.net/get.php?id=fake-id"
+        )
+
+
+class TestFetchUrl(unittest.TestCase):
+    @patch("download_uup.urlopen")
+    def test_fetch_url_success_get(self, mock_urlopen):
+        mock_response = unittest.mock.MagicMock()
+        mock_response.read.return_value = b"success content"
+        mock_response.__enter__.return_value = mock_response
+        mock_urlopen.return_value = mock_response
+
+        result = download_uup.fetch_url("http://example.com")
+
+        self.assertEqual(result, "success content")
+        mock_urlopen.assert_called_once()
+
+    @patch("download_uup.urlopen")
+    @patch("download_uup.Request")
+    def test_fetch_url_success_post(self, mock_request, mock_urlopen):
+        mock_response = unittest.mock.MagicMock()
+        mock_response.read.return_value = b"post success"
+        mock_response.__enter__.return_value = mock_response
+        mock_urlopen.return_value = mock_response
+
+        data = {"key": "value"}
+        result = download_uup.fetch_url("http://example.com", data=data)
+
+        self.assertEqual(result, "post success")
+        mock_request.assert_called_once()
+        kwargs = mock_request.call_args.kwargs
+        self.assertEqual(kwargs["data"], b"key=value")
+
+    @patch("download_uup.urlopen")
+    @patch("download_uup.log_error")
+    def test_fetch_url_http_error(self, mock_log_error, mock_urlopen):
+        from urllib.error import HTTPError
+        from io import BytesIO
+
+        mock_urlopen.side_effect = HTTPError(
+            "http://example.com", 404, "Not Found", {}, BytesIO(b"")
+        )
+
+        result = download_uup.fetch_url("http://example.com")
+
+        self.assertIsNone(result)
+        mock_log_error.assert_called_once()
+        self.assertIn("HTTP Error 404", mock_log_error.call_args[0][0])
+
+    @patch("download_uup.urlopen")
+    @patch("download_uup.log_error")
+    def test_fetch_url_url_error(self, mock_log_error, mock_urlopen):
+        from urllib.error import URLError
+
+        mock_urlopen.side_effect = URLError("reason")
+
+        result = download_uup.fetch_url("http://example.com")
+
+        self.assertIsNone(result)
+        mock_log_error.assert_called_once()
+        self.assertIn("URL Error", mock_log_error.call_args[0][0])
+
+    @patch("download_uup.urlopen")
+    @patch("download_uup.log_error")
+    def test_fetch_url_generic_exception(self, mock_log_error, mock_urlopen):
+        mock_urlopen.side_effect = Exception("generic error")
+
+        result = download_uup.fetch_url("http://example.com")
+
+        self.assertIsNone(result)
+        mock_log_error.assert_called_once()
+        self.assertIn("Error fetching URL", mock_log_error.call_args[0][0])
+
 
 class TestSelectEditions(unittest.TestCase):
     @patch("download_uup.log_warn")
@@ -209,21 +314,25 @@ class TestSelectEditions(unittest.TestCase):
         build_info = {"files": {"test.txt": {"size": 100}}}
         result = download_uup.select_editions(build_info)
         self.assertIsNone(result)
-        mock_log_warn.assert_called_with("No edition-specific files found, will download all files")
+        mock_log_warn.assert_called_with(
+            "No edition-specific files found, will download all files"
+        )
 
     @patch("download_uup.log_warn")
     def test_select_editions_no_matching_esd_files(self, mock_log_warn):
         build_info = {"files": {"unknown.esd": {"size": 100}}}
         result = download_uup.select_editions(build_info)
         self.assertIsNone(result)
-        mock_log_warn.assert_called_with("No edition-specific files found, will download all files")
+        mock_log_warn.assert_called_with(
+            "No edition-specific files found, will download all files"
+        )
 
     @patch("builtins.input", return_value="")
     def test_select_editions_empty_choice(self, mock_input):
         build_info = {
             "files": {
                 "Windows_Professional.esd": {"size": 100},
-                "Windows_Home.esd": {"size": 100}
+                "Windows_Home.esd": {"size": 100},
             }
         }
         result = download_uup.select_editions(build_info)
@@ -231,11 +340,7 @@ class TestSelectEditions(unittest.TestCase):
 
     @patch("builtins.input", return_value="A")
     def test_select_editions_all_choice(self, mock_input):
-        build_info = {
-            "files": {
-                "Windows_Professional.esd": {"size": 100}
-            }
-        }
+        build_info = {"files": {"Windows_Professional.esd": {"size": 100}}}
         result = download_uup.select_editions(build_info)
         self.assertIsNone(result)
 
@@ -246,7 +351,7 @@ class TestSelectEditions(unittest.TestCase):
         build_info = {
             "files": {
                 "Windows_Professional.esd": {"size": 100},
-                "Windows_Home.esd": {"size": 100}
+                "Windows_Home.esd": {"size": 100},
             }
         }
         result = download_uup.select_editions(build_info)
@@ -258,11 +363,7 @@ class TestSelectEditions(unittest.TestCase):
     @patch("download_uup.log_warn")
     @patch("builtins.input", return_value="invalid")
     def test_select_editions_non_numeric_choice(self, mock_input, mock_log_warn):
-        build_info = {
-            "files": {
-                "Windows_Professional.esd": {"size": 100}
-            }
-        }
+        build_info = {"files": {"Windows_Professional.esd": {"size": 100}}}
         result = download_uup.select_editions(build_info)
         self.assertIsNone(result)
         mock_log_warn.assert_called_with("Invalid selection, downloading all editions")
@@ -270,11 +371,7 @@ class TestSelectEditions(unittest.TestCase):
     @patch("download_uup.log_warn")
     @patch("builtins.input", return_value="99")
     def test_select_editions_out_of_range_choice(self, mock_input, mock_log_warn):
-        build_info = {
-            "files": {
-                "Windows_Professional.esd": {"size": 100}
-            }
-        }
+        build_info = {"files": {"Windows_Professional.esd": {"size": 100}}}
         result = download_uup.select_editions(build_info)
         self.assertIsNone(result)
         mock_log_warn.assert_called_with("Invalid selection, downloading all editions")

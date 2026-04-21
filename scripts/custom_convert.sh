@@ -5,6 +5,9 @@ UUP_CONVERTER_SCRIPT=1
 
 export PATH=${PATH}:/usr/sbin
 
+# shellcheck disable=SC1091
+source "$(cd "$(dirname "$(readlink -f "$0")")" && pwd)/utils.sh"
+
 if [[ -f "$(dirname "$0")"/convert_ve_plugin ]]; then
   . "$(dirname "$0")"/convert_ve_plugin
 fi
@@ -327,15 +330,15 @@ if [ "$1" == "-?" -o "$1" == "--help" -o "$1" == "-h" ]; then
   exit
 fi
 
-for prog in aria2c cabextract wimlib-imagex chntpw; do
-  which "$prog" &>/dev/null 2>&1 && continue
+for prog in "${REQUIRED_TOOLS[@]}"; do
+  command -v "$prog" &>/dev/null && continue
 
   echo "${prog} does not seem to be installed"
   echo "Check the readme.md for details"
   exit 1
 done
 
-if ! command -v genisoimage &>/dev/null && ! command -v mkisofs &>/dev/null; then
+if ! check_iso_tool >/dev/null; then
   echo "genisoimage nor mkisofs does seem to be installed"
   echo "Check the readme.md for details"
   exit 1
@@ -521,11 +524,15 @@ elif [[ -e ./ISODIR/sources/winpe.jpg ]]; then
   bckimg=winpe.jpg
 fi
 
-wimlib-imagex update ISODIR/sources/boot.wim 1 << EOF >/dev/null
-add 'ISODIR/sources/${bckimg}' '/Windows/system32/winpe.jpg'
-add 'ISODIR/sources/${bckimg}' '/Windows/system32/winre.jpg'
-delete --force /Windows/System32/winpeshl.ini
-EOF
+wimlib-imagex update ISODIR/sources/boot.wim 1 \
+  --command "add 'ISODIR/sources/${bckimg}' '/Windows/system32/winpe.jpg'" >/dev/null
+
+wimlib-imagex update ISODIR/sources/boot.wim 1 \
+  --command "add 'ISODIR/sources/${bckimg}' '/Windows/system32/winre.jpg'" >/dev/null
+
+wimlib-imagex update ISODIR/sources/boot.wim 1 \
+  --command "delete /Windows/System32/winpeshl.ini" >/dev/null
+
 errorHandler $? "Failed to update boot.wim index 1"
 
 wimlib-imagex export "${tempDir}/winre.wim" 1 \

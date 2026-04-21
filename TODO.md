@@ -1,3 +1,5 @@
+merge features of "https://github.com/zoicware/zISOTweaker"
+
 implement the official instance of the [UUP dump JSON API](https://git.uupdump.net/uup-dump/json-api). You can access it at https://api.uupdump.net.
 
 UUP dump officially operates under the https://uupdump.net address.

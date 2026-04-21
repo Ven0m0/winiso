@@ -1,29 +1,28 @@
 {
-  "theme": {
-    "file": [
-      "/ventoy/themes/miku/theme.txt",
-      "/ventoy/themes/cachyos/theme.txt",
-      "/ventoy/themes/minegrub/theme.txt"
+    "control":[
+        { "VTOY_MAX_SEARCH_LEVEL": "1" }
     ],
-    "gfxmode": "1920x1080",
-    "fonts": [
-      "/ventoy/themes/cachyos/ubuntu_regular_20.pf2",
-      "/ventoy/themes/cachyos/terminus-18.pf2"
-    ]
-  },
-  "control_legacy": [
-    {
-      "VTOY_DEFAULT_SEARCH_ROOT": "/iso"
-    }
-  ],
-  "auto_install": [
-    {
-      "image": "/iso/win11.iso",
-      "template": "/autounattend/win11-ultra.xml"
+    "theme":{
+        "file":[
+            "/ventoy/themes/miku/theme.txt",
+            "/ventoy/themes/cachyos/theme.txt",
+            "/ventoy/themes/celeste/theme.txt",
+            "/ventoy/themes/cyberpunk/theme.txt"
+        ],
+        "gfxmode": "1920x1080",
+        "fonts":[
+            "/ventoy/themes/cachyos/ubuntu_regular_20.pf2",
+            "/ventoy/themes/cachyos/terminus-18.pf2",
+            "/ventoy/themes/celeste/RenogareRegular20.pf2",
+            "/ventoy/themes/cyberpunk/Rajdhani_Regular_18.pf2"
+        ]
     },
-    {
-      "image": "/iso/win11.iso",
-      "template": "/autounattend/win11.xml"
-    }
-  ]
+    "auto_install":[
+        {
+            "image": "/iso/win11-uudump.iso",
+            "template":[
+                "/answer/autounattend-safe.xml"
+            ]
+        }
+    ]
 }

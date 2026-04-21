@@ -34,6 +34,9 @@ if (!(Test-Path $WimPath)) {
 # --- Mount ---
 dism /Mount-Image /ImageFile:$WimPath /Index:$Index /MountDir:$MountDir | Out-Null
 
+# --- strip 8.3 filenames ---
+fsutil 8dot3name strip /f /s $MountDir | Out-Null
+
 # --- Remove provisioned Appx ---
 $appx = @(
     "Microsoft.BingNews",

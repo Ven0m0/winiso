@@ -45,7 +45,11 @@ class TestCheckDependencies(unittest.TestCase):
         # Mock shutil.which to return a path for aria2c
         mock_which.return_value = "/usr/bin/aria2c"
 
+        result = download_uup.check_dependencies()
 
+        self.assertTrue(result)
+        mock_which.assert_called_once_with("aria2c")
+        mock_log_error.assert_not_called()
 class TestDownloadUUP(unittest.TestCase):
     def test_parse_args_defaults(self):
         args = parse_args([])

@@ -521,14 +521,12 @@ elif [[ -e ./ISODIR/sources/winpe.jpg ]]; then
   bckimg=winpe.jpg
 fi
 
-wimlib-imagex update ISODIR/sources/boot.wim 1 \
-  --command "add 'ISODIR/sources/${bckimg}' '/Windows/system32/winpe.jpg'" >/dev/null
-
-wimlib-imagex update ISODIR/sources/boot.wim 1 \
-  --command "add 'ISODIR/sources/${bckimg}' '/Windows/system32/winre.jpg'" >/dev/null
-
-wimlib-imagex update ISODIR/sources/boot.wim 1 \
-  --command "delete /Windows/System32/winpeshl.ini" >/dev/null
+wimlib-imagex update ISODIR/sources/boot.wim 1 << EOF >/dev/null
+add 'ISODIR/sources/${bckimg}' '/Windows/system32/winpe.jpg'
+add 'ISODIR/sources/${bckimg}' '/Windows/system32/winre.jpg'
+delete --force /Windows/System32/winpeshl.ini
+EOF
+errorHandler $? "Failed to update boot.wim index 1"
 
 wimlib-imagex export "${tempDir}/winre.wim" 1 \
   ISODIR/sources/boot.wim "Microsoft Windows Setup" "Microsoft Windows Setup"

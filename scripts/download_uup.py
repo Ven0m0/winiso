@@ -257,9 +257,7 @@ def _run_aria2_download(output_path, aria2_input, download_list):
                 or "\n" in item["name"]
                 or "\r" in item["name"]
             ):
-                log_error(
-                    f"Invalid characters in URL or filename: {item['name']}"
-                )
+                log_error(f"Invalid characters in URL or filename: {item['name']}")
                 return False
 
             f.write(f"{item['url']}\n")
@@ -397,7 +395,9 @@ def interactive_mode(output_dir):
                     .lower()
                 )
                 if confirm == "" or confirm == "y":
-                    return download_build(build_id, output_dir, edition_filter, build_info=build_info)
+                    return download_build(
+                        build_id, output_dir, edition_filter, build_info=build_info
+                    )
                 else:
                     log_info("Download cancelled")
                     return False
@@ -466,7 +466,9 @@ def main():
     if not output_dir.is_absolute():
         output_dir = project_root.joinpath(output_dir)
 
-    if not str(output_dir.resolve()).startswith(str(project_root.resolve())):
+    try:
+        output_dir.resolve().relative_to(project_root.resolve())
+    except (ValueError, RuntimeError):
         log_error(f"Path traversal attempt detected for output: {args.output}")
         return 1
 

@@ -209,11 +209,23 @@ def select_editions(build_info):
     return None
 
 
-def _prepare_output_directory(output_path):
-    """Create output directory and optionally clear existing files"""
-    output_path.mkdir(parents=True, exist_ok=True)
+def download_build(build_id, output_dir, edition_filter=None, build_info=None):
+    """Download UUP files for a specific build"""
+    if build_info is None:
+        build_info = get_build_info(build_id)
 
-    # Clear existing files if user confirms
+    if not build_info:
+        log_error("Failed to get build information")
+        return False
+
+    files = build_info.get("files", {})
+    if not files:
+        log_error("No files found for this build")
+        return False
+
+    output_path = Path(output_dir)
+    # Create output directory and optionally clear existing files
+    output_path.mkdir(parents=True, exist_ok=True)
     existing_files = list(output_path.glob("*"))
     if existing_files:
         print(
@@ -226,30 +238,26 @@ def _prepare_output_directory(output_path):
                 if f.is_file() and f.name != ".gitkeep":
                     f.unlink()
 
-
-def _prepare_download_list(build_id, files, edition_filter):
-    """Construct the list of files to download"""
+    # Construct the list of files to download
     download_list = []
     base_url = "https://uupdump.net/get.php"
-
     log_info(f"Preparing to download {len(files)} files...")
-
     for filename, file_info in files.items():
-        # Apply edition filter if specified
         if edition_filter and filename.endswith(".esd"):
             if filename not in edition_filter:
                 continue
-
         file_url = f"{base_url}?id={build_id}&pack={filename}&aria2=2"
         download_list.append(
             {"url": file_url, "name": filename, "size": file_info.get("size", 0)}
         )
-    return download_list
 
+    if not download_list:
+        log_error("No files to download after filtering")
+        return False
 
-def _run_aria2_download(output_path, aria2_input, download_list):
-    """Manages the aria2c process and post-download reporting"""
-    # Create aria2 input file
+    log_success(f"Will download {len(download_list)} files")
+
+    aria2_input = output_path / "aria2_input.txt"
     lines = []
     for item in download_list:
         if (
@@ -261,9 +269,7 @@ def _run_aria2_download(output_path, aria2_input, download_list):
             log_error(f"Invalid characters in URL or filename: {item['name']}")
             return False
 
-        # Security: Sanitize filename and prevent path traversal
         safe_name = os.path.basename(item["name"].replace("\\", "/"))
-
         if not safe_name or safe_name in (".", ".."):
             log_error(f"Invalid filename detected: {item['name']}")
             return False
@@ -280,7 +286,7 @@ def _run_aria2_download(output_path, aria2_input, download_list):
 
     with open(aria2_input, "w") as f:
         f.writelines(lines)
-    # Download using aria2
+
     log_info("Starting download with aria2c...")
     print(
         f"{Colors.BOLD}This may take a while depending on your connection...{Colors.RESET}\n"
@@ -312,18 +318,13 @@ def _run_aria2_download(output_path, aria2_input, download_list):
 
     try:
         subprocess.run(aria2_cmd, check=True)
-        aria2_input.unlink()  # Clean up input file
-
+        aria2_input.unlink()
         log_success(f"Download complete! Files saved to: {output_path}")
-
-        # Count downloaded files
         downloaded = sum(
             1 for f in output_path.glob("*") if f.is_file() and f.name != ".gitkeep"
         )
         log_info(f"Total files downloaded: {downloaded}")
-
         return True
-
     except subprocess.CalledProcessError as e:
         log_error(f"aria2c failed with exit code {e.returncode}")
         return False
@@ -331,35 +332,6 @@ def _run_aria2_download(output_path, aria2_input, download_list):
         log_warn("\nDownload interrupted by user")
         aria2_input.unlink(missing_ok=True)
         return False
-
-
-def download_build(build_id, output_dir, edition_filter=None, build_info=None):
-    """Download UUP files for a specific build"""
-    if build_info is None:
-        build_info = get_build_info(build_id)
-
-    if not build_info:
-        log_error("Failed to get build information")
-        return False
-
-    files = build_info.get("files", {})
-    if not files:
-        log_error("No files found for this build")
-        return False
-
-    output_path = Path(output_dir)
-    _prepare_output_directory(output_path)
-
-    download_list = _prepare_download_list(build_id, files, edition_filter)
-
-    if not download_list:
-        log_error("No files to download after filtering")
-        return False
-
-    log_success(f"Will download {len(download_list)} files")
-
-    aria2_input = output_path / "aria2_input.txt"
-    return _run_aria2_download(output_path, aria2_input, download_list)
 
 
 def interactive_mode(output_dir):

@@ -202,5 +202,83 @@ class TestGetLatestBuilds(unittest.TestCase):
         )
 
 
+
+class TestSelectEditions(unittest.TestCase):
+    @patch("download_uup.log_warn")
+    def test_select_editions_no_esd_files(self, mock_log_warn):
+        build_info = {"files": {"test.txt": {"size": 100}}}
+        result = download_uup.select_editions(build_info)
+        self.assertIsNone(result)
+        mock_log_warn.assert_called_with("No edition-specific files found, will download all files")
+
+    @patch("download_uup.log_warn")
+    def test_select_editions_no_matching_esd_files(self, mock_log_warn):
+        build_info = {"files": {"unknown.esd": {"size": 100}}}
+        result = download_uup.select_editions(build_info)
+        self.assertIsNone(result)
+        mock_log_warn.assert_called_with("No edition-specific files found, will download all files")
+
+    @patch("builtins.input", return_value="")
+    def test_select_editions_empty_choice(self, mock_input):
+        build_info = {
+            "files": {
+                "Windows_Professional.esd": {"size": 100},
+                "Windows_Home.esd": {"size": 100}
+            }
+        }
+        result = download_uup.select_editions(build_info)
+        self.assertIsNone(result)
+
+    @patch("builtins.input", return_value="A")
+    def test_select_editions_all_choice(self, mock_input):
+        build_info = {
+            "files": {
+                "Windows_Professional.esd": {"size": 100}
+            }
+        }
+        result = download_uup.select_editions(build_info)
+        self.assertIsNone(result)
+
+    @patch("builtins.input", return_value="1")
+    def test_select_editions_valid_choice(self, mock_input):
+        # We need to be careful with the order of editions because it uses list(edition_files.keys())
+        # Python 3.7+ dicts are ordered, so "professional" then "home"
+        build_info = {
+            "files": {
+                "Windows_Professional.esd": {"size": 100},
+                "Windows_Home.esd": {"size": 100}
+            }
+        }
+        result = download_uup.select_editions(build_info)
+        # It should return a list with the filename
+        # editions = ["professional", "home"]
+        # choice "1" -> idx 0 -> edition_files["professional"] -> "Windows_Professional.esd"
+        self.assertEqual(result, ["Windows_Professional.esd"])
+
+    @patch("download_uup.log_warn")
+    @patch("builtins.input", return_value="invalid")
+    def test_select_editions_non_numeric_choice(self, mock_input, mock_log_warn):
+        build_info = {
+            "files": {
+                "Windows_Professional.esd": {"size": 100}
+            }
+        }
+        result = download_uup.select_editions(build_info)
+        self.assertIsNone(result)
+        mock_log_warn.assert_called_with("Invalid selection, downloading all editions")
+
+    @patch("download_uup.log_warn")
+    @patch("builtins.input", return_value="99")
+    def test_select_editions_out_of_range_choice(self, mock_input, mock_log_warn):
+        build_info = {
+            "files": {
+                "Windows_Professional.esd": {"size": 100}
+            }
+        }
+        result = download_uup.select_editions(build_info)
+        self.assertIsNone(result)
+        mock_log_warn.assert_called_with("Invalid selection, downloading all editions")
+
+
 if __name__ == "__main__":
     unittest.main()

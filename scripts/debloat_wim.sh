@@ -55,6 +55,13 @@ if [[ -f "$CONFIG_FILE" ]]; then
     line=$(echo "$line" | tr -d '\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
     [[ -z "$line" ]] && continue
     [[ "$line" =~ ^# ]] && continue
+
+    # Validate pattern to prevent path injection
+    if [[ ! "$line" =~ ^[a-zA-Z0-9.*_-]+$ ]]; then
+      log_warn "Skipping invalid pattern: $line"
+      continue
+    fi
+
     PATTERNS+=("$line")
   done <"$CONFIG_FILE"
 fi

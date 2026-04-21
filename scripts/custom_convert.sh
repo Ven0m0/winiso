@@ -524,8 +524,9 @@ fi
 wimlib-imagex update ISODIR/sources/boot.wim 1 << EOF >/dev/null
 add 'ISODIR/sources/${bckimg}' '/Windows/system32/winpe.jpg'
 add 'ISODIR/sources/${bckimg}' '/Windows/system32/winre.jpg'
-delete /Windows/System32/winpeshl.ini
+delete --force /Windows/System32/winpeshl.ini
 EOF
+errorHandler $? "Failed to update boot.wim index 1"
 
 wimlib-imagex export "${tempDir}/winre.wim" 1 \
   ISODIR/sources/boot.wim "Microsoft Windows Setup" "Microsoft Windows Setup"

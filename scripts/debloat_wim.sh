@@ -51,12 +51,19 @@ done <<< "$WIM_INFO_OUTPUT"
 # Parse config file
 PATTERNS=()
 if [[ -f "$CONFIG_FILE" ]]; then
-  while IFS= read -r line || [[ -n "$line" ]]; do
-    line=$(echo "$line" | tr -d '\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-    [[ -z "$line" ]] && continue
-    [[ "$line" =~ ^# ]] && continue
-    PATTERNS+=("$line")
-  done <"$CONFIG_FILE"
+   while IFS= read -r line || [[ -n "$line" ]]; do
+     line=$(echo "$line" | tr -d '\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+     [[ -z "$line" ]] && continue
+     [[ "$line" =~ ^# ]] && continue
+
+     # Validate pattern to prevent path injection
+     if [[ ! "$line" =~ ^[a-zA-Z0-9.*_-]+$ ]]; then
+       log_warn "Skipping invalid pattern: $line"
+       continue
+     fi
+
+     PATTERNS+=("$line")
+   done <"$CONFIG_FILE"
 fi
 
 # Function to apply registry tweaks using chntpw

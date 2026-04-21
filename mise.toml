@@ -1,0 +1,108 @@
+# =============================================================================
+# mise.toml - Cross-platform development environment
+# =============================================================================
+# Usage:
+#   mise trust mise.toml
+#   mise run install-deps
+#   mise run build
+# =============================================================================
+
+min_version = "2024.1.0"
+
+[python]
+version = "3.11"
+pip = true
+
+[env]
+PROJECT_ROOT = "{{.root}}"
+
+[tasks]
+# Install system dependencies
+install-deps = [
+  "@if linux: sudo pacman -S --needed aria2 cabextract wimlib chntpw cdrtools",
+  "@if linux: sudo apt update && sudo apt install -y aria2 cabextract wimtools chntpw genisoimage",
+  "@if linux: sudo dnf install -y aria2 cabextract wimlib-utils chntpw genisoimage",
+  "@if darwin: brew install wimlib cdrtools aria2",
+  "@if windows: choco install wimlib aria2 cabextract genisoimage"
+]
+
+# Download UUP files
+download = [
+  "python {{.root}}/scripts/download_uup.py"
+]
+
+# Validate prerequisites
+validate = [
+  "bash {{.root}}/scripts/validate_prereqs.sh"
+]
+
+# Full build
+build = [
+  "bash {{.root}}/scripts/build.sh"
+]
+
+# Build Pro edition
+build-pro = [
+  "TARGET_EDITION=Professional FALLBACK_EDITION=Professional bash {{.root}}/scripts/build.sh"
+]
+
+# Build with pause for Windows DISM stage
+build-pause = [
+  "PAUSE_FOR_WINDOWS_STAGE=1 bash {{.root}}/scripts/build.sh"
+]
+
+# Clean artifacts (Linux/macOS)
+clean-unix = [
+  "rm -rf {{.root}}/scripts/ISODIR",
+  "rm -f {{.root}}/*.iso",
+  "rm -f {{.root}}/output/*.iso"
+]
+
+# Clean artifacts (Windows PowerShell)
+clean-windows = [
+  "if (Test-Path {{.root}}/scripts/ISODIR) { Remove-Item -Recurse -Force {{.root}}/scripts/ISODIR }",
+  "Get-ChildItem {{.root}} -Filter *.iso | Remove-Item -Force",
+  "Get-ChildItem {{.root}}/output -Filter *.iso | Remove-Item -Force"
+]
+
+# List builds from API
+list-builds = [
+  "python {{.root}}/scripts/download_uup.py --list"
+]
+
+# Show API version
+api-version = [
+  "python {{.root}}/scripts/download_uup.py --version"
+]
+
+# Show available tasks
+help = [
+  "mise tasks"
+]
+
+[tasks.linux]
+description = "Install build dependencies on Linux"
+run = [
+  "sudo pacman -S --needed aria2 cabextract wimlib chntpw cdrtools 2>/dev/null || (sudo apt update && sudo apt install -y aria2 cabextract wimtools chntpw genisoimage) 2>/dev/null || (sudo dnf install -y aria2 cabextract wimlib-utils chntpw genisoimage)"
+]
+
+[tasks.mac]
+description = "Install build dependencies on macOS"
+run = ["brew install wimlib cdrtools aria2"]
+
+[tasks.windows]
+description = "Install build dependencies on Windows (Admin)"
+run = ["choco install wimlib aria2 cabextract genisoimage"]
+
+# Aliases for platform-specific installs
+[tasks.arch]
+description = "Install deps (Arch Linux)"
+run = ["sudo pacman -S --needed aria2 cabextract wimlib chntpw cdrtools"]
+
+[tasks.debian]
+description = "Install deps (Debian/Ubuntu)"
+run = ["sudo apt update && sudo apt install -y aria2 cabextract wimtools chntpw genisoimage"]
+
+[tasks.fedora]
+description = "Install deps (Fedora)"
+run = ["sudo dnf install -y aria2 cabextract wimlib-utils chntpw genisoimage"]

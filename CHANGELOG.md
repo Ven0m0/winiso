@@ -17,6 +17,11 @@ All notable changes to this project will be documented in this file.
   - `--arch` - Architecture filter for `--latest` (amd64, x86, arm64, all)
   - `--ring` - Update ring for `--latest` (Dev, Beta, ReleasePreview, Retail)
   - `--version` - Show API version info
+- **Cross-platform environment** (`mise.toml`)
+  - mise (formerly rtx) configuration for tool version management
+  - Task aliases for build commands (install-deps, build, download, clean, etc.)
+  - Platform-specific dependency installation (Arch, Debian, Fedora, macOS, Windows)
+  - Python 3.11 runtime for download scripts
 
 ### Documentation
 - **Build selection guidance** added to README.md:

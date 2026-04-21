@@ -19,6 +19,17 @@ A Linux-based automation toolset for creating debloated Windows 11 ISO files fro
 
 ### 1. Install Dependencies
 
+**Option A: Using mise (Recommended)**
+
+```bash
+mise trust mise.toml
+mise run install-deps
+```
+
+Uses [mise](https://mise.jdx.dev/) for cross-platform tool management.
+
+**Option B: Using Make**
+
 ```bash
 make deps
 ```
@@ -132,16 +143,37 @@ wsreset -i
 
 ## Build Options
 
-| Command | Description |
-|---------|-------------|
-| `make deps` | Install system dependencies |
-| `make download` | Download UUP files from uupdump.net (interactive) |
-| `make validate` | Validate prerequisites before building |
-| `make build` | Build ISO with Pro for Workstations (default) |
-| `make build-pro` | Build ISO with Pro edition only |
-| `make build-pause` | Pause for Windows servicing stage |
-| `make clean` | Remove all build artifacts |
-| `make help` | Show all available targets |
+### Using mise (Recommended)
+
+```bash
+mise run install-deps    # Install system dependencies
+mise run download       # Download UUP files
+mise run validate      # Validate prerequisites
+mise run build        # Build ISO
+mise run build-pro    # Build Pro edition
+mise run build-pause  # Build with pause
+mise run clean        # Clean artifacts
+```
+
+### Using Make
+
+| Make Command | mise equivalent | Description |
+|-------------|----------------|-------------|
+| `make deps` | `mise run install-deps` | Install system dependencies |
+| `make download` | `mise run download` | Download UUP files |
+| `make validate` | `mise run validate` | Validate prerequisites |
+| `make build` | `mise run build` | Build ISO (default) |
+| `make build-pro` | `mise run build-pro` | Build Pro edition |
+| `make build-pause` | `mise run build-pause` | Pause for servicing |
+| `make clean` | `mise run clean-unix` | Remove artifacts |
+
+### Direct Scripts
+
+```bash
+./scripts/setup_env.sh   # Install dependencies
+./scripts/download_uup.py --list  # List builds
+./scripts/build.sh       # Build ISO
+```
 
 ### Environment Variables
 

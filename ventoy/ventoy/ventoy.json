@@ -11,12 +11,19 @@
       "/ventoy/themes/cachyos/terminus-18.pf2"
     ]
   },
+  "control_legacy": [
+    {
+      "VTOY_DEFAULT_SEARCH_ROOT": "/iso"
+    }
+  ],
   "auto_install": [
     {
-      "image": "/ISO/Win11.iso",
-      "template": [
-        "/answer/autounattend.xml"
-      ]
+      "image": "/iso/win11.iso",
+      "template": "/autounattend/win11-ultra.xml"
+    },
+    {
+      "image": "/iso/win11.iso",
+      "template": "/autounattend/win11.xml"
     }
   ]
 }

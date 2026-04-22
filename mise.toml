@@ -19,9 +19,16 @@ PROJECT_ROOT = "{{.root}}"
 [tasks]
 # Install system dependencies
 install-deps = [
-  "@if linux: sudo pacman -S --needed aria2 cabextract wimlib chntpw cdrtools",
-  "@if linux: sudo apt update && sudo apt install -y aria2 cabextract wimtools chntpw genisoimage",
-  "@if linux: sudo dnf install -y aria2 cabextract wimlib-utils chntpw genisoimage",
+  """@if linux: if command -v pacman >/dev/null 2>&1; then
+    sudo pacman -S --needed aria2 cabextract wimlib chntpw cdrtools
+  elif command -v apt-get >/dev/null 2>&1; then
+    sudo apt update && sudo apt install -y aria2 cabextract wimtools chntpw genisoimage
+  elif command -v dnf >/dev/null 2>&1; then
+    sudo dnf install -y aria2 cabextract wimlib-utils chntpw genisoimage
+  else
+    echo 'Unsupported Linux distribution: no supported package manager found (pacman, apt-get, or dnf).' >&2
+    exit 1
+  fi""",
   "@if darwin: brew install wimlib cdrtools aria2",
   "@if windows: choco install wimlib aria2 cabextract genisoimage"
 ]

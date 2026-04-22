@@ -30,7 +30,7 @@ install-deps = [
     exit 1
   fi""",
   "@if darwin: brew install wimlib cdrtools aria2",
-  "@if windows: choco install wimlib aria2 cabextract genisoimage"
+  "@if windows: choco install -y wimlib aria2 cabextract genisoimage"
 ]
 
 # Download UUP files

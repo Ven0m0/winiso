@@ -579,53 +579,62 @@ def main():
         return 1
 
     # API version check
-    if args.version:
-        version_info = get_api_version()
-        if version_info:
-            log_success("UUP dump API is online")
-            print(f"  API Version: {version_info.get('apiVersion', 'unknown')}")
-            print(f"  JSON API Version: {version_info.get('jsonApiVersion', 'unknown')}")
-            return 0
-        return 1
+    # Info-only modes should exit before any download/output-dir setup so they can
+    # run without invoking normal-path dependency or filesystem checks.
+    info_only_mode = (
+        args.version
+        or args.editions
+        or args.languages is not None
+        or args.latest
+    )
 
-    # List editions mode
-    if args.editions:
-        editions_info = get_available_editions(args.editions)
-        if editions_info:
-            print(f"\n{Colors.BOLD}Available Editions for Build:{Colors.RESET}\n")
-            edition_list = editions_info.get("editionList", [])
-            fancy_names = editions_info.get("editionFancyNames", {})
-            for edition in edition_list:
-                fancy_name = fancy_names.get(edition, edition)
-                print(f"  {Colors.CYAN}{edition}{Colors.RESET} - {fancy_name}")
-            return 0
-        return 1
+    if info_only_mode:
+        if args.version:
+            version_info = get_api_version()
+            if version_info:
+                log_success("UUP dump API is online")
+                print(f"  API Version: {version_info.get('apiVersion', 'unknown')}")
+                print(f"  JSON API Version: {version_info.get('jsonApiVersion', 'unknown')}")
+                return 0
+            return 1
 
-    # List languages mode
-    if args.languages is not None:
-        langs_info = get_available_languages(args.languages or None)
-        if langs_info:
-            print(f"\n{Colors.BOLD}Available Languages:{Colors.RESET}\n")
-            lang_list = langs_info.get("langList", [])
-            fancy_names = langs_info.get("langFancyNames", {})
-            for lang in lang_list:
-                fancy_name = fancy_names.get(lang, lang)
-                print(f"  {Colors.CYAN}{lang}{Colors.RESET} - {fancy_name}")
-            return 0
-        return 1
+        # List editions mode
+        if args.editions:
+            editions_info = get_available_editions(args.editions)
+            if editions_info:
+                print(f"\n{Colors.BOLD}Available Editions for Build:{Colors.RESET}\n")
+                edition_list = editions_info.get("editionList", [])
+                fancy_names = editions_info.get("editionFancyNames", {})
+                for edition in edition_list:
+                    fancy_name = fancy_names.get(edition, edition)
+                    print(f"  {Colors.CYAN}{edition}{Colors.RESET} - {fancy_name}")
+                return 0
+            return 1
 
-    # Fetch latest from Windows Update
-    if args.latest:
-        latest_info = fetch_latest_from_wu(args.arch, args.ring)
-        if latest_info:
-            print(f"\n{Colors.BOLD}Latest Build from Windows Update:{Colors.RESET}\n")
-            print(f"  Update ID: {latest_info.get('updateId', 'N/A')}")
-            print(f"  Title: {latest_info.get('updateTitle', 'N/A')}")
-            print(f"  Build: {latest_info.get('foundBuild', 'N/A')}")
-            print(f"  Arch: {latest_info.get('arch', 'N/A')}")
-            return 0
-        return 1
+        # List languages mode
+        if args.languages is not None:
+            langs_info = get_available_languages(args.languages or None)
+            if langs_info:
+                print(f"\n{Colors.BOLD}Available Languages:{Colors.RESET}\n")
+                lang_list = langs_info.get("langList", [])
+                fancy_names = langs_info.get("langFancyNames", {})
+                for lang in lang_list:
+                    fancy_name = fancy_names.get(lang, lang)
+                    print(f"  {Colors.CYAN}{lang}{Colors.RESET} - {fancy_name}")
+                return 0
+            return 1
 
+        # Fetch latest from Windows Update
+        if args.latest:
+            latest_info = fetch_latest_from_wu(args.arch, args.ring)
+            if latest_info:
+                print(f"\n{Colors.BOLD}Latest Build from Windows Update:{Colors.RESET}\n")
+                print(f"  Update ID: {latest_info.get('updateId', 'N/A')}")
+                print(f"  Title: {latest_info.get('updateTitle', 'N/A')}")
+                print(f"  Build: {latest_info.get('foundBuild', 'N/A')}")
+                print(f"  Arch: {latest_info.get('arch', 'N/A')}")
+                return 0
+            return 1
     # Resolve output directory
     script_dir = Path(__file__).parent
     project_root = script_dir.parent

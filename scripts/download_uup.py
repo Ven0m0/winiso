@@ -161,6 +161,97 @@ def get_build_info(build_id):
         return None
 
 
+def get_available_editions(build_id):
+    """Get available editions for a specific build from the API"""
+    log_info(f"Fetching available editions for build: {build_id}")
+
+    params = {"id": build_id}
+    api_url = f"https://api.uupdump.net/listeditions.php?{urlencode(params)}"
+    response = fetch_url(api_url)
+
+    if not response:
+        return None
+
+    try:
+        data = json.loads(response)
+        response_data = data.get("response") or {}
+        if response_data.get("error"):
+            log_error(f"API Error: {response_data['error']}")
+            return None
+
+        return response_data
+    except json.JSONDecodeError as e:
+        log_error(f"Failed to parse JSON response: {e}")
+        return None
+
+
+def get_available_languages(build_id=None):
+    """Get available languages for a specific build from the API"""
+    if build_id:
+        log_info(f"Fetching available languages for build: {build_id}")
+        params = {"id": build_id}
+        api_url = f"https://api.uupdump.net/listlangs.php?{urlencode(params)}"
+    else:
+        log_info("Fetching all available languages")
+        api_url = "https://api.uupdump.net/listlangs.php"
+
+    response = fetch_url(api_url)
+
+    if not response:
+        return None
+
+    try:
+        data = json.loads(response)
+        if data.get("response", {}).get("error"):
+            log_error(f"API Error: {data['response']['error']}")
+            return None
+
+        return data.get("response", {})
+    except json.JSONDecodeError as e:
+        log_error(f"Failed to parse JSON response: {e}")
+        return None
+
+
+def fetch_latest_from_wu(arch="amd64", ring="Retail"):
+    """Fetch the latest build from Windows Update servers"""
+    log_info(f"Fetching latest {arch} build from Windows Update ({ring} ring)...")
+
+    params = {"arch": arch, "ring": ring}
+    api_url = f"https://api.uupdump.net/fetchupd.php?{urlencode(params)}"
+    response = fetch_url(api_url)
+
+    if not response:
+        log_warn("Failed to fetch from Windows Update, falling back to cached builds")
+        return None
+
+    try:
+        data = json.loads(response)
+        if data.get("response", {}).get("error"):
+            log_error(f"API Error: {data['response']['error']}")
+            return None
+
+        return data.get("response", {})
+    except json.JSONDecodeError as e:
+        log_error(f"Failed to parse JSON response: {e}")
+        return None
+
+
+def get_api_version():
+    """Get the current UUP dump API version"""
+    api_url = "https://api.uupdump.net/"
+    response = fetch_url(api_url)
+
+    if not response:
+        return None
+
+    try:
+        data = json.loads(response)
+        return data.get("response", {})
+    except json.JSONDecodeError as e:
+        log_error(f"Failed to parse JSON response: {e}")
+        return None
+
+
 def select_editions(build_info):
     """Allow user to select which editions to download"""
     files = build_info.get("files", {})
@@ -410,6 +501,9 @@ Examples:
   %(prog)s --build-id UUID          # Download specific build by ID
   %(prog)s --output /custom/path    # Custom output directory
   %(prog)s --list                   # List latest builds only
+  %(prog)s --editions UUID          # List available editions for a build
+  %(prog)s --languages UUID        # List available languages for a build
+  %(prog)s --latest                # Fetch latest build from Windows Update
 
 For more information, visit: https://uupdump.net
         """,
@@ -435,16 +529,112 @@ For more information, visit: https://uupdump.net
         help="Maximum number of builds to list (default: 10)",
     )
 
+    parser.add_argument(
+        "-e", "--editions",
+        help="List available editions for a specific build ID and exit"
+    )
+
+    parser.add_argument(
+        "--languages",
+        const="",
+        nargs="?",
+        help="List available languages (optionally for a specific build ID)"
+    )
+
+    parser.add_argument(
+        "--latest",
+        action="store_true",
+        help="Fetch latest build info from Windows Update servers"
+    )
+
+    parser.add_argument(
+        "--arch",
+        default="amd64",
+        choices=["amd64", "x86", "arm64", "all"],
+        help="Architecture for --latest (default: amd64)"
+    )
+
+    parser.add_argument(
+        "--ring",
+        default="Retail",
+        choices=["Dev", "Beta", "ReleasePreview", "Retail"],
+        help="Update ring for --latest (default: Retail)"
+    )
+
+    parser.add_argument(
+        "--version",
+        action="store_true",
+        help="Show API version info and exit"
+    )
+
     return parser.parse_args(args)
 
 
 def main():
     args = parse_args()
 
-    # Check dependencies
-    if not check_dependencies():
+    # Check dependencies (skip for info-only commands)
+    info_only = args.list or args.editions or args.languages is not None or args.latest or args.version
+    if not info_only and not check_dependencies():
         return 1
 
+    # API version check
+    # Info-only modes should exit before any download/output-dir setup so they can
+    # run without invoking normal-path dependency or filesystem checks.
+    info_only_mode = (
+        args.version
+        or args.editions
+        or args.languages is not None
+        or args.latest
+    )
+
+    if info_only_mode:
+        if args.version:
+            version_info = get_api_version()
+            if version_info:
+                log_success("UUP dump API is online")
+                print(f"  API Version: {version_info.get('apiVersion', 'unknown')}")
+                print(f"  JSON API Version: {version_info.get('jsonApiVersion', 'unknown')}")
+                return 0
+            return 1
+
+        # List editions mode
+        if args.editions:
+            editions_info = get_available_editions(args.editions)
+            if editions_info:
+                print(f"\n{Colors.BOLD}Available Editions for Build:{Colors.RESET}\n")
+                edition_list = editions_info.get("editionList", [])
+                fancy_names = editions_info.get("editionFancyNames", {})
+                for edition in edition_list:
+                    fancy_name = fancy_names.get(edition, edition)
+                    print(f"  {Colors.CYAN}{edition}{Colors.RESET} - {fancy_name}")
+                return 0
+            return 1
+
+        # List languages mode
+        if args.languages is not None:
+            langs_info = get_available_languages(args.languages or None)
+            if langs_info:
+                print(f"\n{Colors.BOLD}Available Languages:{Colors.RESET}\n")
+                lang_list = langs_info.get("langList", [])
+                fancy_names = langs_info.get("langFancyNames", {})
+                for lang in lang_list:
+                    fancy_name = fancy_names.get(lang, lang)
+                    print(f"  {Colors.CYAN}{lang}{Colors.RESET} - {fancy_name}")
+                return 0
+            return 1
+
+        # Fetch latest from Windows Update
+        if args.latest:
+            latest_info = fetch_latest_from_wu(args.arch, args.ring)
+            if latest_info:
+                print(f"\n{Colors.BOLD}Latest Build from Windows Update:{Colors.RESET}\n")
+                print(f"  Update ID: {latest_info.get('updateId', 'N/A')}")
+                print(f"  Title: {latest_info.get('updateTitle', 'N/A')}")
+                print(f"  Build: {latest_info.get('foundBuild', 'N/A')}")
+                print(f"  Arch: {latest_info.get('arch', 'N/A')}")
+                return 0
+            return 1
     # Resolve output directory
     script_dir = Path(__file__).parent
     project_root = script_dir.parent

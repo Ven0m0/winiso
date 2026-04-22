@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.0] - 2026-04-21 - UUP JSON API Completion
+
+### Added
+- **Complete UUP JSON API integration** (`scripts/download_uup.py`)
+  - `get_available_editions()` - List editions for a build via `listeditions.php`
+  - `get_available_languages()` - List languages for a build via `listlangs.php`
+  - `fetch_latest_from_wu()` - Fetch latest build from Windows Update servers via `fetchupd.php`
+  - `get_api_version()` - Check API status via `index.php`
+- **New CLI options** for API queries:
+  - `--editions UUID` - List available editions for a build
+  - `--languages [UUID]` - List available languages (optionally filtered by build)
+  - `--latest` - Fetch latest build from Windows Update
+  - `--arch` - Architecture filter for `--latest` (amd64, x86, arm64, all)
+  - `--ring` - Update ring for `--latest` (Dev, Beta, ReleasePreview, Retail)
+  - `--version` - Show API version info
+- **Cross-platform environment** (`mise.toml`)
+  - mise (formerly rtx) configuration for tool version management
+  - Task aliases for build commands (install-deps, build, download, clean, etc.)
+  - Platform-specific dependency installation (Arch, Debian, Fedora, macOS, Windows)
+  - Python 3.11 runtime for download scripts
+
+### Documentation
+- **Build selection guidance** added to README.md:
+  - Which build type to choose (Feature Update vs Cumulative)
+  - Edition selection guide (base editions, virtual editions)
+  - Troubleshooting for common build selection issues
+  - Fixes for missing Windows Security/Settings apps
+
 ## [1.1.0] - 2026-01-08 - Automated UUP Download
 
 ### Added

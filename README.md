@@ -19,6 +19,17 @@ A Linux-based automation toolset for creating debloated Windows 11 ISO files fro
 
 ### 1. Install Dependencies
 
+**Option A: Using mise (Recommended)**
+
+```bash
+mise trust mise.toml
+mise run install-deps
+```
+
+Uses [mise](https://mise.jdx.dev/) for cross-platform tool management.
+
+**Option B: Using Make**
+
 ```bash
 make deps
 ```
@@ -65,18 +76,104 @@ make build
 
 The debloated ISO will appear in `output/`.
 
+## Build Selection Guidance
+
+### Which Build Should I Choose?
+
+**Recommended:** Select "Pro for Workstations" edition for the best balance of features and stability.
+
+#### Build Type Differences
+
+| Type | Description | Use Case |
+|------|-------------|----------|
+| **Feature Update** | Complete Windows build ("Upgrade to...") | Recommended - full installation |
+| **Cumulative Update** | Updates only ("Update for...") | Not useful for ISO creation |
+
+If you're not sure or want an updated image, choose the **Feature Update**.
+
+#### Edition Selection Guide
+
+Select the **base edition** first, then add additional editions:
+
+| Virtual Edition | Base Edition |
+|----------------|-------------|
+| Enterprise | Pro |
+| Education | Pro |
+| Pro Education | Pro |
+| Pro for Workstations | Pro |
+| IoT Enterprise | Pro |
+| Home Single Language | Home |
+
+### Troubleshooting Common Issues
+
+#### "This build can't be converted to an ISO image"
+
+This means the entry is **not** a complete Windows build:
+- Standalone update (not usable)
+- Server build without metadata
+
+Those entries cannot be made into Windows images.
+
+#### Build shows "(2)" in name
+
+Most often the build was pushed to multiple channels, or it's a different release type mistaken for a duplicate.
+
+#### ISO version differs from selected build
+
+Common causes:
+- "Include updates" option was unchecked on uupdump.net
+- Conversion failed to include updates
+- Conversion was done on Linux/macOS (does not support installing updates)
+
+To fix: Redo the conversion with "Include updates" checked on uupdump.net.
+
+#### Windows Security or Settings app missing
+
+This applies to Windows 11 22H2 and later.
+
+**Fix "Settings" app or missing "Microsoft Store":**
+```cmd
+wsreset -i
+```
+
+**Fix missing "Windows Security":**
+1. Go to uupdump.net for your build
+2. Use "Browse files" section to search for `SecHealthUI`
+3. Download and install the appx package
+
 ## Build Options
 
-| Command | Description |
-|---------|-------------|
-| `make deps` | Install system dependencies |
-| `make download` | Download UUP files from uupdump.net (interactive) |
-| `make validate` | Validate prerequisites before building |
-| `make build` | Build ISO with Pro for Workstations (default) |
-| `make build-pro` | Build ISO with Pro edition only |
-| `make build-pause` | Pause for Windows servicing stage |
-| `make clean` | Remove all build artifacts |
-| `make help` | Show all available targets |
+### Using mise (Recommended)
+
+```bash
+mise run install-deps    # Install system dependencies
+mise run download       # Download UUP files
+mise run validate      # Validate prerequisites
+mise run build        # Build ISO
+mise run build-pro    # Build Pro edition
+mise run build-pause  # Build with pause
+mise run clean-unix   # Clean artifacts
+```
+
+### Using Make
+
+| Make Command | mise equivalent | Description |
+|-------------|----------------|-------------|
+| `make deps` | `mise run install-deps` | Install system dependencies |
+| `make download` | `mise run download` | Download UUP files |
+| `make validate` | `mise run validate` | Validate prerequisites |
+| `make build` | `mise run build` | Build ISO (default) |
+| `make build-pro` | `mise run build-pro` | Build Pro edition |
+| `make build-pause` | `mise run build-pause` | Pause for servicing |
+| `make clean` | `mise run clean-unix` | Remove artifacts |
+
+### Direct Scripts
+
+```bash
+./scripts/setup_env.sh   # Install dependencies
+./scripts/download_uup.py --list  # List builds
+./scripts/build.sh       # Build ISO
+```
 
 ### Environment Variables
 

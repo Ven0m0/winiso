@@ -165,7 +165,8 @@ def get_available_editions(build_id):
     """Get available editions for a specific build from the API"""
     log_info(f"Fetching available editions for build: {build_id}")
 
-    api_url = f"https://api.uupdump.net/listeditions.php?id={build_id}"
+    params = {"id": build_id}
+    api_url = f"https://api.uupdump.net/listeditions.php?{urlencode(params)}"
     response = fetch_url(api_url)
 
     if not response:

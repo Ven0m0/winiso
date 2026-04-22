@@ -189,7 +189,8 @@ def get_available_languages(build_id=None):
     """Get available languages for a specific build from the API"""
     if build_id:
         log_info(f"Fetching available languages for build: {build_id}")
-        api_url = f"https://api.uupdump.net/listlangs.php?id={build_id}"
+        params = {"id": build_id}
+        api_url = f"https://api.uupdump.net/listlangs.php?{urlencode(params)}"
     else:
         log_info("Fetching all available languages")
         api_url = "https://api.uupdump.net/listlangs.php"

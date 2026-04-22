@@ -33,22 +33,30 @@ download = [
 
 # Validate prerequisites
 validate = [
-  "bash {{.root}}/scripts/validate_prereqs.sh"
+  "@if linux: bash {{.root}}/scripts/validate_prereqs.sh",
+  "@if darwin: bash {{.root}}/scripts/validate_prereqs.sh",
+  "@if windows: powershell -NoProfile -Command \"Write-Error 'validate requires a POSIX shell. Run this task from WSL or Git Bash.'; exit 1\""
 ]
 
 # Full build
 build = [
-  "bash {{.root}}/scripts/build.sh"
+  "@if linux: bash {{.root}}/scripts/build.sh",
+  "@if darwin: bash {{.root}}/scripts/build.sh",
+  "@if windows: powershell -NoProfile -Command \"Write-Error 'build requires a POSIX shell. Run this task from WSL or Git Bash.'; exit 1\""
 ]
 
 # Build Pro edition
 build-pro = [
-  "TARGET_EDITION=Professional FALLBACK_EDITION=Professional bash {{.root}}/scripts/build.sh"
+  "@if linux: TARGET_EDITION=Professional FALLBACK_EDITION=Professional bash {{.root}}/scripts/build.sh",
+  "@if darwin: TARGET_EDITION=Professional FALLBACK_EDITION=Professional bash {{.root}}/scripts/build.sh",
+  "@if windows: powershell -NoProfile -Command \"Write-Error 'build-pro requires a POSIX shell. Run this task from WSL or Git Bash.'; exit 1\""
 ]
 
 # Build with pause for Windows DISM stage
 build-pause = [
-  "PAUSE_FOR_WINDOWS_STAGE=1 bash {{.root}}/scripts/build.sh"
+  "@if linux: PAUSE_FOR_WINDOWS_STAGE=1 bash {{.root}}/scripts/build.sh",
+  "@if darwin: PAUSE_FOR_WINDOWS_STAGE=1 bash {{.root}}/scripts/build.sh",
+  "@if windows: powershell -NoProfile -Command \"Write-Error 'build-pause requires a POSIX shell. Run this task from WSL or Git Bash.'; exit 1\""
 ]
 
 # Clean artifacts (Linux/macOS)

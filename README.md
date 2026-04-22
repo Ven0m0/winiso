@@ -152,7 +152,7 @@ mise run validate      # Validate prerequisites
 mise run build        # Build ISO
 mise run build-pro    # Build Pro edition
 mise run build-pause  # Build with pause
-mise run clean        # Clean artifacts
+mise run clean-unix   # Clean artifacts
 ```
 
 ### Using Make

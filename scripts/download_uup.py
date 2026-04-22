@@ -174,11 +174,12 @@ def get_available_editions(build_id):
 
     try:
         data = json.loads(response)
-        if data.get("response", {}).get("error"):
-            log_error(f"API Error: {data['response']['error']}")
+        response_data = data.get("response") or {}
+        if response_data.get("error"):
+            log_error(f"API Error: {response_data['error']}")
             return None
 
-        return data.get("response", {})
+        return response_data
     except json.JSONDecodeError as e:
         log_error(f"Failed to parse JSON response: {e}")
         return None

@@ -59,7 +59,7 @@ jobs:
       - name: Install Python validation tools with uv
         run: |
           mise exec -- sh -c '
-            for tool in black flake8 pytest; do
+            for tool in ruff flake8 pytest; do
               echo "Installing $tool"
               uv tool install "$tool"
             done

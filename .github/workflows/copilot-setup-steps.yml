@@ -18,6 +18,8 @@ defaults:
 
 env:
   UV_PYTHON_PREFERENCE: only-managed
+  DEBIAN_FRONTEND: noninteractive
+  DEBCONF_NOWARNINGS: yes
 
 jobs:
   copilot-setup-steps:
@@ -35,18 +37,11 @@ jobs:
           enable-cache: true
           cache-python: true
 
-      - name: Install system packages used by this repo
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            aria2 \
-            cabextract \
-            chntpw \
-            genisoimage \
-            libxml2-utils \
-            shellcheck \
-            shfmt \
-            wimtools
+      - name: Install system packages
+        uses: awalsh128/cache-apt-pkgs-action@v1
+        with:
+          packages: aria2 cabextract chntpw genisoimage libxml2-utils shellcheck shfmt wimtools
+          version: 1.0
 
       - name: Inspect uv-managed Python
         run: |

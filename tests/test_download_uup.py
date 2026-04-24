@@ -56,32 +56,43 @@ class TestDownloadUUP(unittest.TestCase):
 
 class TestDownloadBuild(unittest.TestCase):
     @patch("download_uup.get_build_info")
-    @patch("download_uup._prepare_output_directory")
-    @patch("download_uup._prepare_download_list")
-    @patch("download_uup._run_aria2_download")
+    @patch("download_uup.Path.mkdir")
+    @patch("download_uup.Path.glob", return_value=[])
+    @patch("os.scandir")
+    @patch("download_uup.Path.unlink")
+    @patch("builtins.open", new_callable=unittest.mock.mock_open)
+    @patch("subprocess.run")
     @patch("download_uup.log_success")
     @patch("download_uup.log_error")
+    @patch("download_uup.log_info")
     def test_download_build_success(
         self,
+        mock_log_info,
         mock_log_error,
         mock_log_success,
-        mock_run_aria2,
-        mock_prep_list,
-        mock_prep_dir,
+        mock_run,
+        mock_open,
+        mock_unlink,
+        mock_scandir,
+        mock_glob,
+        mock_mkdir,
         mock_get_info,
     ):
         mock_get_info.return_value = {"files": {"test.esd": {"size": 100}}}
-        mock_prep_list.return_value = [{"url": "http://test", "name": "test.esd"}]
-        mock_run_aria2.return_value = True
 
+        # Mock subprocess returning successfully
+        mock_run.return_value.returncode = 0
+        mock_scandir.return_value.__enter__.return_value = []
+
+        # Test download_build
         result = download_uup.download_build("build123", "out_dir")
 
         self.assertTrue(result)
         mock_get_info.assert_called_with("build123")
-        mock_prep_dir.assert_called_once()
-        mock_prep_list.assert_called_once()
-        mock_run_aria2.assert_called_once()
-        mock_log_success.assert_called_with("Will download 1 files")
+        mock_mkdir.assert_called_once_with(parents=True, exist_ok=True)
+        mock_run.assert_called_once()
+        mock_log_success.assert_any_call("Will download 1 files")
+        mock_log_success.assert_any_call("Download complete! Files saved to: out_dir")
 
     @patch("download_uup.get_build_info")
     @patch("download_uup.log_error")
@@ -92,94 +103,6 @@ class TestDownloadBuild(unittest.TestCase):
 
         self.assertFalse(result)
         mock_log_error.assert_called_with("Failed to get build information")
-
-
-class TestHelpers(unittest.TestCase):
-    @patch("download_uup.Path.mkdir")
-    @patch("download_uup.Path.glob")
-    @patch("builtins.input")
-    @patch("download_uup.log_info")
-    def test_prepare_output_directory_clears(
-        self, mock_log_info, mock_input, mock_glob, mock_mkdir
-    ):
-
-        mock_input.return_value = "y"
-        mock_file = unittest.mock.MagicMock(spec=Path)
-        mock_file.is_file.return_value = True
-        mock_file.name = "old_file.txt"
-        mock_glob.return_value = [mock_file]
-
-        download_uup._prepare_output_directory(Path("test_out"))
-
-        mock_mkdir.assert_called_with(parents=True, exist_ok=True)
-        mock_file.unlink.assert_called_once()
-        mock_log_info.assert_called_with("Clearing existing files...")
-
-    def test_prepare_download_list(self):
-        files = {
-            "test1.esd": {"size": 100},
-            "test2.esd": {"size": 200},
-            "other.txt": {"size": 50},
-        }
-        edition_filter = ["test1.esd"]
-
-        # Test with filter: should include test1.esd (matched filter) and other.txt (not .esd)
-        dl_list = download_uup._prepare_download_list("build123", files, edition_filter)
-        self.assertEqual(len(dl_list), 2)
-        names = [item["name"] for item in dl_list]
-        self.assertIn("test1.esd", names)
-        self.assertIn("other.txt", names)
-        self.assertNotIn("test2.esd", names)
-
-        # Test without filter
-        dl_list = download_uup._prepare_download_list("build123", files, None)
-        self.assertEqual(len(dl_list), 3)
-
-    @patch("builtins.open", new_callable=unittest.mock.mock_open)
-    @patch("subprocess.run")
-    @patch("download_uup.Path.unlink")
-    @patch("download_uup.Path.glob")
-    @patch("download_uup.log_success")
-    @patch("download_uup.log_info")
-    def test_run_aria2_download_success(
-        self,
-        mock_log_info,
-        mock_log_success,
-        mock_glob,
-        mock_unlink,
-        mock_run,
-        mock_open,
-    ):
-
-        dl_list = [{"url": "http://test", "name": "test.esd"}]
-        mock_glob.return_value = [Path("test.esd")]
-
-        result = download_uup._run_aria2_download(Path("out"), Path("in.txt"), dl_list)
-
-        self.assertTrue(result)
-        mock_run.assert_called_once()
-        mock_unlink.assert_called_once()
-        mock_log_success.assert_called()
-
-    @patch("builtins.open", new_callable=unittest.mock.mock_open)
-    @patch("download_uup.log_error")
-    def test_run_aria2_download_path_traversal(self, mock_log_error, mock_open):
-        """Ensure path traversal attempts in filename are rejected."""
-        test_cases = [
-            {"url": "http://test", "name": ".."},
-            {"url": "http://test", "name": "a/.."},
-            {"url": "http://test", "name": "."},
-            {"url": "http://test", "name": ""},
-        ]
-
-        for idx, item in enumerate(test_cases):
-            with self.subTest(name=item["name"]):
-                result = download_uup._run_aria2_download(
-                    Path("/tmp/out"), Path("in.txt"), [item]
-                )
-                self.assertFalse(result)
-                mock_log_error.assert_called()
-                mock_log_error.reset_mock()
 
 
 class TestGetLatestBuilds(unittest.TestCase):
@@ -375,6 +298,66 @@ class TestSelectEditions(unittest.TestCase):
         result = download_uup.select_editions(build_info)
         self.assertIsNone(result)
         mock_log_warn.assert_called_with("Invalid selection, downloading all editions")
+
+
+class TestDisplayBuilds(unittest.TestCase):
+    @patch("builtins.print")
+    def test_display_builds_empty(self, mock_print):
+        download_uup.display_builds([])
+        # Should only print the header and no builds
+        mock_print.assert_called_once_with(
+            f"\n{download_uup.Colors.BOLD}Available Windows 11 Builds:{download_uup.Colors.RESET}\n"
+        )
+
+    @patch("builtins.print")
+    def test_display_builds_valid(self, mock_print):
+        builds = [
+            {
+                "title": "Windows 11 Insider Preview 25393.1",
+                "build": "25393.1",
+                "arch": "amd64",
+                "created": "2023-06-15",
+            }
+        ]
+        download_uup.display_builds(builds)
+
+        self.assertEqual(mock_print.call_count, 4)
+        calls = mock_print.call_args_list
+        self.assertEqual(
+            calls[0][0][0],
+            f"\n{download_uup.Colors.BOLD}Available Windows 11 Builds:{download_uup.Colors.RESET}\n",
+        )
+        self.assertEqual(
+            calls[1][0][0],
+            f"{download_uup.Colors.CYAN}[1]{download_uup.Colors.RESET} Windows 11 Insider Preview 25393.1",
+        )
+        self.assertEqual(
+            calls[2][0][0], "    Build: 25393.1 | Arch: amd64 | Created: 2023-06-15"
+        )
+        self.assertEqual(calls[3][0], ())
+
+    @patch("builtins.print")
+    def test_display_builds_missing_fields(self, mock_print):
+        builds = [
+            {
+                "title": "Windows 11 Partial"
+                # Missing build, arch, created
+            }
+        ]
+        download_uup.display_builds(builds)
+
+        self.assertEqual(mock_print.call_count, 4)
+        calls = mock_print.call_args_list
+        self.assertEqual(
+            calls[0][0][0],
+            f"\n{download_uup.Colors.BOLD}Available Windows 11 Builds:{download_uup.Colors.RESET}\n",
+        )
+        self.assertEqual(
+            calls[1][0][0],
+            f"{download_uup.Colors.CYAN}[1]{download_uup.Colors.RESET} Windows 11 Partial",
+        )
+        self.assertEqual(calls[2][0][0], "    Build: N/A | Arch: N/A | Created: N/A")
+        self.assertEqual(calls[3][0], ())
 
 
 if __name__ == "__main__":

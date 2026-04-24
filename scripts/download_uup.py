@@ -411,9 +411,8 @@ def download_build(build_id, output_dir, edition_filter=None, build_info=None):
         subprocess.run(aria2_cmd, check=True)
         aria2_input.unlink()
         log_success(f"Download complete! Files saved to: {output_path}")
-        downloaded = sum(
-            1 for f in output_path.glob("*") if f.is_file() and f.name != ".gitkeep"
-        )
+        with os.scandir(output_path) as it:
+            downloaded = sum(1 for e in it if e.is_file() and e.name != ".gitkeep")
         log_info(f"Total files downloaded: {downloaded}")
         return True
     except subprocess.CalledProcessError as e:
@@ -530,41 +529,40 @@ For more information, visit: https://uupdump.net
     )
 
     parser.add_argument(
-        "-e", "--editions",
-        help="List available editions for a specific build ID and exit"
+        "-e",
+        "--editions",
+        help="List available editions for a specific build ID and exit",
     )
 
     parser.add_argument(
         "--languages",
         const="",
         nargs="?",
-        help="List available languages (optionally for a specific build ID)"
+        help="List available languages (optionally for a specific build ID)",
     )
 
     parser.add_argument(
         "--latest",
         action="store_true",
-        help="Fetch latest build info from Windows Update servers"
+        help="Fetch latest build info from Windows Update servers",
     )
 
     parser.add_argument(
         "--arch",
         default="amd64",
         choices=["amd64", "x86", "arm64", "all"],
-        help="Architecture for --latest (default: amd64)"
+        help="Architecture for --latest (default: amd64)",
     )
 
     parser.add_argument(
         "--ring",
         default="Retail",
         choices=["Dev", "Beta", "ReleasePreview", "Retail"],
-        help="Update ring for --latest (default: Retail)"
+        help="Update ring for --latest (default: Retail)",
     )
 
     parser.add_argument(
-        "--version",
-        action="store_true",
-        help="Show API version info and exit"
+        "--version", action="store_true", help="Show API version info and exit"
     )
 
     return parser.parse_args(args)
@@ -574,7 +572,13 @@ def main():
     args = parse_args()
 
     # Check dependencies (skip for info-only commands)
-    info_only = args.list or args.editions or args.languages is not None or args.latest or args.version
+    info_only = (
+        args.list
+        or args.editions
+        or args.languages is not None
+        or args.latest
+        or args.version
+    )
     if not info_only and not check_dependencies():
         return 1
 
@@ -582,10 +586,7 @@ def main():
     # Info-only modes should exit before any download/output-dir setup so they can
     # run without invoking normal-path dependency or filesystem checks.
     info_only_mode = (
-        args.version
-        or args.editions
-        or args.languages is not None
-        or args.latest
+        args.version or args.editions or args.languages is not None or args.latest
     )
 
     if info_only_mode:
@@ -594,7 +595,9 @@ def main():
             if version_info:
                 log_success("UUP dump API is online")
                 print(f"  API Version: {version_info.get('apiVersion', 'unknown')}")
-                print(f"  JSON API Version: {version_info.get('jsonApiVersion', 'unknown')}")
+                print(
+                    f"  JSON API Version: {version_info.get('jsonApiVersion', 'unknown')}"
+                )
                 return 0
             return 1
 
@@ -628,7 +631,9 @@ def main():
         if args.latest:
             latest_info = fetch_latest_from_wu(args.arch, args.ring)
             if latest_info:
-                print(f"\n{Colors.BOLD}Latest Build from Windows Update:{Colors.RESET}\n")
+                print(
+                    f"\n{Colors.BOLD}Latest Build from Windows Update:{Colors.RESET}\n"
+                )
                 print(f"  Update ID: {latest_info.get('updateId', 'N/A')}")
                 print(f"  Title: {latest_info.get('updateTitle', 'N/A')}")
                 print(f"  Build: {latest_info.get('foundBuild', 'N/A')}")

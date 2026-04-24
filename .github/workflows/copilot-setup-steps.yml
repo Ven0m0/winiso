@@ -35,11 +35,6 @@ jobs:
           enable-cache: true
           cache-python: true
 
-      - name: Set up mise
-        uses: jdx/mise-action@v4
-        with:
-          cache: true
-
       - name: Install system packages used by this repo
         run: |
           sudo apt-get update
@@ -52,11 +47,6 @@ jobs:
             shellcheck \
             shfmt \
             wimtools
-
-      - name: Trust and inspect mise tasks
-        run: |
-          mise trust --yes mise.toml
-          mise tasks
 
       - name: Inspect uv-managed Python
         run: |

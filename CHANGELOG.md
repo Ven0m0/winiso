@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
-- Added a dedicated `test-matrix.yml` workflow for Python tests across Ubuntu and macOS on uv-managed Python 3.13.
+- Added a dedicated `test-matrix.yml` workflow for Python tests across Ubuntu and macOS on uv-managed Python 3.9-3.13.
 
 ### Changed
 - Refreshed `AGENTS.md`, `.github/copilot-instructions.md`, and repo-specific Copilot instructions/skills to use a canonical long-form guide plus focused instruction files.

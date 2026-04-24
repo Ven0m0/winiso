@@ -14,6 +14,7 @@ python = "3.11"
 
 [env]
 PROJECT_ROOT = "{{config_root}}"
+# Ensure uv uses the exact Python interpreter installed and exposed by mise.
 UV_PYTHON = { value = "{{ tools.python.path }}", tools = true }
 
 [tasks]

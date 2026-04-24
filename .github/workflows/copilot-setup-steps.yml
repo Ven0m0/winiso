@@ -65,7 +65,7 @@ jobs:
           UV_TOOL_BIN_DIR: ${{ runner.temp }}/uv-bin
         run: |
           echo "$UV_TOOL_BIN_DIR" >> "$GITHUB_PATH"
-          mise exec -- bash -lc 'for tool in black flake8 pytest; do uv tool install "$tool"; done'
+          mise exec -- sh -c 'uv tool install black && uv tool install flake8 && uv tool install pytest'
           mise exec -- uv tool list
 
       - name: Prepare executable scripts

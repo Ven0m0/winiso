@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+- Added a dedicated `test-matrix.yml` workflow for Python tests across Ubuntu and macOS on Python 3.9-3.12.
+
+### Changed
+- Refreshed `AGENTS.md`, `.github/copilot-instructions.md`, and repo-specific Copilot instructions/skills to use a canonical long-form guide plus focused instruction files.
+- Updated `.github/workflows/copilot-setup-steps.yml` to install only the toolchain this repository actually uses.
+
 ## [1.2.0] - 2026-04-21 - UUP JSON API Completion
 
 ### Added

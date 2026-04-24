@@ -17,7 +17,7 @@ auto_install = true
 
 [settings.python]
 uv_venv_auto = "create|source"
-#uv_venv_create_args = "--system-site-packages --seed"
+uv_create_args = ["--seed", "--system-site-packages"]
 
 [settings.pipx]
 uvx = true

@@ -1,3 +1,5 @@
+import os
+import subprocess
 #!/usr/bin/env python3
 """
 UUP File Downloader for Windows 11 ISO Builder
@@ -300,21 +302,8 @@ def select_editions(build_info):
     return None
 
 
-def download_build(build_id, output_dir, edition_filter=None, build_info=None):
-    """Download UUP files for a specific build"""
-    if build_info is None:
-        build_info = get_build_info(build_id)
 
-    if not build_info:
-        log_error("Failed to get build information")
-        return False
-
-    files = build_info.get("files", {})
-    if not files:
-        log_error("No files found for this build")
-        return False
-
-    output_path = Path(output_dir)
+def _prepare_output_directory(output_path):
     # Create output directory and optionally clear existing files
     output_path.mkdir(parents=True, exist_ok=True)
     existing_files = list(output_path.glob("*"))
@@ -329,10 +318,10 @@ def download_build(build_id, output_dir, edition_filter=None, build_info=None):
                 if f.is_file() and f.name != ".gitkeep":
                     f.unlink()
 
+def _prepare_download_list(build_id, files, edition_filter):
     # Construct the list of files to download
     download_list = []
     base_url = "https://uupdump.net/get.php"
-    log_info(f"Preparing to download {len(files)} files...")
     for filename, file_info in files.items():
         if edition_filter and filename.endswith(".esd"):
             if filename not in edition_filter:
@@ -341,14 +330,9 @@ def download_build(build_id, output_dir, edition_filter=None, build_info=None):
         download_list.append(
             {"url": file_url, "name": filename, "size": file_info.get("size", 0)}
         )
+    return download_list
 
-    if not download_list:
-        log_error("No files to download after filtering")
-        return False
-
-    log_success(f"Will download {len(download_list)} files")
-
-    aria2_input = output_path / "aria2_input.txt"
+def _run_aria2_download(output_path, aria2_input, download_list):
     lines = []
     for item in download_list:
         if (
@@ -401,94 +385,65 @@ def download_build(build_id, output_dir, edition_filter=None, build_info=None):
         "5",
         "--retry-wait",
         "5",
-        "--console-log-level",
-        "notice",
-        "--summary-interval",
-        "10",
+        "--allow-overwrite",
+        "true",
+        "--auto-file-renaming",
+        "false",
+        "--check-certificate",
+        "false",
+        "--show-console-readout",
+        "true",
     ]
 
     try:
+
         subprocess.run(aria2_cmd, check=True)
-        aria2_input.unlink()
-        log_success(f"Download complete! Files saved to: {output_path}")
-        downloaded = sum(
-            1 for f in output_path.glob("*") if f.is_file() and f.name != ".gitkeep"
-        )
-        log_info(f"Total files downloaded: {downloaded}")
+        log_success("Download completed successfully")
+
+        if aria2_input.exists():
+            aria2_input.unlink()
+
         return True
     except subprocess.CalledProcessError as e:
-        log_error(f"aria2c failed with exit code {e.returncode}")
+        log_error(f"aria2c failed with return code {e.returncode}")
         return False
     except KeyboardInterrupt:
-        log_warn("\nDownload interrupted by user")
-        aria2_input.unlink(missing_ok=True)
+        log_error("\nDownload interrupted by user")
+        if aria2_input.exists():
+            aria2_input.unlink()
+        return False
+    except Exception as e:
+        log_error(f"Unexpected error during download: {e}")
         return False
 
+def download_build(build_id, output_dir, edition_filter=None, build_info=None):
+    """Download UUP files for a specific build"""
+    if build_info is None:
+        build_info = get_build_info(build_id)
 
-def interactive_mode(output_dir):
-    """Interactive mode for selecting and downloading builds"""
-    print(f"\n{Colors.BOLD}UUP File Downloader for Windows 11{Colors.RESET}")
-    print("=" * 50)
-
-    builds = get_latest_builds()
-    if not builds:
-        log_error("Failed to fetch builds")
+    if not build_info:
+        log_error("Failed to get build information")
         return False
 
-    display_builds(builds)
+    files = build_info.get("files", {})
+    if not files:
+        log_error("No files found for this build")
+        return False
 
-    while True:
-        try:
-            choice = input(
-                f"{Colors.BOLD}Select build number [1-{len(builds)}] or 'q' to quit:{Colors.RESET} "
-            ).strip()
+    output_path = Path(output_dir)
+    _prepare_output_directory(output_path)
 
-            if choice.lower() == "q":
-                log_info("Cancelled by user")
-                return False
+    log_info(f"Preparing to download {len(files)} files...")
+    download_list = _prepare_download_list(build_id, files, edition_filter)
 
-            idx = int(choice) - 1
-            if 0 <= idx < len(builds):
-                selected_build = builds[idx]
-                build_id = selected_build["id"]
+    if not download_list:
+        log_error("No files to download after filtering")
+        return False
 
-                print(
-                    f"\n{Colors.BOLD}Selected:{Colors.RESET} {selected_build.get('title', 'Unknown')}"
-                )
-                print(f"{Colors.BOLD}Build ID:{Colors.RESET} {build_id}")
+    log_success(f"Will download {len(download_list)} files")
 
-                # Fetch build info once
-                build_info = get_build_info(build_id)
-                if not build_info:
-                    log_error("Failed to get build information")
-                    return False
-
-                # Ask for edition selection
-                edition_filter = select_editions(build_info)
-
-                confirm = (
-                    input(
-                        f"\n{Colors.BOLD}Proceed with download? [Y/n]:{Colors.RESET} "
-                    )
-                    .strip()
-                    .lower()
-                )
-                if confirm == "" or confirm == "y":
-                    return download_build(
-                        build_id, output_dir, edition_filter, build_info=build_info
-                    )
-                else:
-                    log_info("Download cancelled")
-                    return False
-            else:
-                log_warn(f"Please enter a number between 1 and {len(builds)}")
-
-        except ValueError:
-            log_warn("Invalid input. Please enter a number.")
-        except KeyboardInterrupt:
-            print()
-            log_info("Cancelled by user")
-            return False
+    aria2_input = output_path / "aria2_input.txt"
+    return _run_aria2_download(output_path, aria2_input, download_list)
 
 
 def parse_args(args=None):

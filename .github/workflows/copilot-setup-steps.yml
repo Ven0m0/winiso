@@ -27,10 +27,6 @@ jobs:
 
       - name: Set up uv
         uses: astral-sh/setup-uv@v7
-        with:
-          enable-cache: true
-          cache-dependency-glob: |
-            mise.toml
 
       - name: Set up mise
         uses: jdx/mise-action@v4
@@ -62,9 +58,12 @@ jobs:
 
       - name: Install Python validation tools with uv
         run: |
-          mise exec -- uv tool install black
-          mise exec -- uv tool install flake8
-          mise exec -- uv tool install pytest
+          mise exec -- sh -c '
+            for tool in black flake8 pytest; do
+              echo "Installing $tool"
+              uv tool install "$tool"
+            done
+          '
           mise exec -- uv tool list
 
       - name: Prepare executable scripts

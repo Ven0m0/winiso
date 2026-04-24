@@ -1,5 +1,3 @@
-import os
-import subprocess
 #!/usr/bin/env python3
 """
 UUP File Downloader for Windows 11 ISO Builder
@@ -302,7 +300,6 @@ def select_editions(build_info):
     return None
 
 
-
 def _prepare_output_directory(output_path):
     # Create output directory and optionally clear existing files
     output_path.mkdir(parents=True, exist_ok=True)
@@ -318,6 +315,7 @@ def _prepare_output_directory(output_path):
                 if f.is_file() and f.name != ".gitkeep":
                     f.unlink()
 
+
 def _prepare_download_list(build_id, files, edition_filter):
     # Construct the list of files to download
     download_list = []
@@ -331,6 +329,7 @@ def _prepare_download_list(build_id, files, edition_filter):
             {"url": file_url, "name": filename, "size": file_info.get("size", 0)}
         )
     return download_list
+
 
 def _run_aria2_download(output_path, aria2_input, download_list):
     lines = []
@@ -416,6 +415,7 @@ def _run_aria2_download(output_path, aria2_input, download_list):
         log_error(f"Unexpected error during download: {e}")
         return False
 
+
 def download_build(build_id, output_dir, edition_filter=None, build_info=None):
     """Download UUP files for a specific build"""
     if build_info is None:
@@ -444,6 +444,72 @@ def download_build(build_id, output_dir, edition_filter=None, build_info=None):
 
     aria2_input = output_path / "aria2_input.txt"
     return _run_aria2_download(output_path, aria2_input, download_list)
+
+
+def interactive_mode(output_dir):
+    """Interactive mode for selecting and downloading builds"""
+    print(f"\n{Colors.BOLD}UUP File Downloader for Windows 11{Colors.RESET}")
+    print("=" * 50)
+
+    builds = get_latest_builds()
+    if not builds:
+        log_error("Failed to fetch builds")
+        return False
+
+    display_builds(builds)
+
+    while True:
+        try:
+            choice = input(
+                f"{Colors.BOLD}Select build number [1-{len(builds)}] or 'q' to quit:{Colors.RESET} "
+            ).strip()
+
+            if choice.lower() == "q":
+                log_info("Cancelled by user")
+                return False
+
+            idx = int(choice) - 1
+            if 0 <= idx < len(builds):
+                selected_build = builds[idx]
+                build_id = selected_build["id"]
+
+                print(
+                    f"\n{Colors.BOLD}Selected:{Colors.RESET} {selected_build.get('title', 'Unknown')}"
+                )
+                print(f"{Colors.BOLD}Build ID:{Colors.RESET} {build_id}")
+
+                # Fetch build info once
+                build_info = get_build_info(build_id)
+                if not build_info:
+                    log_error("Failed to get build information")
+                    return False
+
+                # Ask for edition selection
+                edition_filter = select_editions(build_info)
+
+                confirm = (
+                    input(
+                        f"\n{Colors.BOLD}Proceed with download? [Y/n]:{Colors.RESET} "
+                    )
+                    .strip()
+                    .lower()
+                )
+                if confirm == "" or confirm == "y":
+                    return download_build(
+                        build_id, output_dir, edition_filter, build_info=build_info
+                    )
+                else:
+                    log_info("Download cancelled")
+                    return False
+            else:
+                log_warn(f"Please enter a number between 1 and {len(builds)}")
+
+        except ValueError:
+            log_warn("Invalid input. Please enter a number.")
+        except KeyboardInterrupt:
+            print()
+            log_info("Cancelled by user")
+            return False
 
 
 def parse_args(args=None):
@@ -485,41 +551,40 @@ For more information, visit: https://uupdump.net
     )
 
     parser.add_argument(
-        "-e", "--editions",
-        help="List available editions for a specific build ID and exit"
+        "-e",
+        "--editions",
+        help="List available editions for a specific build ID and exit",
     )
 
     parser.add_argument(
         "--languages",
         const="",
         nargs="?",
-        help="List available languages (optionally for a specific build ID)"
+        help="List available languages (optionally for a specific build ID)",
     )
 
     parser.add_argument(
         "--latest",
         action="store_true",
-        help="Fetch latest build info from Windows Update servers"
+        help="Fetch latest build info from Windows Update servers",
     )
 
     parser.add_argument(
         "--arch",
         default="amd64",
         choices=["amd64", "x86", "arm64", "all"],
-        help="Architecture for --latest (default: amd64)"
+        help="Architecture for --latest (default: amd64)",
     )
 
     parser.add_argument(
         "--ring",
         default="Retail",
         choices=["Dev", "Beta", "ReleasePreview", "Retail"],
-        help="Update ring for --latest (default: Retail)"
+        help="Update ring for --latest (default: Retail)",
     )
 
     parser.add_argument(
-        "--version",
-        action="store_true",
-        help="Show API version info and exit"
+        "--version", action="store_true", help="Show API version info and exit"
     )
 
     return parser.parse_args(args)
@@ -529,7 +594,13 @@ def main():
     args = parse_args()
 
     # Check dependencies (skip for info-only commands)
-    info_only = args.list or args.editions or args.languages is not None or args.latest or args.version
+    info_only = (
+        args.list
+        or args.editions
+        or args.languages is not None
+        or args.latest
+        or args.version
+    )
     if not info_only and not check_dependencies():
         return 1
 
@@ -537,10 +608,7 @@ def main():
     # Info-only modes should exit before any download/output-dir setup so they can
     # run without invoking normal-path dependency or filesystem checks.
     info_only_mode = (
-        args.version
-        or args.editions
-        or args.languages is not None
-        or args.latest
+        args.version or args.editions or args.languages is not None or args.latest
     )
 
     if info_only_mode:
@@ -549,7 +617,9 @@ def main():
             if version_info:
                 log_success("UUP dump API is online")
                 print(f"  API Version: {version_info.get('apiVersion', 'unknown')}")
-                print(f"  JSON API Version: {version_info.get('jsonApiVersion', 'unknown')}")
+                print(
+                    f"  JSON API Version: {version_info.get('jsonApiVersion', 'unknown')}"
+                )
                 return 0
             return 1
 
@@ -583,7 +653,9 @@ def main():
         if args.latest:
             latest_info = fetch_latest_from_wu(args.arch, args.ring)
             if latest_info:
-                print(f"\n{Colors.BOLD}Latest Build from Windows Update:{Colors.RESET}\n")
+                print(
+                    f"\n{Colors.BOLD}Latest Build from Windows Update:{Colors.RESET}\n"
+                )
                 print(f"  Update ID: {latest_info.get('updateId', 'N/A')}")
                 print(f"  Title: {latest_info.get('updateTitle', 'N/A')}")
                 print(f"  Build: {latest_info.get('foundBuild', 'N/A')}")

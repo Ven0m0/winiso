@@ -183,6 +183,42 @@ class TestHelpers(unittest.TestCase):
 
 
 class TestGetLatestBuilds(unittest.TestCase):
+
+    @patch("download_uup.fetch_url")
+    def test_get_latest_builds_success(self, mock_fetch_url):
+        import json
+
+        mock_fetch_url.return_value = json.dumps(
+            {
+                "response": {
+                    "builds": {
+                        "build-1": {
+                            "title": "Windows 11 Build 1",
+                            "created": "1600000000",
+                        },
+                        "build-2": {
+                            "title": "Windows 11 Build 2",
+                            "created": "1620000000",
+                        },
+                        "build-3": {
+                            "title": "Windows 11 Build 3",
+                            "created": "1610000000",
+                        },
+                    }
+                }
+            }
+        )
+
+        result = download_uup.get_latest_builds(max_results=2)
+
+        self.assertIsNotNone(result)
+        self.assertEqual(len(result), 2)
+        # Expected sort order: build-2 (1620000000), build-3 (1610000000)
+        self.assertEqual(result[0]["id"], "build-2")
+        self.assertEqual(result[0]["title"], "Windows 11 Build 2")
+        self.assertEqual(result[1]["id"], "build-3")
+        self.assertEqual(result[1]["title"], "Windows 11 Build 3")
+
     @patch("download_uup.fetch_url")
     @patch("download_uup.log_error")
     def test_get_latest_builds_api_error(self, mock_log_error, mock_fetch_url):

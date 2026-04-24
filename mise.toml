@@ -127,7 +127,10 @@ run = [
 
 [tasks.windows]
 description = "Install build dependencies on Windows (Admin)"
-run = ["choco install -y wimlib aria2 cabextract genisoimage"]
+run = [
+  "choco install -y wimlib aria2 cabextract genisoimage",
+  "winget install -h Microsoft.WindowsADK"
+]
 
 # Aliases for platform-specific installs
 [tasks.arch]

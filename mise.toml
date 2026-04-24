@@ -23,7 +23,7 @@ uv_venv_create_args = "--system-site-packages --seed"
 uvx = true
 
 [tools]
-python = "3.13"
+python = "3.14.4"
 uv = "latest"
 ruff = "latest"
 prek = "latest"

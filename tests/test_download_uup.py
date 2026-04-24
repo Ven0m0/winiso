@@ -1,6 +1,7 @@
 import sys
 import os
 import unittest
+import subprocess
 from pathlib import Path
 from unittest.mock import patch
 
@@ -161,6 +162,53 @@ class TestHelpers(unittest.TestCase):
         mock_run.assert_called_once()
         mock_unlink.assert_called_once()
         mock_log_success.assert_called()
+
+    @patch("builtins.open", new_callable=unittest.mock.mock_open)
+    @patch("subprocess.run")
+    @patch("download_uup.log_error")
+    def test_run_aria2_download_called_process_error(
+        self, mock_log_error, mock_run, mock_open
+    ):
+        mock_run.side_effect = subprocess.CalledProcessError(1, "aria2c")
+        dl_list = [{"url": "http://test", "name": "test.esd"}]
+
+        result = download_uup._run_aria2_download(Path("out"), Path("in.txt"), dl_list)
+
+        self.assertFalse(result)
+        mock_log_error.assert_called_with("Aria2c download failed with return code: 1")
+
+    @patch("builtins.open", new_callable=unittest.mock.mock_open)
+    @patch("subprocess.run")
+    @patch("download_uup.log_warn")
+    @patch("download_uup.Path.unlink")
+    def test_run_aria2_download_keyboard_interrupt(
+        self, mock_unlink, mock_log_warn, mock_run, mock_open
+    ):
+        mock_run.side_effect = KeyboardInterrupt()
+        dl_list = [{"url": "http://test", "name": "test.esd"}]
+
+        result = download_uup._run_aria2_download(Path("out"), Path("in.txt"), dl_list)
+
+        self.assertFalse(result)
+        mock_log_warn.assert_called_with("\nDownload interrupted by user")
+        # Should call unlink on aria2_input
+        mock_unlink.assert_called_with(missing_ok=True)
+
+    @patch("builtins.open", new_callable=unittest.mock.mock_open)
+    @patch("subprocess.run")
+    @patch("download_uup.log_error")
+    def test_run_aria2_download_generic_exception(
+        self, mock_log_error, mock_run, mock_open
+    ):
+        mock_run.side_effect = Exception("Unexpected error")
+        dl_list = [{"url": "http://test", "name": "test.esd"}]
+
+        result = download_uup._run_aria2_download(Path("out"), Path("in.txt"), dl_list)
+
+        self.assertFalse(result)
+        mock_log_error.assert_called_with(
+            "An unexpected error occurred during download: Unexpected error"
+        )
 
 
 class TestGetLatestBuilds(unittest.TestCase):

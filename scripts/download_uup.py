@@ -311,11 +311,14 @@ def _run_aria2_download(output_path, aria2_input, download_list):
         return True
 
     except subprocess.CalledProcessError as e:
-        log_error(f"aria2c failed with exit code {e.returncode}")
+        log_error(f"Aria2c download failed with return code: {e.returncode}")
         return False
     except KeyboardInterrupt:
         log_warn("\nDownload interrupted by user")
         aria2_input.unlink(missing_ok=True)
+        return False
+    except Exception as e:
+        log_error(f"An unexpected error occurred during download: {e}")
         return False
 
 

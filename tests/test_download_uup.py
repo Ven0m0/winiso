@@ -377,5 +377,47 @@ class TestSelectEditions(unittest.TestCase):
         mock_log_warn.assert_called_with("Invalid selection, downloading all editions")
 
 
+
+
+class TestDisplayBuilds(unittest.TestCase):
+    @patch("builtins.print")
+    def test_display_builds_empty(self, mock_print):
+        download_uup.display_builds([])
+        # Should only print the header and no builds
+        mock_print.assert_called_once_with(f"\n{download_uup.Colors.BOLD}Available Windows 11 Builds:{download_uup.Colors.RESET}\n")
+
+    @patch("builtins.print")
+    def test_display_builds_valid(self, mock_print):
+        builds = [{
+            "title": "Windows 11 Insider Preview 25393.1",
+            "build": "25393.1",
+            "arch": "amd64",
+            "created": "2023-06-15"
+        }]
+        download_uup.display_builds(builds)
+
+        self.assertEqual(mock_print.call_count, 4)
+        calls = mock_print.call_args_list
+        self.assertEqual(calls[0][0][0], f"\n{download_uup.Colors.BOLD}Available Windows 11 Builds:{download_uup.Colors.RESET}\n")
+        self.assertEqual(calls[1][0][0], f"{download_uup.Colors.CYAN}[1]{download_uup.Colors.RESET} Windows 11 Insider Preview 25393.1")
+        self.assertEqual(calls[2][0][0], "    Build: 25393.1 | Arch: amd64 | Created: 2023-06-15")
+        self.assertEqual(calls[3][0], ())
+
+    @patch("builtins.print")
+    def test_display_builds_missing_fields(self, mock_print):
+        builds = [{
+            "title": "Windows 11 Partial"
+            # Missing build, arch, created
+        }]
+        download_uup.display_builds(builds)
+
+        self.assertEqual(mock_print.call_count, 4)
+        calls = mock_print.call_args_list
+        self.assertEqual(calls[0][0][0], f"\n{download_uup.Colors.BOLD}Available Windows 11 Builds:{download_uup.Colors.RESET}\n")
+        self.assertEqual(calls[1][0][0], f"{download_uup.Colors.CYAN}[1]{download_uup.Colors.RESET} Windows 11 Partial")
+        self.assertEqual(calls[2][0][0], "    Build: N/A | Arch: N/A | Created: N/A")
+        self.assertEqual(calls[3][0], ())
+
+
 if __name__ == "__main__":
     unittest.main()

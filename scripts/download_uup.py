@@ -319,6 +319,7 @@ def _run_aria2_download(output_path, aria2_input, download_list):
         return False
     except Exception as e:
         log_error(f"An unexpected error occurred during download: {e}")
+        aria2_input.unlink(missing_ok=True)
         return False
 
 

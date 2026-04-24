@@ -1,4 +1,5 @@
-name: Copilot Setup Steps
+name: Copilot setup steps
+
 on:
   workflow_dispatch:
   push:
@@ -7,43 +8,56 @@ on:
   pull_request:
     paths:
       - .github/workflows/copilot-setup-steps.yml
+
 permissions:
   contents: read
-env:
-  DEBIAN_FRONTEND: noninteractive 
-  DEBCONF_NOWARNINGS: yes
+
+defaults:
+  run:
+    shell: bash
+
 jobs:
   copilot-setup-steps:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 20
+
     steps:
-      - uses: astral-sh/setup-uv@v8.1.0
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          enable-cache: true
-          cache-dependency-glob: |
-            uv.lock
-            pyproject.toml
-      - uses: oven-sh/setup-bun@v2
-      - name: Install apt packages
-        run: |
-          sudo apt-get update -qq >/dev/null 2>&1
-          sudo apt-get install -yqq --no-install-recommends ripgrep fd-find shellcheck shfmt build-essential pkg-config
-      - name: Install repository toolchain
-        uses: jdx/mise-action@v4
+          python-version: '3.11'
+
+      - name: Set up mise
+        uses: jdx/mise-action@v2
         with:
           install: true
           cache: true
-          experimental: true
-      - run: |
-          mise trust mise.toml
-          mise up -y
-          mise run install-deps
-      - name: Install project Python dependencies
+
+      - name: Install system packages used by this repo
         run: |
-          [[ -f pyproject.toml ]] && uv sync --all-extras --all-packages --all-groups --frozen && source .venv/bin/activate
-      - name: Install project JS/TS dependencies
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            aria2 \
+            cabextract \
+            chntpw \
+            genisoimage \
+            libxml2-utils \
+            shellcheck \
+            shfmt \
+            wimtools
+
+      - name: Install Python validation tools
         run: |
-          [[ -f package.json ]] && bun install --frozen-lockfile
-      - name: Preinstall bun global packages
+          python -m pip install --upgrade pip
+          python -m pip install black flake8 pytest
+
+      - name: Trust and inspect mise tasks
         run: |
-          bun i -g @zed-industries/vscode-langservers-extracted yaml-language-server bash-language-server @ast-grep/cli @biomejs/biome oxlint oxfmt typescript @vtsls/language-server
+          mise trust --yes mise.toml
+          mise tasks
+
+      - name: Prepare executable scripts
+        run: chmod +x scripts/*.sh

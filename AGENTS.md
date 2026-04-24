@@ -1,101 +1,91 @@
 # AGENTS.md — Debloated Windows 11 ISO Builder
-> @.github/copilot-instructions.md
 
-Read this file fully before making any changes. It is the authoritative reference for AI coding agents working in this repository.
+Canonical repository guidance for coding agents and contributors.
+Edit this file when repo-wide guidance changes. `CLAUDE.md` must stay a symlink to this file, and `.github/copilot-instructions.md` must stay short and point back here.
 
----
+## Mission and entry points
 
-## Quick Orientation
+- Build debloated, unattended Windows 11 ISO images from UUP dump files on Linux.
+- User-facing entry point: `/home/runner/work/winiso/winiso/Makefile`
+- Main orchestrator: `/home/runner/work/winiso/winiso/scripts/build.sh`
+- UUP downloader: `/home/runner/work/winiso/winiso/scripts/download_uup.py`
+- Shared shell helpers: `/home/runner/work/winiso/winiso/scripts/utils.sh`
 
-**What this project does:** Converts UUP (Unified Update Platform) dump files into debloated, unattended Windows 11 ISO images — entirely on Linux.
+Normal flow:
 
-**Entry point for users:** `Makefile` (run `make help` to see all targets)
-
-**Entry point for the build:** `scripts/build.sh`
-
-**Standard workflow:**
-```
-make deps → make download → make validate → make build → output/*.iso
-```
-
----
-
-## Critical Constraints — Read First
-
-These rules are non-negotiable. Violating them will break functionality or corrupt ISOs.
-
-### AppX packages you must NEVER remove
-When touching `config/debloat_list.txt` or `scripts/debloat_wim.sh`:
-```
-*Store*              # Microsoft Store
-*WebView*            # WebView2 runtime
-*VCLibs*             # Visual C++ libraries
-*UI.Xaml*            # UWP UI framework
-*Defender*           # Windows Defender
-*DesktopAppInstaller* # App installer framework
+```text
+make deps -> make download -> make validate -> make build
 ```
 
-### Build must run as a regular user (not root)
-`wimlib` FUSE mounts do not require elevation. Never introduce `sudo` or `su` into the main build pipeline.
+## Non-negotiable invariants
 
-### UUP files must be at the root of `uup_files/`
-`.cab` and `.esd` files go directly in `uup_files/` — **no subdirectories**.
+### Protected AppX patterns
+Never add removal patterns that match any of these:
 
----
-
-## Repository Layout
-
+```text
+*Store*
+*WebView*
+*VCLibs*
+*UI.Xaml*
+*Defender*
+*DesktopAppInstaller*
 ```
+
+These packages keep Store installs, WebView, runtimes, and core Windows functionality working.
+
+### Build pipeline must stay non-root
+- Do not add `sudo` or `su` to `/home/runner/work/winiso/winiso/scripts/build.sh` or the scripts it calls.
+- `wimlib` FUSE mounts work as a regular user.
+
+### UUP inputs stay flat
+- `.cab` and `.esd` files must live directly under `/home/runner/work/winiso/winiso/uup_files/`.
+- The build scripts do not scan nested directories.
+
+### Upstream sources are read-only
+- Do not edit files under `/home/runner/work/winiso/winiso/upstream/`.
+- If shared converter behavior must change, update `/home/runner/work/winiso/winiso/scripts/convert_config.sh` instead.
+
+### Downloads must go through uupdump.net
+- Keep download logic inside `/home/runner/work/winiso/winiso/scripts/download_uup.py`.
+- Do not add direct Microsoft download flows elsewhere in the repository.
+
+## Repository map
+
+```text
 config/
-  autounattend.xml          # Windows unattended answer file (OOBE bypass)
-  debloat_list.txt          # Glob patterns for AppX packages to remove
-  oem/
-    SetupComplete.cmd        # First-boot tweaks (telemetry, perf, advertising)
+  autounattend.xml
+  debloat_list.txt
+  oem/SetupComplete.cmd
 
 docs/
-  autounattend.md           # Guide for editing autounattend.xml
+  autounattend.md
 
 scripts/
-  build.sh                  # Main orchestrator — start here
-  custom_convert.sh         # Modified UUP → WIM converter (wimlib-based)
-  debloat_wim.sh            # Removes AppX packages from install.wim
-  download_uup.py           # Interactive UUP downloader (uupdump.net API)
-  setup_env.sh              # Installs system deps (Arch / Debian / Fedora)
-  validate_prereqs.sh       # Pre-build validation (deps, files, disk space)
-  convert_config.sh         # Shared converter config (synced from upstream)
-  utils.sh                  # Color-coded log helpers (source this, don't copy)
-  windows_service.cmd       # Optional Windows-side DISM servicing (run as Admin)
+  build.sh
+  custom_convert.sh
+  convert_config.sh
+  debloat_wim.sh
+  download_uup.py
+  setup_env.sh
+  utils.sh
+  validate_prereqs.sh
+  windows_service.cmd
 
 tests/
-  test_download_uup.py      # Unit tests for download_uup.py
+  test_download_uup.py
+  test_security.py
 
-uup_files/                  # INPUT — place .cab / .esd files here (gitignored)
-output/                     # OUTPUT — final ISO lands here (gitignored)
-ventoy/                     # Ventoy multi-boot plugin and themes
-
-Makefile                    # Primary user interface
-CHANGELOG.md                # Version history (Keep a Changelog format)
+.github/
+  copilot-instructions.md
+  instructions/
+  skills/
+  workflows/
 ```
 
----
+## File-specific guidance
 
-## Build Pipeline (scripts/build.sh)
-
-Steps executed in order:
-1. `validate_prereqs.sh` — fail-fast on missing tools or files
-2. Detect `.cab`/`.esd` files in `uup_files/`
-3. `custom_convert.sh` — UUP → WIM via wimlib
-4. Export only the target edition (`ProfessionalWorkstation`, fallback `Professional`)
-5. `debloat_wim.sh` — remove apps matching patterns in `config/debloat_list.txt`
-6. Inject `autounattend.xml` into ISO root; inject OEM scripts into WIM
-7. Optional pause for Windows-side DISM servicing (`PAUSE_FOR_WINDOWS_STAGE=1`)
-8. Generate bootable ISO with `genisoimage` / `mkisofs` (auto-detected)
-
----
-
-## Shell Scripting Standards
-
-Every script in `scripts/` follows these rules — maintain them:
+### Shell scripts in `scripts/*.sh`
+Every maintained shell script should start with:
 
 ```bash
 #!/bin/bash
@@ -104,187 +94,72 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-source "$SCRIPT_DIR/utils.sh"   # provides log_info, log_success, log_warn, log_error
+source "$SCRIPT_DIR/utils.sh"
 ```
 
-**Log helpers** (always use these — never raw `echo` for user-facing output):
+Rules:
+- Use `log_info`, `log_success`, `log_warn`, and `log_error` for user-facing output.
+- Derive paths from `SCRIPT_DIR` or `PROJECT_ROOT`; do not hardcode machine-specific absolute paths inside scripts.
+- Let failures surface through `set -euo pipefail`; do not hide errors.
+- `custom_convert.sh` is upstream-derived and excluded from normal cleanup unless the task explicitly requires it.
+
+### `Makefile`
+When adding or changing a target:
+- Keep `.PHONY` in sync.
+- Run `chmod +x scripts/*.sh` before invoking shell scripts.
+- Document the target in `help` output.
+- Keep commands aligned with the real scripts and environment variables used by `scripts/build.sh`.
+
+### `scripts/download_uup.py` and `tests/`
+- Python 3 only; stdlib-first.
+- Keep the existing CLI interface stable; do not rename or remove existing flags.
+- `aria2c` remains the external runtime dependency for parallel downloads.
+- Preserve path traversal safeguards and keep tests covering them.
+
+### `config/`
+- `config/autounattend.xml` must stay UTF-8 without BOM.
+- `config/oem/SetupComplete.cmd` must keep CRLF line endings.
+- `config/debloat_list.txt` should remain grouped by comment headers with one glob per line.
+
+### Guidance and workflow files
+- `AGENTS.md` is the canonical long-form guide.
+- `.github/copilot-instructions.md` should only be a short startup bootstrap.
+- `.github/instructions/*.instructions.md` should hold narrow, reusable rules.
+- `.github/skills/*/SKILL.md` should capture recurring repo workflows.
+- Workflows should use minimal triggers, least-privilege permissions, and only the tools this repo actually uses.
+
+## Validation matrix
+
+Run the smallest relevant subset for the files you touched:
+
 ```bash
-log_info    "message"   # [INFO]  cyan
-log_success "message"   # [OK]    green
-log_warn    "message"   # [WARN]  yellow
-log_error   "message"   # [ERROR] red
-```
+# Shell syntax
+for f in scripts/*.sh; do bash -n "$f"; done
 
-**Rules:**
-- No hardcoded absolute paths — derive everything from `PROJECT_ROOT`
-- Don't swallow errors — let `set -euo pipefail` surface them
-- Validate syntax after every edit: `bash -n scripts/<file>.sh`
-
----
-
-## Configuration Files
-
-### config/debloat_list.txt
-- Case-insensitive glob patterns, one per line
-- Group patterns under `# category` comment headers
-- Patterns are matched against paths in:
-  - `/Program Files/WindowsApps/`
-  - `/ProgramData/Microsoft/Windows/AppRepository/Packages/`
-
-### config/autounattend.xml
-- UTF-8 encoding, **no BOM** — Windows setup is sensitive to both
-- Skips OOBE, creates local user, sets telemetry to minimum (Security level)
-- Validate before committing: `xmllint --noout config/autounattend.xml`
-- Reference: [Schneegans Unattend Generator](https://schneegans.de/windows/unattend-generator/)
-
-### config/oem/SetupComplete.cmd
-- Runs as Administrator on first boot after Windows installation
-- Applies telemetry, advertising, and performance tweaks
-- Must use CRLF line endings (Windows CMD requirement) — enforced by `.gitattributes`
-
----
-
-## Environment Variables
-
-| Variable | Default | Purpose |
-|---|---|---|
-| `TARGET_EDITION` | `ProfessionalWorkstation` | Preferred Windows edition to export |
-| `FALLBACK_EDITION` | `Professional` | Used when target edition is not found in WIM |
-| `PAUSE_FOR_WINDOWS_STAGE` | `0` | Set to `1` to pause build for optional DISM servicing on Windows |
-
----
-
-## Make Targets
-
-| Target | Purpose |
-|---|---|
-| `make deps` | Install system dependencies (run once per machine) |
-| `make download` | Interactive UUP downloader — fetches files from uupdump.net |
-| `make validate` | Pre-build validation; safe to run without UUP files |
-| `make build` | Standard build (Pro for Workstations → Pro fallback) |
-| `make build-pro` | Forces `Professional` edition |
-| `make build-pause` | Pauses before ISO creation for optional Windows DISM step |
-| `make clean` | Remove build artifacts (`scripts/ISODIR`, `output/*.iso`) |
-| `make help` | Show all available targets |
-
-Adding a new target: add to `.PHONY`, include `chmod +x scripts/*.sh` if invoking shell scripts, document it in the `help` target.
-
----
-
-## Testing and Validation
-
-### Automated tests
-```bash
-# Unit tests for download_uup.py
-python3 -m pytest tests/
-# or
-python3 -m unittest discover tests/
-```
-
-### Manual validation (no UUP files required)
-```bash
-# 1. Syntax-check all shell scripts
-for f in scripts/*.sh; do bash -n "$f" && echo "OK: $f"; done
-
-# 2. Validate XML
+# XML
 xmllint --noout config/autounattend.xml
 
-# 3. Dry-run prerequisite check
+# Python tests
+python3 -m pytest tests/
+
+# Pre-build validation
 make validate
 ```
 
-### Full integration test (requires UUP files + ~20 GB free disk)
-```bash
-make build
-```
+Additional expectations:
+- If you edit shell scripts, syntax-check the changed scripts immediately.
+- If you edit workflow or guidance files, verify referenced paths and commands exist.
+- Only run `make build` when UUP files and disk space are available.
 
-### CI checks (run locally before pushing)
-```bash
-shellcheck scripts/*.sh   # excludes custom_convert.sh (upstream)
-flake8 scripts/*.py       # max line length: 120
-black --check scripts/*.py
-```
+## Existing CI coverage
 
----
+- `/home/runner/work/winiso/winiso/.github/workflows/lint-and-format.yml`
+- `/home/runner/work/winiso/winiso/.github/workflows/test-matrix.yml`
+- `/home/runner/work/winiso/winiso/.github/workflows/build-and-deploy.yml`
+- `/home/runner/work/winiso/winiso/.github/workflows/copilot-setup-steps.yml`
 
-## CI/CD (GitHub Actions)
+## Change-management expectations
 
-| Workflow | Trigger | What it does |
-|---|---|---|
-| `lint-and-format.yml` | push / PR | ShellCheck, Flake8, Black, xmllint |
-| `test-matrix.yml` | push / PR | Python unit tests on Ubuntu + macOS, Python 3.9–3.12 |
-| `build-and-deploy.yml` | push / PR | Mock build; uploads ISO artifact (7-day retention) |
-All workflows use concurrency groups to cancel in-progress runs on new pushes to the same branch.
-
-**Note:** `custom_convert.sh` is excluded from ShellCheck — it is synced from upstream and not modified directly.
-
----
-
-## Python (download_uup.py)
-
-- Python 3 only; uses stdlib only (`requests` is optional)
-- No root/sudo usage
-- Preserve the existing CLI argument interface — do not rename or remove flags
-- External dependency: `aria2c` for parallel downloads
-
----
-
-## Common Pitfalls
-
-| Pitfall | Correct approach |
-|---|---|
-| Removing a critical AppX pattern | Check the six protected patterns before editing `debloat_list.txt` |
-| Running build as root | Build as regular user — FUSE mounts don't need elevation |
-| UUP files in a subdirectory | Place `.cab`/`.esd` directly in `uup_files/` |
-| Raw `echo` in shell scripts | Use `log_info` / `log_warn` / `log_error` / `log_success` from `utils.sh` |
-| Hardcoded absolute paths | Always derive paths from `SCRIPT_DIR` / `PROJECT_ROOT` |
-| Forgetting CRLF on `.cmd` files | `.gitattributes` enforces it — don't override |
-
----
-
-## Out of Scope
-
-Do not add or modify:
-- Any code that contacts Microsoft servers directly (use uupdump.net via `download_uup.py`)
-- Any feature requiring root/sudo in the main build pipeline
-
----
-
-## Versioning
-
-Follow [Keep a Changelog](https://keepachangelog.com/) format. Update `CHANGELOG.md` for every user-facing change. Current version: **1.1.0**
-
-
-## vexp <!-- vexp v1.3.11 -->
-
-**MANDATORY: use `run_pipeline` — do NOT grep or glob the codebase.**
-vexp returns pre-indexed, graph-ranked context in a single call.
-
-### Workflow
-1. `run_pipeline` with your task description — ALWAYS FIRST (replaces all other tools)
-2. Make targeted changes based on the context returned
-3. `run_pipeline` again only if you need more context
-
-### Available MCP tools
-- `run_pipeline` — **PRIMARY TOOL**. Runs capsule + impact + memory in 1 call.
-  Auto-detects intent. Includes file content. Example: `run_pipeline({ "task": "fix auth bug" })`
-- `get_context_capsule` — lightweight, for simple questions only
-- `get_impact_graph` — impact analysis of a specific symbol
-- `search_logic_flow` — execution paths between functions
-- `get_skeleton` — compact file structure
-- `index_status` — indexing status
-- `get_session_context` — recall observations from sessions
-- `search_memory` — cross-session search
-- `save_observation` — persist insights (prefer run_pipeline's observation param)
-
-### Agentic search
-- Do NOT use built-in file search, grep, or codebase indexing — always call `run_pipeline` first
-- If you spawn sub-agents or background tasks, pass them the context from `run_pipeline`
-  rather than letting them search the codebase independently
-
-### Smart Features
-Intent auto-detection, hybrid ranking, session memory, auto-expanding budget.
-
-### Multi-Repo
-`run_pipeline` auto-queries all indexed repos. Use `repos: ["alias"]` to scope. Run `index_status` to see aliases.
-<!-- /vexp -->
+- Update `/home/runner/work/winiso/winiso/CHANGELOG.md` for contributor-facing changes.
+- Keep guidance concise, repository-specific, and internally consistent.
+- Prefer improving existing files over creating overlapping duplicates.

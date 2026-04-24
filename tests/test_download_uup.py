@@ -307,6 +307,41 @@ class TestFetchUrl(unittest.TestCase):
         mock_log_error.assert_called_once()
         self.assertIn("Error fetching URL", mock_log_error.call_args[0][0])
 
+    @patch("download_uup.urlopen")
+    @patch("download_uup.log_error")
+    def test_fetch_url_timeout_error(self, mock_log_error, mock_urlopen):
+        import socket
+
+        mock_urlopen.side_effect = socket.timeout("timed out")
+
+        result = download_uup.fetch_url("http://example.com")
+
+        self.assertIsNone(result)
+        mock_log_error.assert_called_once()
+        self.assertIn("Error fetching URL", mock_log_error.call_args[0][0])
+
+    @patch("download_uup.urlopen")
+    @patch("download_uup.log_error")
+    def test_fetch_url_timeout_error_timeout(self, mock_log_error, mock_urlopen):
+        mock_urlopen.side_effect = TimeoutError("timed out")
+
+        result = download_uup.fetch_url("http://example.com")
+
+        self.assertIsNone(result)
+        mock_log_error.assert_called_once()
+        self.assertIn("Error fetching URL", mock_log_error.call_args[0][0])
+
+    @patch("download_uup.urlopen")
+    @patch("download_uup.log_error")
+    def test_fetch_url_connection_reset_error(self, mock_log_error, mock_urlopen):
+        mock_urlopen.side_effect = ConnectionResetError("Connection reset by peer")
+
+        result = download_uup.fetch_url("http://example.com")
+
+        self.assertIsNone(result)
+        mock_log_error.assert_called_once()
+        self.assertIn("Error fetching URL", mock_log_error.call_args[0][0])
+
 
 class TestSelectEditions(unittest.TestCase):
     @patch("download_uup.log_warn")

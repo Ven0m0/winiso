@@ -4,3 +4,4 @@ export DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes
 sudo apt-get update -qq && sudo apt-get DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes install -yqq --no-install-recommends \
   genisoimage libfuse2 aria2 cabextract wimtools chntpw
 [[ -f pyproject.toml ]] && uv sync --frozen || true
+[[ -f .venv/bin/activate ]] && source .venv/bin/activate

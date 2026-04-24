@@ -1,6 +1,6 @@
 ---
 name: iso-build-pipeline
-description: Update shell/build pipeline files, config, or guidance for the debloated Windows 11 ISO workflow while preserving repo invariants.
+description: Use when updating shell/build pipeline files, config, or guidance for the debloated Windows 11 ISO workflow while preserving repo invariants.
 ---
 
 # ISO build pipeline

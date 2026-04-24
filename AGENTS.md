@@ -1,15 +1,15 @@
 # AGENTS.md — Debloated Windows 11 ISO Builder
 
 Canonical repository guidance for coding agents and contributors.
-Edit this file when repo-wide guidance changes. `CLAUDE.md` must stay a symlink to this file, and `.github/copilot-instructions.md` must stay short and point back here.
+Edit this file when repo-wide guidance changes. `CLAUDE.md` must stay a symlink to this file, `.github/copilot-instructions.md` must stay short, and matching files under `.github/instructions/` may add narrower rules for their scope.
 
 ## Mission and entry points
 
 - Build debloated, unattended Windows 11 ISO images from UUP dump files on Linux.
-- User-facing entry point: `/home/runner/work/winiso/winiso/Makefile`
-- Main orchestrator: `/home/runner/work/winiso/winiso/scripts/build.sh`
-- UUP downloader: `/home/runner/work/winiso/winiso/scripts/download_uup.py`
-- Shared shell helpers: `/home/runner/work/winiso/winiso/scripts/utils.sh`
+- User-facing entry point: `Makefile`
+- Main orchestrator: `scripts/build.sh`
+- UUP downloader: `scripts/download_uup.py`
+- Shared shell helpers: `scripts/utils.sh`
 
 Normal flow:
 
@@ -20,7 +20,7 @@ make deps -> make download -> make validate -> make build
 ## Non-negotiable invariants
 
 ### Protected AppX patterns
-Never add removal patterns that match any of these:
+Treat these patterns as required keeps and preserve them in `config/debloat_list.txt` and `scripts/debloat_wim.sh`:
 
 ```text
 *Store*
@@ -34,20 +34,20 @@ Never add removal patterns that match any of these:
 These packages keep Store installs, WebView, runtimes, and core Windows functionality working.
 
 ### Build pipeline must stay non-root
-- Do not add `sudo` or `su` to `/home/runner/work/winiso/winiso/scripts/build.sh` or the scripts it calls.
-- `wimlib` FUSE mounts work as a regular user.
+- Keep `scripts/build.sh` and the scripts it calls runnable as a regular user.
+- `wimlib` FUSE mounts work as a regular user, so user-space flows are the default.
 
 ### UUP inputs stay flat
-- `.cab` and `.esd` files must live directly under `/home/runner/work/winiso/winiso/uup_files/`.
+- Place `.cab` and `.esd` files directly in the repository input directory named `uup_files`.
 - The build scripts do not scan nested directories.
 
-### Upstream sources are read-only
-- Do not edit files under `/home/runner/work/winiso/winiso/upstream/`.
-- If shared converter behavior must change, update `/home/runner/work/winiso/winiso/scripts/convert_config.sh` instead.
+### Upstream-derived converter logic stays isolated
+- Treat `scripts/custom_convert.sh` as an upstream-derived file unless the task explicitly requires syncing or patching it.
+- If shared converter behavior must change, prefer updating `scripts/convert_config.sh`.
 
 ### Downloads must go through uupdump.net
-- Keep download logic inside `/home/runner/work/winiso/winiso/scripts/download_uup.py`.
-- Do not add direct Microsoft download flows elsewhere in the repository.
+- Keep download logic inside `scripts/download_uup.py`.
+- Add new download behavior only through the existing uupdump.net-based flow.
 
 ## Repository map
 
@@ -55,7 +55,7 @@ These packages keep Store installs, WebView, runtimes, and core Windows function
 config/
   autounattend.xml
   debloat_list.txt
-  oem/SetupComplete.cmd
+  config/oem/SetupComplete.cmd
 
 docs/
   autounattend.md
@@ -77,9 +77,9 @@ tests/
 
 .github/
   copilot-instructions.md
-  instructions/
-  skills/
-  workflows/
+  .github/instructions/
+  .github/skills/
+  .github/workflows/
 ```
 
 ## File-specific guidance
@@ -149,17 +149,18 @@ make validate
 Additional expectations:
 - If you edit shell scripts, syntax-check the changed scripts immediately.
 - If you edit workflow or guidance files, verify referenced paths and commands exist.
+- `make validate` expects a local `uup_files` directory and will report missing inputs until UUP files are staged.
 - Only run `make build` when UUP files and disk space are available.
 
 ## Existing CI coverage
 
-- `/home/runner/work/winiso/winiso/.github/workflows/lint-and-format.yml`
-- `/home/runner/work/winiso/winiso/.github/workflows/test-matrix.yml`
-- `/home/runner/work/winiso/winiso/.github/workflows/build-and-deploy.yml`
-- `/home/runner/work/winiso/winiso/.github/workflows/copilot-setup-steps.yml`
+- `.github/workflows/lint-and-format.yml`
+- `.github/workflows/test-matrix.yml`
+- `.github/workflows/build-and-deploy.yml`
+- `.github/workflows/copilot-setup-steps.yml`
 
 ## Change-management expectations
 
-- Update `/home/runner/work/winiso/winiso/CHANGELOG.md` for contributor-facing changes.
+- Update `CHANGELOG.md` for contributor-facing changes.
 - Keep guidance concise, repository-specific, and internally consistent.
 - Prefer improving existing files over creating overlapping duplicates.

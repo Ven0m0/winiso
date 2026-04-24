@@ -10,6 +10,8 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - Refreshed `AGENTS.md`, `.github/copilot-instructions.md`, and repo-specific Copilot instructions/skills to use a canonical long-form guide plus focused instruction files.
 - Updated `.github/workflows/copilot-setup-steps.yml` to install only the toolchain this repository actually uses.
+- Switched `.github/workflows/copilot-setup-steps.yml` to use `uv` for Python tooling bootstrap while validating the mise-managed runtime.
+- Normalized `mise.toml` to `[tools]` entries and wired `UV_PYTHON` to the mise-managed interpreter for consistent uv integration.
 
 ## [1.2.0] - 2026-04-21 - UUP JSON API Completion
 

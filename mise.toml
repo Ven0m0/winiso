@@ -9,12 +9,13 @@
 
 min_version = "2024.1.0"
 
-[python]
-version = "3.11"
-pip = true
+[tools]
+python = "3.11"
+uv = "latest"
 
 [env]
 PROJECT_ROOT = "{{.root}}"
+UV_PYTHON = { value = "{{ tools.python.path }}", tools = true }
 
 [tasks]
 # Install system dependencies

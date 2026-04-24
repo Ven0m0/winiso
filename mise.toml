@@ -34,7 +34,7 @@ PROJECT_ROOT = "{{config_root}}"
 # `tools = true` makes `tools.python.path` available when mise resolves tool-aware env vars at runtime.
 UV_PYTHON = { value = "{{ tools.python.path }}", tools = true }
 UV_LINK_MODE = "symlink"
-_.python.venv = ".venv"
+_.python.venv = { path = ".venv", create = true, uv_create_args = ["--seed", "--system-site-packages"] }
 
 [tasks]
 # Install system dependencies

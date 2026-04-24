@@ -10,7 +10,7 @@
 min_version = "2024.1.0"
 
 [tools]
-python = "3.11"
+python = "3.13"
 
 [env]
 PROJECT_ROOT = "{{config_root}}"

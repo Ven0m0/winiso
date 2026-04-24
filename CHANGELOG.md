@@ -5,14 +5,15 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
-- Added a dedicated `test-matrix.yml` workflow for Python tests across Ubuntu and macOS on Python 3.9-3.12.
+- Added a dedicated `test-matrix.yml` workflow for Python tests across Ubuntu and macOS on uv-managed Python 3.13.
 
 ### Changed
 - Refreshed `AGENTS.md`, `.github/copilot-instructions.md`, and repo-specific Copilot instructions/skills to use a canonical long-form guide plus focused instruction files.
 - Updated `.github/workflows/copilot-setup-steps.yml` to install only the toolchain this repository actually uses.
-- Switched `.github/workflows/copilot-setup-steps.yml` to use `uv` for Python tooling bootstrap while validating the mise-managed runtime.
+- Switched `.github/workflows/copilot-setup-steps.yml` to use `uv` for Python tooling bootstrap while validating the uv-managed runtime.
 - Normalized `mise.toml` to `[tools]` entries and wired `UV_PYTHON` to the mise-managed interpreter for consistent uv integration.
 - Replaced Black with Ruff in workflow-based Python formatting checks and Copilot setup tool bootstrap.
+- Updated the repository Python toolchain to 3.13 and switched CI/bootstrap Python provisioning to uv-managed Python.
 
 ## [1.2.0] - 2026-04-21 - UUP JSON API Completion
 

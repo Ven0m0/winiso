@@ -16,6 +16,9 @@ defaults:
   run:
     shell: bash
 
+env:
+  UV_PYTHON_PREFERENCE: only-managed
+
 jobs:
   copilot-setup-steps:
     runs-on: ubuntu-latest
@@ -27,11 +30,14 @@ jobs:
 
       - name: Set up uv
         uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.13"
+          enable-cache: true
+          cache-python: true
 
       - name: Set up mise
         uses: jdx/mise-action@v4
         with:
-          install: true
           cache: true
 
       - name: Install system packages used by this repo
@@ -50,21 +56,21 @@ jobs:
       - name: Trust and inspect mise tasks
         run: |
           mise trust --yes mise.toml
-          mise install
           mise tasks
-          mise ls --current
-          mise exec -- python --version
-          mise exec -- which python
+
+      - name: Inspect uv-managed Python
+        run: |
+          python --version
+          which python
+          uv python list --only-installed
 
       - name: Install Python validation tools with uv
         run: |
-          mise exec -- sh -c '
-            for tool in ruff flake8 pytest; do
-              echo "Installing $tool"
-              uv tool install "$tool"
-            done
-          '
-          mise exec -- uv tool list
+          for tool in ruff flake8 pytest; do
+            echo "Installing $tool"
+            uv tool install "$tool"
+          done
+          uv tool list
 
       - name: Prepare executable scripts
         run: chmod +x scripts/*.sh

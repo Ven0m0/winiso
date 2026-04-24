@@ -9,12 +9,14 @@
 
 min_version = "2024.1.0"
 
-[python]
-version = "3.11"
-pip = true
+[tools]
+python = "3.13"
 
 [env]
-PROJECT_ROOT = "{{.root}}"
+PROJECT_ROOT = "{{config_root}}"
+# Ensure uv uses the exact Python interpreter installed by `mise install`.
+# `tools = true` makes `tools.python.path` available when mise resolves tool-aware env vars at runtime.
+UV_PYTHON = { value = "{{ tools.python.path }}", tools = true }
 
 [tasks]
 # Install system dependencies
@@ -35,59 +37,59 @@ install-deps = [
 
 # Download UUP files
 download = [
-  "python {{.root}}/scripts/download_uup.py"
+  "python {{config_root}}/scripts/download_uup.py"
 ]
 
 # Validate prerequisites
 validate = [
-  "@if linux: bash {{.root}}/scripts/validate_prereqs.sh",
-  "@if darwin: bash {{.root}}/scripts/validate_prereqs.sh",
+  "@if linux: bash {{config_root}}/scripts/validate_prereqs.sh",
+  "@if darwin: bash {{config_root}}/scripts/validate_prereqs.sh",
   "@if windows: powershell -NoProfile -Command \"Write-Error 'validate requires a POSIX shell. Run this task from WSL or Git Bash.'; exit 1\""
 ]
 
 # Full build
 build = [
-  "@if linux: bash {{.root}}/scripts/build.sh",
-  "@if darwin: bash {{.root}}/scripts/build.sh",
+  "@if linux: bash {{config_root}}/scripts/build.sh",
+  "@if darwin: bash {{config_root}}/scripts/build.sh",
   "@if windows: powershell -NoProfile -Command \"Write-Error 'build requires a POSIX shell. Run this task from WSL or Git Bash.'; exit 1\""
 ]
 
 # Build Pro edition
 build-pro = [
-  "@if linux: TARGET_EDITION=Professional FALLBACK_EDITION=Professional bash {{.root}}/scripts/build.sh",
-  "@if darwin: TARGET_EDITION=Professional FALLBACK_EDITION=Professional bash {{.root}}/scripts/build.sh",
+  "@if linux: TARGET_EDITION=Professional FALLBACK_EDITION=Professional bash {{config_root}}/scripts/build.sh",
+  "@if darwin: TARGET_EDITION=Professional FALLBACK_EDITION=Professional bash {{config_root}}/scripts/build.sh",
   "@if windows: powershell -NoProfile -Command \"Write-Error 'build-pro requires a POSIX shell. Run this task from WSL or Git Bash.'; exit 1\""
 ]
 
 # Build with pause for Windows DISM stage
 build-pause = [
-  "@if linux: PAUSE_FOR_WINDOWS_STAGE=1 bash {{.root}}/scripts/build.sh",
-  "@if darwin: PAUSE_FOR_WINDOWS_STAGE=1 bash {{.root}}/scripts/build.sh",
+  "@if linux: PAUSE_FOR_WINDOWS_STAGE=1 bash {{config_root}}/scripts/build.sh",
+  "@if darwin: PAUSE_FOR_WINDOWS_STAGE=1 bash {{config_root}}/scripts/build.sh",
   "@if windows: powershell -NoProfile -Command \"Write-Error 'build-pause requires a POSIX shell. Run this task from WSL or Git Bash.'; exit 1\""
 ]
 
 # Clean artifacts (Linux/macOS)
 clean-unix = [
-  "rm -rf {{.root}}/scripts/ISODIR",
-  "rm -f {{.root}}/*.iso",
-  "rm -f {{.root}}/output/*.iso"
+  "rm -rf {{config_root}}/scripts/ISODIR",
+  "rm -f {{config_root}}/*.iso",
+  "rm -f {{config_root}}/output/*.iso"
 ]
 
 # Clean artifacts (Windows PowerShell)
 clean-windows = [
-  "if (Test-Path {{.root}}/scripts/ISODIR) { Remove-Item -Recurse -Force {{.root}}/scripts/ISODIR }",
-  "Get-ChildItem {{.root}} -Filter *.iso | Remove-Item -Force",
-  "Get-ChildItem {{.root}}/output -Filter *.iso | Remove-Item -Force"
+  "if (Test-Path {{config_root}}/scripts/ISODIR) { Remove-Item -Recurse -Force {{config_root}}/scripts/ISODIR }",
+  "Get-ChildItem {{config_root}} -Filter *.iso | Remove-Item -Force",
+  "Get-ChildItem {{config_root}}/output -Filter *.iso | Remove-Item -Force"
 ]
 
 # List builds from API
 list-builds = [
-  "python {{.root}}/scripts/download_uup.py --list"
+  "python {{config_root}}/scripts/download_uup.py --list"
 ]
 
 # Show API version
 api-version = [
-  "python {{.root}}/scripts/download_uup.py --version"
+  "python {{config_root}}/scripts/download_uup.py --version"
 ]
 
 # Show available tasks

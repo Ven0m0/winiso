@@ -1,7 +1,7 @@
 # Copilot Instructions — Debloated Windows 11 ISO Builder
 
 Start here, then read `AGENTS.md` for the canonical repo-wide guide.
-Precedence: direct task instructions first, then matching files in `.github/instructions/`, then this bootstrap, then `AGENTS.md`.
+Precedence: direct task instructions first, then matching files in `.github/instructions/`, then relevant `.github/skills/`, then this bootstrap, then `AGENTS.md`.
 
 ## Quick bootstrap
 - User entry point: `Makefile`

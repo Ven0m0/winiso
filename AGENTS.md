@@ -1,7 +1,10 @@
 # AGENTS.md — Debloated Windows 11 ISO Builder
 
 Canonical repository guidance for coding agents and contributors.
-Edit this file when repo-wide guidance changes. `CLAUDE.md` must stay a symlink to this file, `.github/copilot-instructions.md` must stay short, and matching files under `.github/instructions/` may add narrower rules for their scope.
+Edit this file when repo-wide guidance changes.
+Keep `CLAUDE.md` as a symlink to this file.
+Keep `.github/copilot-instructions.md` short.
+Allow matching files under `.github/instructions/` to add narrower rules for their scope.
 
 ## Mission and entry points
 
@@ -55,7 +58,7 @@ These packages keep Store installs, WebView, runtimes, and core Windows function
 config/
   autounattend.xml
   debloat_list.txt
-  config/oem/SetupComplete.cmd
+  oem/SetupComplete.cmd
 
 docs/
   autounattend.md

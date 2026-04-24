@@ -115,6 +115,10 @@ help = [
   "mise tasks"
 ]
 
+[tasks.install]
+description = 'Mise ci install'
+file = '.mise/tasks/install'
+
 [tasks.linux]
 description = "Install build dependencies on Linux"
 run = [

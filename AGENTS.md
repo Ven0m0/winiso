@@ -80,9 +80,9 @@ tests/
 
 .github/
   copilot-instructions.md
-  .github/instructions/
-  .github/skills/
-  .github/workflows/
+  instructions/
+  skills/
+  workflows/
 ```
 
 ## File-specific guidance

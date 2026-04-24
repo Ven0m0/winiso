@@ -250,28 +250,31 @@ class TestGetLatestBuilds(unittest.TestCase):
         )
 
 
-
 class TestSelectEditions(unittest.TestCase):
     @patch("download_uup.log_warn")
     def test_select_editions_no_esd_files(self, mock_log_warn):
         build_info = {"files": {"test.txt": {"size": 100}}}
         result = download_uup.select_editions(build_info)
         self.assertIsNone(result)
-        mock_log_warn.assert_called_with("No edition-specific files found, will download all files")
+        mock_log_warn.assert_called_with(
+            "No edition-specific files found, will download all files"
+        )
 
     @patch("download_uup.log_warn")
     def test_select_editions_no_matching_esd_files(self, mock_log_warn):
         build_info = {"files": {"unknown.esd": {"size": 100}}}
         result = download_uup.select_editions(build_info)
         self.assertIsNone(result)
-        mock_log_warn.assert_called_with("No edition-specific files found, will download all files")
+        mock_log_warn.assert_called_with(
+            "No edition-specific files found, will download all files"
+        )
 
     @patch("builtins.input", return_value="")
     def test_select_editions_empty_choice(self, mock_input):
         build_info = {
             "files": {
                 "Windows_Professional.esd": {"size": 100},
-                "Windows_Home.esd": {"size": 100}
+                "Windows_Home.esd": {"size": 100},
             }
         }
         result = download_uup.select_editions(build_info)
@@ -279,11 +282,7 @@ class TestSelectEditions(unittest.TestCase):
 
     @patch("builtins.input", return_value="A")
     def test_select_editions_all_choice(self, mock_input):
-        build_info = {
-            "files": {
-                "Windows_Professional.esd": {"size": 100}
-            }
-        }
+        build_info = {"files": {"Windows_Professional.esd": {"size": 100}}}
         result = download_uup.select_editions(build_info)
         self.assertIsNone(result)
 
@@ -294,7 +293,7 @@ class TestSelectEditions(unittest.TestCase):
         build_info = {
             "files": {
                 "Windows_Professional.esd": {"size": 100},
-                "Windows_Home.esd": {"size": 100}
+                "Windows_Home.esd": {"size": 100},
             }
         }
         result = download_uup.select_editions(build_info)
@@ -306,11 +305,7 @@ class TestSelectEditions(unittest.TestCase):
     @patch("download_uup.log_warn")
     @patch("builtins.input", return_value="invalid")
     def test_select_editions_non_numeric_choice(self, mock_input, mock_log_warn):
-        build_info = {
-            "files": {
-                "Windows_Professional.esd": {"size": 100}
-            }
-        }
+        build_info = {"files": {"Windows_Professional.esd": {"size": 100}}}
         result = download_uup.select_editions(build_info)
         self.assertIsNone(result)
         mock_log_warn.assert_called_with("Invalid selection, downloading all editions")
@@ -318,11 +313,7 @@ class TestSelectEditions(unittest.TestCase):
     @patch("download_uup.log_warn")
     @patch("builtins.input", return_value="99")
     def test_select_editions_out_of_range_choice(self, mock_input, mock_log_warn):
-        build_info = {
-            "files": {
-                "Windows_Professional.esd": {"size": 100}
-            }
-        }
+        build_info = {"files": {"Windows_Professional.esd": {"size": 100}}}
         result = download_uup.select_editions(build_info)
         self.assertIsNone(result)
         mock_log_warn.assert_called_with("Invalid selection, downloading all editions")

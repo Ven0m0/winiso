@@ -257,9 +257,7 @@ def _run_aria2_download(output_path, aria2_input, download_list):
                 or "\n" in item["name"]
                 or "\r" in item["name"]
             ):
-                log_error(
-                    f"Invalid characters in URL or filename: {item['name']}"
-                )
+                log_error(f"Invalid characters in URL or filename: {item['name']}")
                 return False
 
             f.write(f"{item['url']}\n")
@@ -319,7 +317,6 @@ def _run_aria2_download(output_path, aria2_input, download_list):
         return False
     except Exception as e:
         log_error(f"An unexpected error occurred during download: {e}")
-        aria2_input.unlink(missing_ok=True)
         return False
 
 
@@ -401,7 +398,9 @@ def interactive_mode(output_dir):
                     .lower()
                 )
                 if confirm == "" or confirm == "y":
-                    return download_build(build_id, output_dir, edition_filter, build_info=build_info)
+                    return download_build(
+                        build_id, output_dir, edition_filter, build_info=build_info
+                    )
                 else:
                     log_info("Download cancelled")
                     return False

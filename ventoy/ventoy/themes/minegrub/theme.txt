@@ -20,7 +20,8 @@ terminal-font: "Monocraft Regular 22"
 	height = 100%-289
 
 	item_font = "Minecraft Regular 30"
-	item_color = "#ffffff"
+	item_color = "transparent"
+	selected_item_color = "transparent"
     item_padding = 16
     # height+spacing should equals 108
     item_height = 96
@@ -31,7 +32,7 @@ terminal-font: "Monocraft Regular 22"
 
     icon_width = 1
     icon_height = 1
-    item_icon_space = 2000  # Temp fix, draw with empty font instead
+    item_icon_space = 0
 }
 
 ### Icon and Description (one file, see ./icons/)
@@ -42,7 +43,8 @@ terminal-font: "Monocraft Regular 22"
 	height = 100%-289
 
 	item_font = "Minecraft Regular 30"
-	item_color = "#ffffff"
+	item_color = "transparent"
+	selected_item_color = "transparent"
     item_padding = 16
     # height+spacing should equals 108
     # Info: pixmaps are drawn in spacing, which may fuck with where the text is drawn
@@ -54,7 +56,7 @@ terminal-font: "Monocraft Regular 22"
 
     icon_width = 801
     icon_height = 96
-    item_icon_space = 2000  # Temp fix, draw with empty font instead
+    item_icon_space = 0
 }
 
 ### default image and item name

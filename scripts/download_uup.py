@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-UUP File Downloader for Windows 11 ISO Builder
+"""UUP File Downloader for Windows 11 ISO Builder
 Automates the download of UUP files from uupdump.net
 """
 
@@ -15,7 +14,6 @@ from urllib.request import urlopen, Request
 from urllib.error import URLError, HTTPError
 from urllib.parse import urlencode
 
-
 # Colors for terminal output
 class Colors:
     CYAN = "\033[0;36m"
@@ -25,44 +23,35 @@ class Colors:
     RESET = "\033[0m"
     BOLD = "\033[1m"
 
-
 def log_info(msg):
     print(f"{Colors.CYAN}[INFO]{Colors.RESET} {msg}")
-
 
 def log_success(msg):
     print(f"{Colors.GREEN}[OK]{Colors.RESET} {msg}")
 
-
 def log_warn(msg):
     print(f"{Colors.YELLOW}[WARN]{Colors.RESET} {msg}")
 
-
 def log_error(msg):
     print(f"{Colors.RED}[ERROR]{Colors.RESET} {msg}")
-
 
 def check_dependencies():
     """Check if required tools are installed"""
     required = ["aria2c"]
     missing = []
-
     for tool in required:
         if not shutil.which(tool):
             missing.append(tool)
-
     if missing:
         log_error(f"Missing required tools: {', '.join(missing)}")
         log_info("Run 'make deps' to install dependencies")
         return False
     return True
 
-
 def fetch_url(url, headers=None, data=None):
     """Fetch URL with error handling"""
     if headers is None:
         headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"}
-
     try:
         if data:
             data = urlencode(data).encode("utf-8")
@@ -71,6 +60,12 @@ def fetch_url(url, headers=None, data=None):
             return response.read().decode("utf-8")
     except HTTPError as e:
         log_error(f"HTTP Error {e.code}: {e.reason}")
+        return None
+    except URLError as e:
+        log_error(f"URL Error: {e.reason}")
+        return None
+    except Exception as e:
+        log_error(f"Error fetching URL: {e}")
         return None
     except URLError as e:
         log_error(f"URL Error: {e.reason}")

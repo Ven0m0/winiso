@@ -33,30 +33,17 @@ try {
     dism /Mount-Image /ImageFile:$WimPath /Index:$Index /MountDir:$MountDir | Out-Null
 
     $appx = @(
-        "Microsoft.BingNews",
-        "Microsoft.BingWeather",
-        "Microsoft.GetHelp",
-        "Microsoft.Getstarted",
-        "Microsoft.MicrosoftOfficeHub",
-        "Microsoft.MicrosoftSolitaireCollection",
-        "Microsoft.People",
-        "Microsoft.PowerAutomateDesktop",
-        "Microsoft.Todos",
-        "Microsoft.WindowsAlarms",
-        "Microsoft.WindowsFeedbackHub",
-        "Microsoft.WindowsMaps",
-        "Microsoft.WindowsSoundRecorder",
-        "Microsoft.Xbox.TCUI",
-        "Microsoft.XboxApp",
-        "Microsoft.XboxGameOverlay",
-        "Microsoft.XboxGamingOverlay",
-        "Microsoft.XboxIdentityProvider",
-        "Microsoft.XboxSpeechToTextOverlay",
-        "Microsoft.YourPhone",
-        "Microsoft.ZuneMusic",
-        "Microsoft.ZuneVideo",
-        "MicrosoftTeams",
-        "Clipchamp.Clipchamp",
+        "Microsoft.BingNews", "Microsoft.BingWeather", "Microsoft.GetHelp",
+        "Microsoft.Getstarted", "Microsoft.MicrosoftOfficeHub",
+        "Microsoft.MicrosoftSolitaireCollection", "Microsoft.People",
+        "Microsoft.PowerAutomateDesktop", "Microsoft.Todos",
+        "Microsoft.WindowsAlarms", "Microsoft.WindowsFeedbackHub",
+        "Microsoft.WindowsMaps", "Microsoft.WindowsSoundRecorder",
+        "Microsoft.Xbox.TCUI", "Microsoft.XboxApp",
+        "Microsoft.XboxGameOverlay", "Microsoft.XboxGamingOverlay",
+        "Microsoft.XboxIdentityProvider", "Microsoft.XboxSpeechToTextOverlay",
+        "Microsoft.YourPhone", "Microsoft.ZuneMusic", "Microsoft.ZuneVideo",
+        "MicrosoftTeams", "Clipchamp.Clipchamp",
         "Microsoft.OutlookForWindows"
     )
 
@@ -67,14 +54,9 @@ try {
     }
 
     $caps = @(
-        "App.Support.QuickAssist*",
-        "Hello.Face*",
-        "Language.Handwriting*",
-        "Language.OCR*",
-        "Language.Speech*",
-        "MathRecognizer*",
-        "Print.Fax.Scan*",
-        "Browser.InternetExplorer*"
+        "App.Support.QuickAssist*", "Hello.Face*", "Language.Handwriting*",
+        "Language.OCR*", "Language.Speech*", "MathRecognizer*",
+        "Print.Fax.Scan*", "Browser.InternetExplorer*"
     )
 
     foreach ($c in $caps) {
@@ -83,11 +65,7 @@ try {
         } catch {}
     }
 
-    $features = @(
-        "Printing-XPSServices-Features",
-        "WorkFolders-Client"
-    )
-
+    $features = @("Printing-XPSServices-Features", "WorkFolders-Client")
     foreach ($f in $features) {
         try {
             dism /Image:$MountDir /Disable-Feature /FeatureName:$f /Remove | Out-Null
@@ -102,13 +80,9 @@ try {
     reg add HKLM\OFFLINE\Policies\Microsoft\Windows\WindowsCopilot /v TurnOffWindowsCopilot /t REG_DWORD /d 1 /f | Out-Null
 
     reg unload HKLM\OFFLINE | Out-Null
-
     fsutil 8dot3name strip /f /s $MountDir | Out-Null
-
     dism.exe /Image:$MountDir /Optimize-ProvisionedAppxPackages | Out-Null
-
     dism.exe /Image:$MountDir /Cleanup-Image /StartComponentCleanup /ResetBase | Out-Null
-
     dism /Unmount-Image /MountDir:$MountDir /Commit | Out-Null
 
     dism /Export-Image /SourceImageFile:$WimPath /SourceIndex:$Index `

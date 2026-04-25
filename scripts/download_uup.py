@@ -4,9 +4,7 @@ Automates the download of UUP files from uupdump.net
 """
 
 import sys
-import os
 import json
-import subprocess
 import argparse
 import shutil
 from pathlib import Path
@@ -14,7 +12,10 @@ from urllib.request import urlopen, Request
 from urllib.error import URLError, HTTPError
 from urllib.parse import urlencode
 
+
 # Colors for terminal output
+
+
 class Colors:
     CYAN = "\033[0;36m"
     GREEN = "\033[0;32m"
@@ -23,17 +24,22 @@ class Colors:
     RESET = "\033[0m"
     BOLD = "\033[1m"
 
+
 def log_info(msg):
     print(f"{Colors.CYAN}[INFO]{Colors.RESET} {msg}")
+
 
 def log_success(msg):
     print(f"{Colors.GREEN}[OK]{Colors.RESET} {msg}")
 
+
 def log_warn(msg):
     print(f"{Colors.YELLOW}[WARN]{Colors.RESET} {msg}")
 
+
 def log_error(msg):
     print(f"{Colors.RED}[ERROR]{Colors.RESET} {msg}")
+
 
 def check_dependencies():
     """Check if required tools are installed"""
@@ -48,6 +54,7 @@ def check_dependencies():
         return False
     return True
 
+
 def fetch_url(url, headers=None, data=None):
     """Fetch URL with error handling"""
     if headers is None:
@@ -60,12 +67,6 @@ def fetch_url(url, headers=None, data=None):
             return response.read().decode("utf-8")
     except HTTPError as e:
         log_error(f"HTTP Error {e.code}: {e.reason}")
-        return None
-    except URLError as e:
-        log_error(f"URL Error: {e.reason}")
-        return None
-    except Exception as e:
-        log_error(f"Error fetching URL: {e}")
         return None
     except URLError as e:
         log_error(f"URL Error: {e.reason}")
@@ -295,7 +296,6 @@ def select_editions(build_info):
     return None
 
 
-
 def _prepare_output_directory(output_path):
     output_path.mkdir(parents=True, exist_ok=True)
     existing_files = list(output_path.glob("*"))
@@ -307,6 +307,7 @@ def _prepare_output_directory(output_path):
             for f in existing_files:
                 if f.is_file() and f.name != ".gitkeep":
                     f.unlink()
+
 
 def _prepare_download_list(build_id, files, edition_filter):
     download_list = []

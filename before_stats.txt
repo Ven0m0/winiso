@@ -1,0 +1,4 @@
+BEFORE METRICS:
+File count: 24
+Total LOC: 4027
+Total bytes: 138762

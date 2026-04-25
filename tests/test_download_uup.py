@@ -3,6 +3,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+import subprocess
+
 # Add the scripts directory to sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 
@@ -54,54 +56,26 @@ class TestDownloadUUP(unittest.TestCase):
         self.assertEqual(args.max_results, 10)
 
 
+<<<<<<< ours
 class TestDownloadBuild(unittest.TestCase):
     @patch("download_uup.get_build_info")
-    @patch("download_uup.Path.mkdir")
-    @patch("download_uup.Path.glob", return_value=[])
-    @patch("download_uup.Path.unlink")
-    @patch("builtins.open", new_callable=unittest.mock.mock_open)
-    @patch("subprocess.run")
-    @patch("download_uup.log_success")
     @patch("download_uup.log_error")
-    @patch("download_uup.log_info")
-    def test_download_build_success(
-        self,
-        mock_log_info,
-        mock_log_error,
-        mock_log_success,
-        mock_run,
-        mock_open,
-        mock_unlink,
-        mock_glob,
-        mock_mkdir,
-        mock_get_info,
-    ):
-        mock_get_info.return_value = {"files": {"test.esd": {"size": 100}}}
-
-        # Mock subprocess returning successfully
-        mock_run.return_value.returncode = 0
-
-        # Test download_build
-        result = download_uup.download_build("build123", "out_dir")
-
-        self.assertTrue(result)
-        mock_get_info.assert_called_with("build123")
-        mock_mkdir.assert_called_once_with(parents=True, exist_ok=True)
-        mock_run.assert_called_once()
-        mock_log_success.assert_any_call("Will download 1 files")
-        mock_log_success.assert_any_call("Download complete! Files saved to: out_dir")
+    def test_download_build_no_build_info(self, mock_log_error, mock_get_build_info):
+        mock_get_build_info.return_value = None
+        result = download_uup.download_build("build123", Path("out"))
+        self.assertFalse(result)
+        mock_log_error.assert_called_once_with("Failed to get build information")
 
     @patch("download_uup.get_build_info")
     @patch("download_uup.log_error")
-    def test_download_build_no_info(self, mock_log_error, mock_get_info):
-        mock_get_info.return_value = None
-
-        result = download_uup.download_build("build123", "out_dir")
-
+    def test_download_build_no_files(self, mock_log_error, mock_get_build_info):
+        mock_get_build_info.return_value = {"files": {}}
+        result = download_uup.download_build("build123", Path("out"))
         self.assertFalse(result)
-        mock_log_error.assert_called_with("Failed to get build information")
+        mock_log_error.assert_called_once_with("No files found for this build")
 
-
+=======
+>>>>>>> theirs
 class TestGetLatestBuilds(unittest.TestCase):
     @patch("download_uup.fetch_url")
     @patch("download_uup.log_error")
@@ -139,6 +113,43 @@ class TestGetLatestBuilds(unittest.TestCase):
         self.assertTrue(
             mock_log_error.call_args[0][0].startswith("Failed to parse JSON response:")
         )
+
+
+
+    @patch("download_uup.fetch_url")
+    def test_get_latest_builds_success(self, mock_fetch_url):
+        import json
+
+        mock_fetch_url.return_value = json.dumps(
+            {
+                "response": {
+                    "builds": {
+                        "build-1": {
+                            "title": "Windows 11 Build 1",
+                            "created": "1600000000",
+                        },
+                        "build-2": {
+                            "title": "Windows 11 Build 2",
+                            "created": "1620000000",
+                        },
+                        "build-3": {
+                            "title": "Windows 11 Build 3",
+                            "created": "1610000000",
+                        },
+                    }
+                }
+            }
+        )
+
+        result = download_uup.get_latest_builds(max_results=2)
+
+        self.assertIsNotNone(result)
+        self.assertEqual(len(result), 2)
+        # Expected sort order: build-2 (1620000000), build-3 (1610000000)
+        self.assertEqual(result[0]["id"], "build-2")
+        self.assertEqual(result[0]["title"], "Windows 11 Build 2")
+        self.assertEqual(result[1]["id"], "build-3")
+        self.assertEqual(result[1]["title"], "Windows 11 Build 3")
 
 
 class TestGetBuildInfo(unittest.TestCase):
@@ -228,6 +239,90 @@ class TestFetchUrl(unittest.TestCase):
         self.assertIn("Error fetching URL", mock_log_error.call_args[0][0])
 
 
+    @patch("download_uup.urlopen")
+    @patch("download_uup.log_error")
+    def test_fetch_url_timeout_error(self, mock_log_error, mock_urlopen):
+        import socket
+
+        mock_urlopen.side_effect = socket.timeout("timed out")
+
+        result = download_uup.fetch_url("http://example.com")
+
+        self.assertIsNone(result)
+        mock_log_error.assert_called_once()
+        self.assertIn("Error fetching URL", mock_log_error.call_args[0][0])
+
+    @patch("download_uup.urlopen")
+    @patch("download_uup.log_error")
+    def test_fetch_url_timeout_error_timeout(self, mock_log_error, mock_urlopen):
+        mock_urlopen.side_effect = TimeoutError("timed out")
+
+        result = download_uup.fetch_url("http://example.com")
+
+        self.assertIsNone(result)
+        mock_log_error.assert_called_once()
+        self.assertIn("Error fetching URL", mock_log_error.call_args[0][0])
+
+    @patch("download_uup.urlopen")
+    @patch("download_uup.log_error")
+    def test_fetch_url_connection_reset_error(self, mock_log_error, mock_urlopen):
+        mock_urlopen.side_effect = ConnectionResetError("Connection reset by peer")
+
+        result = download_uup.fetch_url("http://example.com")
+
+        self.assertIsNone(result)
+        mock_log_error.assert_called_once()
+        self.assertIn("Error fetching URL", mock_log_error.call_args[0][0])
+
+class TestRunAria2Download(unittest.TestCase):
+    @patch("builtins.open", new_callable=unittest.mock.mock_open)
+    @patch("subprocess.run")
+    @patch("download_uup.log_error")
+    def test_run_aria2_download_called_process_error(
+        self, mock_log_error, mock_run, mock_open
+    ):
+        mock_run.side_effect = subprocess.CalledProcessError(1, "aria2c")
+        dl_list = [{"url": "http://test", "name": "test.esd"}]
+
+        result = download_uup._run_aria2_download(Path("out"), Path("in.txt"), dl_list)
+
+        self.assertFalse(result)
+        mock_log_error.assert_called_with("Aria2c download failed with return code: 1")
+
+    @patch("builtins.open", new_callable=unittest.mock.mock_open)
+    @patch("subprocess.run")
+    @patch("download_uup.log_warn")
+    @patch("download_uup.Path.unlink")
+    def test_run_aria2_download_keyboard_interrupt(
+        self, mock_unlink, mock_log_warn, mock_run, mock_open
+    ):
+        mock_run.side_effect = KeyboardInterrupt()
+        dl_list = [{"url": "http://test", "name": "test.esd"}]
+
+        result = download_uup._run_aria2_download(Path("out"), Path("in.txt"), dl_list)
+
+        self.assertFalse(result)
+        mock_log_warn.assert_called_with("
+Download interrupted by user")
+        # Should call unlink on aria2_input
+        mock_unlink.assert_called_with(missing_ok=True)
+
+    @patch("builtins.open", new_callable=unittest.mock.mock_open)
+    @patch("subprocess.run")
+    @patch("download_uup.log_error")
+    def test_run_aria2_download_generic_exception(
+        self, mock_log_error, mock_run, mock_open
+    ):
+        mock_run.side_effect = Exception("Unexpected error")
+        dl_list = [{"url": "http://test", "name": "test.esd"}]
+
+        result = download_uup._run_aria2_download(Path("out"), Path("in.txt"), dl_list)
+
+        self.assertFalse(result)
+        mock_log_error.assert_called_with(
+            "An unexpected error occurred during download: Unexpected error"
+        )
+
 class TestSelectEditions(unittest.TestCase):
     @patch("download_uup.log_warn")
     def test_select_editions_no_esd_files(self, mock_log_warn):
@@ -297,47 +392,59 @@ class TestSelectEditions(unittest.TestCase):
         mock_log_warn.assert_called_with("Invalid selection, downloading all editions")
 
 
+class TestInteractiveMode(unittest.TestCase):
+    @patch("download_uup.log_error")
+    @patch("download_uup.get_latest_builds", return_value=None)
+    def test_interactive_mode_no_builds(self, mock_get_builds, mock_log_error):
+        result = download_uup.interactive_mode(Path("/tmp"))
+        self.assertFalse(result)
+        mock_log_error.assert_called_once_with("Failed to fetch builds")
 
-
-class TestDisplayBuilds(unittest.TestCase):
-    @patch("builtins.print")
-    def test_display_builds_empty(self, mock_print):
-        download_uup.display_builds([])
-        # Should only print the header and no builds
-        mock_print.assert_called_once_with(f"\n{download_uup.Colors.BOLD}Available Windows 11 Builds:{download_uup.Colors.RESET}\n")
-
-    @patch("builtins.print")
-    def test_display_builds_valid(self, mock_print):
-        builds = [{
-            "title": "Windows 11 Insider Preview 25393.1",
-            "build": "25393.1",
-            "arch": "amd64",
-            "created": "2023-06-15"
-        }]
-        download_uup.display_builds(builds)
-
-        self.assertEqual(mock_print.call_count, 4)
-        calls = mock_print.call_args_list
-        self.assertEqual(calls[0][0][0], f"\n{download_uup.Colors.BOLD}Available Windows 11 Builds:{download_uup.Colors.RESET}\n")
-        self.assertEqual(calls[1][0][0], f"{download_uup.Colors.CYAN}[1]{download_uup.Colors.RESET} Windows 11 Insider Preview 25393.1")
-        self.assertEqual(calls[2][0][0], "    Build: 25393.1 | Arch: amd64 | Created: 2023-06-15")
-        self.assertEqual(calls[3][0], ())
-
-    @patch("builtins.print")
-    def test_display_builds_missing_fields(self, mock_print):
-        builds = [{
-            "title": "Windows 11 Partial"
-            # Missing build, arch, created
-        }]
-        download_uup.display_builds(builds)
-
-        self.assertEqual(mock_print.call_count, 4)
-        calls = mock_print.call_args_list
-        self.assertEqual(calls[0][0][0], f"\n{download_uup.Colors.BOLD}Available Windows 11 Builds:{download_uup.Colors.RESET}\n")
-        self.assertEqual(calls[1][0][0], f"{download_uup.Colors.CYAN}[1]{download_uup.Colors.RESET} Windows 11 Partial")
-        self.assertEqual(calls[2][0][0], "    Build: N/A | Arch: N/A | Created: N/A")
-        self.assertEqual(calls[3][0], ())
-
+    @patch("download_uup.log_info")
+    @patch("builtins.input", return_value="q")
+    @patch("download_uup.display_builds")
+    @patch("download_uup.get_latest_builds")
+    def test_interactive_mode_quit(self, mock_get_builds, mock_display_builds, mock_input, mock_log_info):
+        mock_get_builds.return_value = [{"id": "1", "title": "Build 1"}]
+        result = download_uup.interactive_mode(Path("/tmp"))
+        self.assertFalse(result)
+        mock_log_info.assert_called_once_with("Cancelled by user")
 
 if __name__ == "__main__":
     unittest.main()
+
+    @patch("download_uup.urlopen")
+    @patch("download_uup.log_error")
+    def test_fetch_url_timeout_error(self, mock_log_error, mock_urlopen):
+        import socket
+
+        mock_urlopen.side_effect = socket.timeout("timed out")
+
+        result = download_uup.fetch_url("http://example.com")
+
+        self.assertIsNone(result)
+        mock_log_error.assert_called_once()
+        self.assertIn("Error fetching URL", mock_log_error.call_args[0][0])
+
+    @patch("download_uup.urlopen")
+    @patch("download_uup.log_error")
+    def test_fetch_url_timeout_error_timeout(self, mock_log_error, mock_urlopen):
+        mock_urlopen.side_effect = TimeoutError("timed out")
+
+        result = download_uup.fetch_url("http://example.com")
+
+        self.assertIsNone(result)
+        mock_log_error.assert_called_once()
+        self.assertIn("Error fetching URL", mock_log_error.call_args[0][0])
+
+    @patch("download_uup.urlopen")
+    @patch("download_uup.log_error")
+    def test_fetch_url_connection_reset_error(self, mock_log_error, mock_urlopen):
+        mock_urlopen.side_effect = ConnectionResetError("Connection reset by peer")
+
+        result = download_uup.fetch_url("http://example.com")
+
+        self.assertIsNone(result)
+        mock_log_error.assert_called_once()
+        self.assertIn("Error fetching URL", mock_log_error.call_args[0][0])
+

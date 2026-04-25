@@ -300,6 +300,83 @@ def select_editions(build_info):
     return None
 
 
+
+def _prepare_output_directory(output_path):
+    output_path.mkdir(parents=True, exist_ok=True)
+    existing_files = list(output_path.glob("*"))
+    if existing_files:
+        print(f"\n{Colors.YELLOW}Warning:{Colors.RESET} {len(existing_files)} files exist in {output_path}")
+        response = input("Clear existing files? [y/N]: ").strip().lower()
+        if response == "y":
+            log_info("Clearing existing files...")
+            for f in existing_files:
+                if f.is_file() and f.name != ".gitkeep":
+                    f.unlink()
+
+def _prepare_download_list(build_id, files, edition_filter):
+    download_list = []
+    base_url = "https://uupdump.net/get.php"
+    for filename, file_info in files.items():
+        if edition_filter and filename.endswith(".esd"):
+            if filename not in edition_filter:
+                continue
+        file_url = f"{base_url}?id={build_id}&pack={filename}&aria2=2"
+        download_list.append(
+            {"url": file_url, "name": filename, "size": file_info.get("size", 0)}
+        )
+    return download_list
+
+def _run_aria2_download(output_path, aria2_input, download_list):
+    import subprocess
+    try:
+        lines = []
+        for item in download_list:
+            sanitized_name = str(Path(item['name'].replace('\\', '/')).name)
+            if '..' in sanitized_name or '/' in sanitized_name:
+                log_error(f"Invalid filename detected: {item['name']}")
+                return False
+            url = str(item['url']).replace('\n', '').replace('\r', '')
+            name = str(item['name']).replace('\n', '').replace('\r', '')
+            lines.append(f"{url}\n  out={name}")
+
+        with open(aria2_input, "w") as f:
+            f.write("\n".join(lines))
+
+        cmd = [
+            "aria2c",
+            "-i",
+            str(aria2_input),
+            "-d",
+            str(output_path),
+            "-j",
+            "16",
+            "-x",
+            "16",
+            "-s",
+            "16",
+            "--file-allocation=none",
+            "--continue=true",
+        ]
+        log_info("Starting download...")
+        subprocess.run(cmd, check=True)
+        log_success("Download completed successfully")
+        return True
+    except subprocess.CalledProcessError as e:
+        log_error(f"Download failed with exit code {e.returncode}")
+        return False
+    except KeyboardInterrupt:
+        log_warn("\nDownload cancelled by user")
+        return False
+    except Exception as e:
+        log_error(f"An unexpected error occurred: {e}")
+        return False
+    finally:
+        for f in output_path.glob("aria2_input*"):
+            try:
+                f.unlink()
+            except Exception:
+                pass
+
 def download_build(build_id, output_dir, edition_filter=None, build_info=None):
     """Download UUP files for a specific build"""
     if build_info is None:
@@ -315,32 +392,20 @@ def download_build(build_id, output_dir, edition_filter=None, build_info=None):
         return False
 
     output_path = Path(output_dir)
-    # Create output directory and optionally clear existing files
-    output_path.mkdir(parents=True, exist_ok=True)
-    existing_files = list(output_path.glob("*"))
-    if existing_files:
-        print(
-            f"\n{Colors.YELLOW}Warning:{Colors.RESET} {len(existing_files)} files exist in {output_path}"
-        )
-        response = input("Clear existing files? [y/N]: ").strip().lower()
-        if response == "y":
-            log_info("Clearing existing files...")
-            for f in existing_files:
-                if f.is_file() and f.name != ".gitkeep":
-                    f.unlink()
+    try:
+        if output_path.is_absolute():
+            output_path = output_path.resolve()
+        else:
+            output_path = Path.cwd().joinpath(output_path).resolve()
+        output_path.relative_to(Path.cwd().resolve())
+    except (ValueError, RuntimeError):
+        log_error("Output directory must be within the current directory")
+        return False
 
-    # Construct the list of files to download
-    download_list = []
-    base_url = "https://uupdump.net/get.php"
+    _prepare_output_directory(output_path)
+
     log_info(f"Preparing to download {len(files)} files...")
-    for filename, file_info in files.items():
-        if edition_filter and filename.endswith(".esd"):
-            if filename not in edition_filter:
-                continue
-        file_url = f"{base_url}?id={build_id}&pack={filename}&aria2=2"
-        download_list.append(
-            {"url": file_url, "name": filename, "size": file_info.get("size", 0)}
-        )
+    download_list = _prepare_download_list(build_id, files, edition_filter)
 
     if not download_list:
         log_error("No files to download after filtering")
@@ -349,81 +414,7 @@ def download_build(build_id, output_dir, edition_filter=None, build_info=None):
     log_success(f"Will download {len(download_list)} files")
 
     aria2_input = output_path / "aria2_input.txt"
-    lines = []
-    for item in download_list:
-        if (
-            "\n" in item["url"]
-            or "\r" in item["url"]
-            or "\n" in item["name"]
-            or "\r" in item["name"]
-        ):
-            log_error(f"Invalid characters in URL or filename: {item['name']}")
-            return False
-
-        safe_name = os.path.basename(item["name"].replace("\\", "/"))
-        if not safe_name or safe_name in (".", ".."):
-            log_error(f"Invalid filename detected: {item['name']}")
-            return False
-
-        try:
-            resolved_output = output_path.resolve()
-            target_path = resolved_output.joinpath(safe_name).resolve()
-            target_path.relative_to(resolved_output)
-        except (ValueError, RuntimeError):
-            log_error(f"Path traversal attempt detected in filename: {item['name']}")
-            return False
-
-        lines.append(f"{item['url']}\n  out={safe_name}\n")
-
-    with open(aria2_input, "w") as f:
-        f.writelines(lines)
-
-    log_info("Starting download with aria2c...")
-    print(
-        f"{Colors.BOLD}This may take a while depending on your connection...{Colors.RESET}\n"
-    )
-
-    aria2_cmd = [
-        "aria2c",
-        "--input-file",
-        str(aria2_input),
-        "--dir",
-        str(output_path),
-        "--max-connection-per-server",
-        "8",
-        "--split",
-        "8",
-        "--min-split-size",
-        "1M",
-        "--continue",
-        "true",
-        "--max-tries",
-        "5",
-        "--retry-wait",
-        "5",
-        "--console-log-level",
-        "notice",
-        "--summary-interval",
-        "10",
-    ]
-
-    try:
-        subprocess.run(aria2_cmd, check=True)
-        aria2_input.unlink()
-        log_success(f"Download complete! Files saved to: {output_path}")
-        downloaded = sum(
-            1 for f in output_path.glob("*") if f.is_file() and f.name != ".gitkeep"
-        )
-        log_info(f"Total files downloaded: {downloaded}")
-        return True
-    except subprocess.CalledProcessError as e:
-        log_error(f"aria2c failed with exit code {e.returncode}")
-        return False
-    except KeyboardInterrupt:
-        log_warn("\nDownload interrupted by user")
-        aria2_input.unlink(missing_ok=True)
-        return False
-
+    return _run_aria2_download(output_path, aria2_input, download_list)
 
 def interactive_mode(output_dir):
     """Interactive mode for selecting and downloading builds"""
@@ -530,8 +521,9 @@ For more information, visit: https://uupdump.net
     )
 
     parser.add_argument(
-        "-e", "--editions",
-        help="List available editions for a specific build ID and exit"
+        "-e",
+        "--editions",
+        help="List available editions for a specific build ID and exit",
     )
 
     parser.add_argument(
@@ -551,20 +543,18 @@ For more information, visit: https://uupdump.net
         "--arch",
         default="amd64",
         choices=["amd64", "x86", "arm64", "all"],
-        help="Architecture for --latest (default: amd64)"
+        help="Architecture for --latest (default: amd64)",
     )
 
     parser.add_argument(
         "--ring",
         default="Retail",
         choices=["Dev", "Beta", "ReleasePreview", "Retail"],
-        help="Update ring for --latest (default: Retail)"
+        help="Update ring for --latest (default: Retail)",
     )
 
     parser.add_argument(
-        "--version",
-        action="store_true",
-        help="Show API version info and exit"
+        "--version", action="store_true", help="Show API version info and exit"
     )
 
     return parser.parse_args(args)
@@ -594,7 +584,9 @@ def main():
             if version_info:
                 log_success("UUP dump API is online")
                 print(f"  API Version: {version_info.get('apiVersion', 'unknown')}")
-                print(f"  JSON API Version: {version_info.get('jsonApiVersion', 'unknown')}")
+                print(
+                    f"  JSON API Version: {version_info.get('jsonApiVersion', 'unknown')}"
+                )
                 return 0
             return 1
 
@@ -628,7 +620,9 @@ def main():
         if args.latest:
             latest_info = fetch_latest_from_wu(args.arch, args.ring)
             if latest_info:
-                print(f"\n{Colors.BOLD}Latest Build from Windows Update:{Colors.RESET}\n")
+                print(
+                    f"\n{Colors.BOLD}Latest Build from Windows Update:{Colors.RESET}\n"
+                )
                 print(f"  Update ID: {latest_info.get('updateId', 'N/A')}")
                 print(f"  Title: {latest_info.get('updateTitle', 'N/A')}")
                 print(f"  Build: {latest_info.get('foundBuild', 'N/A')}")

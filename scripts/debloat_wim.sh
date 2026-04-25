@@ -206,9 +206,8 @@ CMD_FILE=$(mktemp)
 generate_commands >"$CMD_FILE"
 
 # Process each index
-local index
 for index in $(seq 1 "$IMAGE_COUNT"); do
-  local EDITION="${EDITION_NAMES[$index]:-Unknown}"
+  EDITION="${EDITION_NAMES[$index]:-Unknown}"
   log_info "Processing index $index: $EDITION"
 
   # AppX Debloating

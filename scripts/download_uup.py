@@ -1,13 +1,10 @@
 #!/usr/bin/env python3
-"""
-UUP File Downloader for Windows 11 ISO Builder
+"""UUP File Downloader for Windows 11 ISO Builder
 Automates the download of UUP files from uupdump.net
 """
 
 import sys
-import os
 import json
-import subprocess
 import argparse
 import shutil
 from pathlib import Path
@@ -17,6 +14,8 @@ from urllib.parse import urlencode
 
 
 # Colors for terminal output
+
+
 class Colors:
     CYAN = "\033[0;36m"
     GREEN = "\033[0;32m"
@@ -46,11 +45,9 @@ def check_dependencies():
     """Check if required tools are installed"""
     required = ["aria2c"]
     missing = []
-
     for tool in required:
         if not shutil.which(tool):
             missing.append(tool)
-
     if missing:
         log_error(f"Missing required tools: {', '.join(missing)}")
         log_info("Run 'make deps' to install dependencies")
@@ -62,7 +59,6 @@ def fetch_url(url, headers=None, data=None):
     """Fetch URL with error handling"""
     if headers is None:
         headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"}
-
     try:
         if data:
             data = urlencode(data).encode("utf-8")
@@ -300,7 +296,6 @@ def select_editions(build_info):
     return None
 
 
-
 def _prepare_output_directory(output_path):
     output_path.mkdir(parents=True, exist_ok=True)
     existing_files = list(output_path.glob("*"))
@@ -312,6 +307,7 @@ def _prepare_output_directory(output_path):
             for f in existing_files:
                 if f.is_file() and f.name != ".gitkeep":
                     f.unlink()
+
 
 def _prepare_download_list(build_id, files, edition_filter):
     download_list = []

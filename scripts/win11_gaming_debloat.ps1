@@ -26,37 +26,31 @@ try {
     dism /Mount-Image /ImageFile:$WimPath /Index:$Index /MountDir:$MountDir | Out-Null
 
     # Appx removal
-    $appx = @(
-        "Microsoft.BingNews","Microsoft.BingWeather","Microsoft.GetHelp",
-        "Microsoft.Getstarted","Microsoft.MicrosoftOfficeHub",
-        "Microsoft.MicrosoftSolitaireCollection","Microsoft.People",
-        "Microsoft.PowerAutomateDesktop","Microsoft.Todos",
-        "Microsoft.WindowsAlarms","Microsoft.WindowsFeedbackHub",
-        "Microsoft.WindowsMaps","Microsoft.WindowsSoundRecorder",
-        "Microsoft.Xbox.TCUI","Microsoft.XboxApp","Microsoft.XboxGameOverlay",
-        "Microsoft.XboxGamingOverlay","Microsoft.XboxIdentityProvider",
-        "Microsoft.XboxSpeechToTextOverlay","Microsoft.YourPhone",
-        "Microsoft.ZuneMusic","Microsoft.ZuneVideo",
-        "MicrosoftTeams","Clipchamp.Clipchamp","Microsoft.OutlookForWindows"
-    )
-
+    $appx = @("Microsoft.BingNews", "Microsoft.BingWeather", "Microsoft.GetHelp",
+        "Microsoft.Getstarted", "Microsoft.MicrosoftOfficeHub",
+        "Microsoft.MicrosoftSolitaireCollection", "Microsoft.People",
+        "Microsoft.PowerAutomateDesktop", "Microsoft.Todos",
+        "Microsoft.WindowsAlarms", "Microsoft.WindowsFeedbackHub",
+        "Microsoft.WindowsMaps", "Microsoft.WindowsSoundRecorder",
+        "Microsoft.Xbox.TCUI", "Microsoft.XboxApp",
+        "Microsoft.XboxGameOverlay", "Microsoft.XboxGamingOverlay",
+        "Microsoft.XboxIdentityProvider", "Microsoft.XboxSpeechToTextOverlay",
+        "Microsoft.YourPhone", "Microsoft.ZuneMusic", "Microsoft.ZuneVideo",
+        "MicrosoftTeams", "Clipchamp.Clipchamp", "Microsoft.OutlookForWindows")
     foreach ($p in $appx) {
         try { dism /Image:$MountDir /Remove-ProvisionedAppxPackage /PackageName:"$p*" | Out-Null } catch {}
     }
 
     # Capabilities
-    $caps = @(
-        "App.Support.QuickAssist*","Hello.Face*","Language.Handwriting*",
-        "Language.OCR*","Language.Speech*","MathRecognizer*",
-        "Print.Fax.Scan*","Browser.InternetExplorer*"
-    )
-
+    $caps = @("App.Support.QuickAssist*", "Hello.Face*", "Language.Handwriting*",
+        "Language.OCR*", "Language.Speech*", "MathRecognizer*",
+        "Print.Fax.Scan*", "Browser.InternetExplorer*")
     foreach ($c in $caps) {
         try { dism /Image:$MountDir /Remove-Capability /CapabilityName:$c | Out-Null } catch {}
     }
 
     # Features
-    $features = @("Printing-XPSServices-Features","WorkFolders-Client")
+    $features = @("Printing-XPSServices-Features", "WorkFolders-Client")
     foreach ($f in $features) {
         try { dism /Image:$MountDir /Disable-Feature /FeatureName:$f /Remove | Out-Null } catch {}
     }
@@ -86,14 +80,11 @@ try {
     reg add HKLM\OFFLINE_SYSTEM\ControlSet001\Control\Session Manager\kernel /v GlobalTimerResolutionRequests /t REG_DWORD /d 1 /f | Out-Null
 
     # Services (safe gaming set)
-    $services = @("DiagTrack","dmwappushservice","WerSvc","MapsBroker","lfsvc",
-                  "SharedAccess","RetailDemo","Fax","XblAuthManager","XblGameSave",
-                  "XboxGipSvc","XboxNetApiSvc")
-
+    $services = @("DiagTrack", "dmwappushservice", "WerSvc", "MapsBroker", "lfsvc",
+        "SharedAccess", "RetailDemo", "Fax", "XblAuthManager", "XblGameSave",
+        "XboxGipSvc", "XboxNetApiSvc")
     foreach ($s in $services) {
-        try {
-            reg add "HKLM\OFFLINE_SYSTEM\ControlSet001\Services\$s" /v Start /t REG_DWORD /d 4 /f | Out-Null
-        } catch {}
+        try { reg add "HKLM\OFFLINE_SYSTEM\ControlSet001\Services\$s" /v Start /t REG_DWORD /d 4 /f | Out-Null } catch {}
     }
 
     reg unload HKLM\OFFLINE | Out-Null
@@ -109,7 +100,6 @@ try {
     dism.exe /Image:$MountDir /Cleanup-Image /StartComponentCleanup /ResetBase | Out-Null
 
     dism /Unmount-Image /MountDir:$MountDir /Commit | Out-Null
-
 } finally {
     try { dism /Cleanup-Mountpoints | Out-Null } catch {}
 }

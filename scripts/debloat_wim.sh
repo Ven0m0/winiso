@@ -51,19 +51,18 @@ done <<< "$WIM_INFO_OUTPUT"
 # Parse config file
 PATTERNS=()
 if [[ -f "$CONFIG_FILE" ]]; then
-   while IFS= read -r line || [[ -n "$line" ]]; do
-     line=$(echo "$line" | tr -d '\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-     [[ -z "$line" ]] && continue
-     [[ "$line" =~ ^# ]] && continue
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line=$(echo "$line" | tr -d '\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    [[ -z "$line" ]] && continue
+    [[ "$line" =~ ^# ]] && continue
 
-     # Validate pattern to prevent path injection
-     if [[ ! "$line" =~ ^[a-zA-Z0-9.*_-]+$ ]]; then
-       log_warn "Skipping invalid pattern: $line"
-       continue
-     fi
+    if [[ ! "$line" =~ ^[a-zA-Z0-9.*_-]+$ ]]; then
+      log_warn "Skipping invalid pattern: $line"
+      continue
+    fi
 
-     PATTERNS+=("$line")
-   done <"$CONFIG_FILE"
+    PATTERNS+=("$line")
+  done <"$CONFIG_FILE"
 fi
 
 # Function to apply registry tweaks using chntpw
@@ -75,11 +74,13 @@ apply_registry_tweaks() {
   log_info "Applying registry tweaks to index $index..."
 
   # 1. SOFTWARE HIVE
-  wimlib-imagex extract "$WIM_FILE" "$index" "/Windows/System32/config/SOFTWARE" --dest-dir="$temp_reg_dir" --no-acls >/dev/null 2>&1 || true
+  wimlib-imagex extract "$WIM_FILE" "$index" \
+    "/Windows/System32/config/SOFTWARE" \
+    --dest-dir="$temp_reg_dir" --no-acls >/dev/null 2>&1 || true
 
   if [[ -f "$temp_reg_dir/SOFTWARE" ]]; then
-    # Disable Consumer Experience, Telemetry, and AI
-    # Using nk to ensure keys exist before navigation
+    # Disable Consumer Experience, Telemetry, and AI. Using nk to ensure
+    # keys exist before navigation.
     chntpw -e "$temp_reg_dir/SOFTWARE" <<EOF >/dev/null 2>&1
 nk Microsoft\Windows\CurrentVersion\CloudContent
 cd Microsoft\Windows\CurrentVersion\CloudContent
@@ -116,17 +117,22 @@ ed HubMode
 q
 y
 EOF
-    wimlib-imagex update "$WIM_FILE" "$index" --command "add '$temp_reg_dir/SOFTWARE' '/Windows/System32/config/SOFTWARE'" >/dev/null 2>&1
+    wimlib-imagex update "$WIM_FILE" "$index" \
+      --command "add '$temp_reg_dir/SOFTWARE' '/Windows/System32/config/SOFTWARE'" \
+      >/dev/null 2>&1
   fi
 
   # 2. SYSTEM HIVE
-  wimlib-imagex extract "$WIM_FILE" "$index" "/Windows/System32/config/SYSTEM" --dest-dir="$temp_reg_dir" --no-acls >/dev/null 2>&1 || true
+  wimlib-imagex extract "$WIM_FILE" "$index" \
+    "/Windows/System32/config/SYSTEM" \
+    --dest-dir="$temp_reg_dir" --no-acls >/dev/null 2>&1 || true
+
   if [[ -f "$temp_reg_dir/SYSTEM" ]]; then
     # Apply registry tweaks to SYSTEM hive (merged for performance)
     {
       # Disable DiagTrack and dmwappushservice across common control sets
-      CONTROL_SETS=("ControlSet001" "ControlSet002" "ControlSet003")
-      for cs in "${CONTROL_SETS[@]}"; do
+      local cs
+      for cs in "ControlSet001" "ControlSet002" "ControlSet003"; do
         echo "nk $cs\Services\DiagTrack"
         echo "cd $cs\Services\DiagTrack"
         echo "nv 4 Start"
@@ -141,7 +147,7 @@ EOF
         echo "cd \\"
       done
 
-      # Apply hardware bypasses (root-level Setup\LabConfig)
+      # Hardware bypasses (root-level Setup\LabConfig)
       echo "nk Setup\\LabConfig"
       echo "cd Setup\\LabConfig"
       echo "nv 4 BypassTPMCheck"
@@ -168,7 +174,9 @@ EOF
       echo "q"
       echo "y"
     } | chntpw -e "$temp_reg_dir/SYSTEM" >/dev/null 2>&1
-    wimlib-imagex update "$WIM_FILE" "$index" --command "add '$temp_reg_dir/SYSTEM' '/Windows/System32/config/SYSTEM'" >/dev/null 2>&1
+    wimlib-imagex update "$WIM_FILE" "$index" \
+      --command "add '$temp_reg_dir/SYSTEM' '/Windows/System32/config/SYSTEM'" \
+      >/dev/null 2>&1
   fi
 
   rm -rf "$temp_reg_dir"
@@ -176,17 +184,16 @@ EOF
 
 # Generate deletion commands
 generate_commands() {
+  local pattern
   for pattern in "${PATTERNS[@]}"; do
     echo "delete --recursive --force \"/Program Files/WindowsApps/$pattern\""
     echo "delete --recursive --force \"/ProgramData/Microsoft/Windows/AppRepository/Packages/$pattern\""
   done
 
   if [[ "${NANO:-0}" == "1" ]]; then
-    # Aggressive Nano deletions
     echo "delete --recursive --force \"/Program Files (x86)/Microsoft/Edge\""
     echo "delete --recursive --force \"/Program Files (x86)/Microsoft/EdgeCore\""
     echo "delete --recursive --force \"/Program Files (x86)/Microsoft/EdgeUpdate\""
-    # DriverStore deletion removed as it is too risky/destructive for a general builder
     echo "delete --recursive --force \"/Windows/Fonts/malgun.ttf\""
     echo "delete --recursive --force \"/Windows/Fonts/msjh.ttc\""
     echo "delete --recursive --force \"/Windows/Fonts/msyh.ttc\""
@@ -205,7 +212,8 @@ for index in $(seq 1 "$IMAGE_COUNT"); do
 
   # AppX Debloating
   if [[ ${#PATTERNS[@]} -gt 0 ]] || [[ "${NANO:-0}" == "1" ]]; then
-    wimlib-imagex update "$WIM_FILE" "$index" <"$CMD_FILE" 2>&1 | grep -v "does not exist" | head -n 20 || true
+    wimlib-imagex update "$WIM_FILE" "$index" <"$CMD_FILE" 2>&1 \
+      | grep -v "does not exist" | head -n 20 || true
   fi
 
   # Registry Tweaking

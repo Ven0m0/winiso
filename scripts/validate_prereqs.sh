@@ -2,9 +2,6 @@
 # =============================================================================
 # validate_prereqs.sh - Validate prerequisites before building ISO
 # =============================================================================
-# This script validates that all required dependencies, configuration files,
-# and directories are present before starting the build process.
-# =============================================================================
 
 set -euo pipefail
 
@@ -24,7 +21,7 @@ log_info "Checking required tools..."
 
 # Use centralized tool list
 if ! check_required_tools "${REQUIRED_TOOLS[@]}"; then
-    ERRORS=$((ERRORS + $?))
+  ERRORS=$((ERRORS + $?))
 fi
 
 # Check for genisoimage or mkisofs
@@ -95,9 +92,8 @@ log_info "Checking configuration files..."
 
 if [[ -f "$PROJECT_ROOT/config/debloat_list.txt" ]]; then
   log_success "debloat_list.txt found"
-
-  # Count non-empty, non-comment lines
-  pattern_count=$(grep -v "^#" "$PROJECT_ROOT/config/debloat_list.txt" | grep -c -v "^[[:space:]]*$")
+  pattern_count=$(grep -v "^#" "$PROJECT_ROOT/config/debloat_list.txt" \
+    | grep -c -v "^[[:space:]]*$")
   log_info "  → $pattern_count debloat patterns configured"
 else
   log_warn "debloat_list.txt not found - no apps will be removed"
@@ -106,8 +102,6 @@ fi
 
 if [[ -f "$PROJECT_ROOT/config/autounattend.xml" ]]; then
   log_success "autounattend.xml found"
-
-  # Basic XML validation
   if grep -q "<?xml" "$PROJECT_ROOT/config/autounattend.xml"; then
     log_success "  → autounattend.xml appears to be valid XML"
   else
@@ -122,7 +116,6 @@ fi
 
 if [[ -d "$PROJECT_ROOT/config/oem" ]]; then
   log_success "OEM scripts directory found"
-
   if [[ -f "$PROJECT_ROOT/config/oem/SetupComplete.cmd" ]]; then
     log_success "  → SetupComplete.cmd found"
   else
@@ -170,7 +163,6 @@ echo ""
 # Environment Variables
 # =============================================================================
 log_info "Environment configuration..."
-
 log_info "TARGET_EDITION: ${TARGET_EDITION:-ProfessionalWorkstation (default)}"
 log_info "FALLBACK_EDITION: ${FALLBACK_EDITION:-Professional (default)}"
 log_info "PAUSE_FOR_WINDOWS_STAGE: ${PAUSE_FOR_WINDOWS_STAGE:-0 (disabled)}"
@@ -181,7 +173,6 @@ echo ""
 # Disk Space Check
 # =============================================================================
 log_info "Checking available disk space..."
-
 available_space=$(df --output=avail -BG "$PROJECT_ROOT" | tail -n 1 | tr -d 'G[:space:]')
 if [[ $available_space -lt 20 ]]; then
   log_warn "Low disk space: ${available_space}GB available (20GB+ recommended)"

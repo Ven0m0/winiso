@@ -1,96 +1,104 @@
 <?xml version="1.0" encoding="utf-8"?>
 <unattend xmlns="urn:schemas-microsoft-com:unattend" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
-	<!--https://schneegans.de/windows/unattend-generator/?LanguageMode=Unattended&UILanguage=en-US&Locale=en-DE&Keyboard=00000409&GeoLocation=94&ProcessorArchitecture=amd64&BypassRequirementsCheck=true&BypassNetworkCheck=true&UseConfigurationSet=true&HidePowerShellWindows=true&ComputerNameMode=Custom&ComputerName=PC&CompactOsMode=Never&TimeZoneMode=Explicit&TimeZone=W.+Europe+Standard+Time&PartitionMode=Unattended&PartitionLayout=GPT&EspSize=550&RecoveryMode=Partition&RecoverySize=1000&DiskAssertionMode=Skip&WindowsEditionMode=Generic&WindowsEdition=pro&InstallFromMode=Automatic&PEMode=Generated&Disable8Dot3Names=true&PauseBeforeFormatting=true&UserAccountMode=Unattended&AccountName0=Ven0m0&AccountDisplayName0=&AccountPassword0=hermes01&AccountGroup0=Administrators&AutoLogonMode=Own&PasswordExpirationMode=Unlimited&LockoutMode=Disabled&HideFiles=HiddenSystem&ShowFileExtensions=true&ClassicContextMenu=true&TaskbarSearch=Icon&TaskbarIconsMode=Empty&DisableWidgets=true&LeftTaskbar=true&HideTaskViewButton=true&DisableBingResults=true&StartTilesMode=Empty&StartPinsMode=Empty&DisableUac=true&DisableSac=true&DisableSmartScreen=true&DisableFastStartup=true&EnableLongPaths=true&HardenSystemDriveAcl=true&DeleteJunctions=true&AllowPowerShellScripts=true&DisableLastAccess=true&PreventAutomaticReboot=true&TurnOffSystemSounds=true&DisableAppSuggestions=true&PreventDeviceEncryption=true&HideEdgeFre=true&DisableEdgeStartupBoost=true&MakeEdgeUninstallable=true&DisablePointerPrecision=true&DisableCoreIsolation=true&DeleteWindowsOld=true&DisableWpbt=true&EffectsMode=Custom&ThumbnailsOrIcon=true&DragFullWindows=true&FontSmoothing=true&DesktopIconsMode=Custom&IconControlPanel=true&IconHome=true&IconRecycleBin=true&StartFoldersMode=Default&WifiMode=Skip&ExpressSettings=DisableAll&LockKeysMode=Configure&CapsLockInitial=Off&CapsLockBehavior=Ignore&NumLockInitial=Off&NumLockBehavior=Ignore&ScrollLockInitial=Off&ScrollLockBehavior=Ignore&StickyKeysMode=Disabled&ColorMode=Custom&SystemColorTheme=Dark&AppsColorTheme=Dark&AccentColor=%23d300d6&WallpaperMode=Default&LockScreenMode=Default&Remove3DViewer=true&RemoveBingSearch=true&RemoveCamera=true&RemoveClipchamp=true&RemoveClock=true&RemoveCopilot=true&RemoveCortana=true&RemoveWindowsHello=true&RemoveFamily=true&RemoveFeedbackHub=true&RemoveGameAssist=true&RemoveGetHelp=true&RemoveHandwriting=true&RemoveMailCalendar=true&RemoveMaps=true&RemoveMathInputPanel=true&RemoveMixedReality=true&RemoveZuneVideo=true&RemoveNews=true&RemoveOffice365=true&RemoveOneDrive=true&RemoveOneNote=true&RemoveOneSync=true&RemoveOutlook=true&RemovePeople=true&RemovePowerAutomate=true&RemoveQuickAssist=true&RemoveRecall=true&RemoveSkype=true&RemoveSnippingTool=true&RemoveSolitaire=true&RemoveSpeech=true&RemoveStepsRecorder=true&RemoveStickyNotes=true&RemoveTeams=true&RemoveGetStarted=true&RemoveToDo=true&RemoveVoiceRecorder=true&RemoveWallet=true&RemoveWeather=true&RemoveFaxAndScan=true&RemoveYourPhone=true&SystemScript0=powercfg.exe+%2Fhibernate+off%0D%0Afsutil+behavior+set+DisableLastAccess+1%0D%0Afsutil+behavior+set+disable8dot3+1%0D%0Afsutil+behavior+set+disableencryption+1%0D%0Afsutil+behavior+set+disablecompression+1&SystemScriptType0=Cmd&SystemScript1=Windows+Registry+Editor+Version+5.00%0D%0A%0D%0A%5BHKEY_LOCAL_MACHINE%5CSOFTWARE%5CMicrosoft%5CPolicyManager%5Ccurrent%5Cdevice%5CUpdate%5D%0D%0A%22ExcludeWUDriversInQualityUpdate%22%3Ddword%3A00000001%0D%0A%0D%0A%5BHKEY_LOCAL_MACHINE%5CSOFTWARE%5CMicrosoft%5CPolicyManager%5Cdefault%5CUpdate%5D%0D%0A%22ExcludeWUDriversInQualityUpdate%22%3Ddword%3A00000001%0D%0A%0D%0A%5BHKEY_LOCAL_MACHINE%5CSOFTWARE%5CMicrosoft%5CWindowsUpdate%5CUX%5CSettings%5D%0D%0A%22ExcludeWUDriversInQualityUpdate%22%3Ddword%3A00000001%0D%0A%0D%0A%5BHKEY_LOCAL_MACHINE%5CSOFTWARE%5CPolicies%5CMicrosoft%5CWindows%5CWindowsUpdate%5D%0D%0A%22ExcludeWUDriversInQualityUpdate%22%3Ddword%3A00000001%0D%0A%0D%0A%5BHKEY_LOCAL_MACHINE%5CSOFTWARE%5CMicrosoft%5CPolicyManager%5Cdefault%5CUpdate%5CExcludeWUDriversInQualityUpdate%5D%0D%0A%22value%22%3Ddword%3A00000001%0D%0A%0D%0A%5BHKEY_LOCAL_MACHINE%5CSOFTWARE%5CMicrosoft%5CWindows%5CCurrentVersion%5CDevice+Metadata%5D%0D%0A%22PreventDeviceMetadataFromNetwork%22%3Ddword%3A00000001%0D%0A%0D%0A%5BHKEY_LOCAL_MACHINE%5CSOFTWARE%5CMicrosoft%5CWindows%5CCurrentVersion%5CDriverSearching%5D%0D%0A%22SearchOrderConfig%22%3Ddword%3A00000000%0D%0A%22DontSearchWindowsUpdate%22%3Ddword%3A00000001&SystemScriptType1=Reg&FirstLogonScript0=powercfg.exe+%2Fhibernate+off%0D%0Afsutil+behavior+set+DisableLastAccess+1%0D%0Afsutil+behavior+set+disable8dot3+1%0D%0Afsutil+behavior+set+disableencryption+1%0D%0Afsutil+behavior+set+disablecompression+1%0D%0Afsutil+behavior+set+encryptpagingfile+0&FirstLogonScriptType0=Cmd&WdacMode=Skip&AppLockerMode=Skip-->
+	<!--https://schneegans.de/windows/unattend-generator/?LanguageMode=Unattended&UILanguage=en-US&Locale=en-DE&Keyboard=00000409&GeoLocation=94&ProcessorArchitecture=amd64&BypassRequirementsCheck=true&BypassNetworkCheck=true&UseConfigurationSet=true&HidePowerShellWindows=true&ComputerNameMode=Custom&ComputerName=PC&CompactOsMode=Never&TimeZoneMode=Explicit&TimeZone=W.+Europe+Standard+Time&PartitionMode=Unattended&PartitionLayout=GPT&EspSize=550&RecoveryMode=Partition&RecoverySize=1000&DiskAssertionMode=Skip&WindowsEditionMode=Generic&WindowsEdition=pro&InstallFromMode=Index&InstallFromIndex=1&PEMode=Generated&Disable8Dot3Names=true&PauseBeforeFormatting=true&UserAccountMode=Unattended&AccountName0=Ven0m0&AccountDisplayName0=&AccountPassword0=hermes01&AccountGroup0=Administrators&AutoLogonMode=Own&PasswordExpirationMode=Unlimited&LockoutMode=Disabled&HideFiles=HiddenSystem&ShowFileExtensions=true&ClassicContextMenu=true&TaskbarSearch=Icon&TaskbarIconsMode=Empty&DisableWidgets=true&LeftTaskbar=true&HideTaskViewButton=true&DisableBingResults=true&StartTilesMode=Empty&StartPinsMode=Empty&DisableUac=true&DisableSac=true&DisableSmartScreen=true&DisableFastStartup=true&EnableLongPaths=true&HardenSystemDriveAcl=true&DeleteJunctions=true&AllowPowerShellScripts=true&DisableLastAccess=true&PreventAutomaticReboot=true&TurnOffSystemSounds=true&DisableAppSuggestions=true&PreventDeviceEncryption=true&HideEdgeFre=true&DisableEdgeStartupBoost=true&MakeEdgeUninstallable=true&DisablePointerPrecision=true&DisableCoreIsolation=true&DeleteWindowsOld=true&DisableWpbt=true&EffectsMode=Custom&ThumbnailsOrIcon=true&DragFullWindows=true&FontSmoothing=true&DesktopIconsMode=Custom&IconControlPanel=true&IconHome=true&IconRecycleBin=true&StartFoldersMode=Default&WifiMode=Skip&ExpressSettings=DisableAll&LockKeysMode=Configure&CapsLockInitial=Off&CapsLockBehavior=Ignore&NumLockInitial=Off&NumLockBehavior=Ignore&ScrollLockInitial=Off&ScrollLockBehavior=Ignore&StickyKeysMode=Disabled&ColorMode=Custom&SystemColorTheme=Dark&AppsColorTheme=Dark&AccentColor=%23d300d6&WallpaperMode=Default&LockScreenMode=Default&WdacMode=Skip&AppLockerMode=Skip-->
 	<settings pass="offlineServicing"></settings>
 	<settings pass="windowsPE">
 		<component name="Microsoft-Windows-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
 			<RunSynchronous>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>1</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:rem Set keyboard layout&amp;echo:wpeutil.exe SetKeyboardLayout 1000:00000409&amp;echo:@for ^%^%d in (C D E F G H I J K L M N O P Q T U V X Y Z^) do @()</Path>
+					<Path>reg.exe add "HKLM\SYSTEM\Setup\LabConfig" /v BypassTPMCheck /t REG_DWORD /d 1 /f</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>2</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:if exist ^%^%d:\sources\install.wim set ^"IMAGE_FILE=^%^%d:\sources\install.wim^"&amp;echo:if exist ^%^%d:\sources\install.esd set ^"IMAGE_FILE=^%^%d:\sources\install.esd^")</Path>
+					<Path>reg.exe add "HKLM\SYSTEM\Setup\LabConfig" /v BypassSecureBootCheck /t REG_DWORD /d 1 /f</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>3</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:if exist ^%^%d:\sources\install.swm set ^"IMAGE_FILE=^%^%d:\sources\install.swm^" ^&amp; set ^"SWM_PARAM=/SWMFile:^%^%d:\sources\install*.swm^"&amp;echo:if exist ^%^%d:\autounattend.xml set ^"XML_FILE=^%^%d:\autounattend.xml^")</Path>
+					<Path>reg.exe add "HKLM\SYSTEM\Setup\LabConfig" /v BypassRAMCheck /t REG_DWORD /d 1 /f</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>4</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:if exist ^%^%d:\$OEM$ set ^"OEM_FOLDER=^%^%d:\$OEM$^"&amp;echo:if exist ^%^%d:\$WinPEDriver$ set ^"PEDRIVERS_FOLDER=^%^%d:\$WinPEDriver$^"&amp;echo:if exist ^%^%d:\virtio-win-guest-tools.exe set ^"VIRTIO_DRIVE=^%^%d:^"&amp;echo:^))</Path>
+					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:rem Set keyboard layout&amp;echo:wpeutil.exe SetKeyboardLayout 1000:00000409&amp;echo:@for ^%^%d in (C D E F G H I J K L M N O P Q T U V X Y Z^) do @()</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>5</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:for /f ^"tokens=3^" ^%^%t in ('reg.exe query HKLM\System\Setup /v UnattendFile 2^^^&gt;nul'^) do ( if exist ^%^%t set ^"XML_FILE=^%^%t^" ^))</Path>
+					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:if exist ^%^%d:\sources\install.wim set ^"IMAGE_FILE=^%^%d:\sources\install.wim^"&amp;echo:if exist ^%^%d:\sources\install.esd set ^"IMAGE_FILE=^%^%d:\sources\install.esd^")</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>6</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:@if not defined IMAGE_FILE echo Could not locate install.wim, install.esd or install.swm. ^&amp; pause ^&amp; exit /b 1&amp;echo:@if not defined XML_FILE echo Could not locate autounattend.xml. ^&amp; pause ^&amp; exit /b 1)</Path>
+					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:if exist ^%^%d:\sources\install.swm set ^"IMAGE_FILE=^%^%d:\sources\install.swm^" ^&amp; set ^"SWM_PARAM=/SWMFile:^%^%d:\sources\install*.swm^"&amp;echo:if exist ^%^%d:\autounattend.xml set ^"XML_FILE=^%^%d:\autounattend.xml^")</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>7</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:rem Install drivers from $WinPEDriver$ folder&amp;echo:if defined PEDRIVERS_FOLDER (&amp;echo:for /R ^%PEDRIVERS_FOLDER^% ^%^%f IN (*.inf^) do drvload.exe ^"^%^%f^"&amp;echo:^)&amp;echo:^&gt;X:\diskpart.txt (&amp;echo:echo:SELECT DISK=0)</Path>
+					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:if exist ^%^%d:\$OEM$ set ^"OEM_FOLDER=^%^%d:\$OEM$^"&amp;echo:if exist ^%^%d:\$WinPEDriver$ set ^"PEDRIVERS_FOLDER=^%^%d:\$WinPEDriver$^"&amp;echo:if exist ^%^%d:\virtio-win-guest-tools.exe set ^"VIRTIO_DRIVE=^%^%d:^"&amp;echo:^))</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>8</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:echo:CLEAN&amp;echo:echo:CONVERT GPT&amp;echo:echo:CREATE PARTITION EFI SIZE=550&amp;echo:echo:FORMAT QUICK FS=FAT32 LABEL=^^^"System^^^"&amp;echo:echo:ASSIGN LETTER=S&amp;echo:echo:CREATE PARTITION MSR SIZE=16&amp;echo:echo:CREATE PARTITION PRIMARY)</Path>
+					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:for /f ^"tokens=3^" ^%^%t in ('reg.exe query HKLM\System\Setup /v UnattendFile 2^^^&gt;nul'^) do ( if exist ^%^%t set ^"XML_FILE=^%^%t^" ^))</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>9</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:echo:SHRINK MINIMUM=1000&amp;echo:echo:FORMAT QUICK FS=NTFS LABEL=^^^"Windows^^^"&amp;echo:echo:ASSIGN LETTER=W&amp;echo:echo:CREATE PARTITION PRIMARY&amp;echo:echo:FORMAT QUICK FS=NTFS LABEL=^^^"Recovery^^^"&amp;echo:echo:ASSIGN LETTER=R)</Path>
+					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:@if not defined IMAGE_FILE echo Could not locate install.wim, install.esd or install.swm. ^&amp; pause ^&amp; exit /b 1&amp;echo:@if not defined XML_FILE echo Could not locate autounattend.xml. ^&amp; pause ^&amp; exit /b 1)</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>10</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:echo:SET ID=^^^"de94bba4-06d1-4d40-a16a-bfd50179d6ac^^^"&amp;echo:echo:GPT ATTRIBUTES=0x8000000000000001&amp;echo:^)&amp;echo:@echo diskpart will now partition and format your disk&amp;echo:pause)</Path>
+					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:rem Install drivers from $WinPEDriver$ folder&amp;echo:if defined PEDRIVERS_FOLDER (&amp;echo:for /R ^%PEDRIVERS_FOLDER^% ^%^%f IN (*.inf^) do drvload.exe ^"^%^%f^"&amp;echo:^)&amp;echo:^&gt;X:\diskpart.txt (&amp;echo:echo:SELECT DISK=0)</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>11</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:diskpart.exe /s X:\diskpart.txt ^|^| ( echo diskpart.exe encountered an error. ^&amp; pause ^&amp; exit /b 1 ^)&amp;echo:set ^"OS_VERSION=Windows 11^"&amp;echo:for /f ^"tokens=3 delims=.^" ^%^%v in ('ver'^) do ()</Path>
+					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:echo:CLEAN&amp;echo:echo:CONVERT GPT&amp;echo:echo:CREATE PARTITION EFI SIZE=550&amp;echo:echo:FORMAT QUICK FS=FAT32 LABEL=^^^"System^^^"&amp;echo:echo:ASSIGN LETTER=S&amp;echo:echo:CREATE PARTITION MSR SIZE=16&amp;echo:echo:CREATE PARTITION PRIMARY)</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>12</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:if ^%^%v LSS 20000 set ^"OS_VERSION=Windows 10^"&amp;echo:^)&amp;echo:set ^"IMG_PARAM=/Name:^"^%OS_VERSION^% Pro^"^")</Path>
+					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:echo:SHRINK MINIMUM=1000&amp;echo:echo:FORMAT QUICK FS=NTFS LABEL=^^^"Windows^^^"&amp;echo:echo:ASSIGN LETTER=W&amp;echo:echo:CREATE PARTITION PRIMARY&amp;echo:echo:FORMAT QUICK FS=NTFS LABEL=^^^"Recovery^^^"&amp;echo:echo:ASSIGN LETTER=R)</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>13</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:dism.exe /Apply-Image /ImageFile:^%IMAGE_FILE^% ^%SWM_PARAM^% ^%IMG_PARAM^% /ApplyDir:W:\  /CheckIntegrity /Verify ^|^| ( echo dism.exe encountered an error. ^&amp; pause ^&amp; exit /b 1 ^))</Path>
+					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:echo:SET ID=^^^"de94bba4-06d1-4d40-a16a-bfd50179d6ac^^^"&amp;echo:echo:GPT ATTRIBUTES=0x8000000000000001&amp;echo:^)&amp;echo:@echo diskpart will now partition and format your disk&amp;echo:pause)</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>14</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:bcdboot.exe W:\Windows /s S: ^|^| ( echo bcdboot.exe encountered an error. ^&amp; pause ^&amp; exit /b 1 ^)&amp;echo:mkdir W:\Windows\Panther&amp;echo:copy ^%XML_FILE^% W:\Windows\Panther\unattend.xml&amp;echo:if defined PEDRIVERS_FOLDER ()</Path>
+					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:diskpart.exe /s X:\diskpart.txt ^|^| ( echo diskpart.exe encountered an error. ^&amp; pause ^&amp; exit /b 1 ^)&amp;echo:set ^"IMG_PARAM=/Index:1^")</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>15</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:dism.exe /Add-Driver /Image:W:\ /Driver:^"^%PEDRIVERS_FOLDER^%^" /Recurse&amp;echo:^)&amp;echo:dism.exe /Image:W:\ /Set-TimeZone:^"W. Europe Standard Time^"&amp;echo:rem Strip 8.3 file names&amp;echo:fsutil.exe 8dot3name set W: 1)</Path>
+					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:dism.exe /Apply-Image /ImageFile:^%IMAGE_FILE^% ^%SWM_PARAM^% ^%IMG_PARAM^% /ApplyDir:W:\  /CheckIntegrity /Verify ^|^| ( echo dism.exe encountered an error. ^&amp; pause ^&amp; exit /b 1 ^))</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>16</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:fsutil.exe 8dot3name strip /s /f W:\&amp;echo:rem Disable WPBT&amp;echo:reg.exe LOAD HKLM\mount W:\Windows\System32\config\SYSTEM)</Path>
+					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:bcdboot.exe W:\Windows /s S: ^|^| ( echo bcdboot.exe encountered an error. ^&amp; pause ^&amp; exit /b 1 ^)&amp;echo:mkdir W:\Windows\Panther&amp;echo:copy ^%XML_FILE^% W:\Windows\Panther\unattend.xml&amp;echo:if defined PEDRIVERS_FOLDER ()</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>17</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:reg.exe add ^"HKLM\mount\ControlSet001\Control\Session Manager^" /v DisableWpbtExecution /t REG_DWORD /d 1 /f&amp;echo:reg.exe UNLOAD HKLM\mount&amp;echo:rem Set device setup region to Germany (GeoID 94^))</Path>
+					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:dism.exe /Add-Driver /Image:W:\ /Driver:^"^%PEDRIVERS_FOLDER^%^" /Recurse&amp;echo:^)&amp;echo:dism.exe /Image:W:\ /Set-TimeZone:^"W. Europe Standard Time^"&amp;echo:rem Strip 8.3 file names&amp;echo:fsutil.exe 8dot3name set W: 1)</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>18</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:reg.exe LOAD HKLM\mount W:\Windows\System32\config\SOFTWARE&amp;echo:reg.exe ADD ^"HKLM\mount\Microsoft\Windows\CurrentVersion\Control Panel\DeviceRegion^" /v DeviceRegion /t REG_DWORD /d 94 /f&amp;echo:reg.exe UNLOAD HKLM\mount)</Path>
+					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:fsutil.exe 8dot3name strip /s /f W:\&amp;echo:rem Disable WPBT&amp;echo:reg.exe LOAD HKLM\mount W:\Windows\System32\config\SYSTEM)</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>19</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:rem Copy $OEM$ folder if present&amp;echo:set ^"ROBOCOPY_ARGS=/E /XX /COPY:DAT /DCOPY:DAT /R:0^"&amp;echo:if defined OEM_FOLDER (&amp;echo:if exist ^"^%OEM_FOLDER^%\$$^" robocopy.exe ^"^%OEM_FOLDER^%\$$^" W:\Windows ^%ROBOCOPY_ARGS^%)</Path>
+					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:reg.exe add ^"HKLM\mount\ControlSet001\Control\Session Manager^" /v DisableWpbtExecution /t REG_DWORD /d 1 /f&amp;echo:reg.exe UNLOAD HKLM\mount&amp;echo:rem Set device setup region to Germany (GeoID 94^))</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>20</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:if exist ^"^%OEM_FOLDER^%\$1^" robocopy.exe ^"^%OEM_FOLDER^%\$1^" W:\ ^%ROBOCOPY_ARGS^%&amp;echo:@for ^%^%d in (C D E F G H I J K L M N O P Q R S T U V W X Y Z^) do @()</Path>
+					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:reg.exe LOAD HKLM\mount W:\Windows\System32\config\SOFTWARE&amp;echo:reg.exe ADD ^"HKLM\mount\Microsoft\Windows\CurrentVersion\Control Panel\DeviceRegion^" /v DeviceRegion /t REG_DWORD /d 94 /f&amp;echo:reg.exe UNLOAD HKLM\mount)</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>21</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:if exist ^"^%OEM_FOLDER^%\^%^%d^" robocopy.exe ^"^%OEM_FOLDER^%\^%^%d^" ^%^%d:\ ^%ROBOCOPY_ARGS^%&amp;echo:^)&amp;echo:^)&amp;echo:rem Continue with next stage of Windows Setup after reboot&amp;echo:wpeutil.exe reboot)</Path>
+					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:rem Copy $OEM$ folder if present&amp;echo:set ^"ROBOCOPY_ARGS=/E /XX /COPY:DAT /DCOPY:DAT /R:0^"&amp;echo:if defined OEM_FOLDER (&amp;echo:if exist ^"^%OEM_FOLDER^%\$$^" robocopy.exe ^"^%OEM_FOLDER^%\$$^" W:\Windows ^%ROBOCOPY_ARGS^%)</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>22</Order>
+					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:if exist ^"^%OEM_FOLDER^%\$1^" robocopy.exe ^"^%OEM_FOLDER^%\$1^" W:\ ^%ROBOCOPY_ARGS^%&amp;echo:@for ^%^%d in (C D E F G H I J K L M N O P Q R S T U V W X Y Z^) do @()</Path>
+				</RunSynchronousCommand>
+				<RunSynchronousCommand wcm:action="add">
+					<Order>23</Order>
+					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:if exist ^"^%OEM_FOLDER^%\^%^%d^" robocopy.exe ^"^%OEM_FOLDER^%\^%^%d^" ^%^%d:\ ^%ROBOCOPY_ARGS^%&amp;echo:^)&amp;echo:^)&amp;echo:rem Continue with next stage of Windows Setup after reboot&amp;echo:wpeutil.exe reboot)</Path>
+				</RunSynchronousCommand>
+				<RunSynchronousCommand wcm:action="add">
+					<Order>24</Order>
 					<Path>cmd.exe /c "X:\pe.cmd"</Path>
 				</RunSynchronousCommand>
 			</RunSynchronous>
@@ -163,7 +171,7 @@
 				<ProtectYourPC>3</ProtectYourPC>
 				<HideEULAPage>true</HideEULAPage>
 				<HideWirelessSetupInOOBE>true</HideWirelessSetupInOOBE>
-				<HideOnlineAccountScreens>false</HideOnlineAccountScreens>
+				<HideOnlineAccountScreens>true</HideOnlineAccountScreens>
 			</OOBE>
 			<FirstLogonCommands>
 				<SynchronousCommand wcm:action="add">
@@ -197,189 +205,6 @@ foreach( $file in $Document.unattend.Extensions.File ) {
     [System.IO.File]::WriteAllBytes( $path, $bytes );
 }
 		</ExtractScript>
-		<File path="C:\Windows\Setup\Scripts\RemovePackages.ps1">
-$selectors = @(
-	'Microsoft.Microsoft3DViewer';
-	'Microsoft.BingSearch';
-	'Microsoft.WindowsCamera';
-	'Clipchamp.Clipchamp';
-	'Microsoft.WindowsAlarms';
-	'Microsoft.Copilot';
-	'Microsoft.549981C3F5F10';
-	'MicrosoftCorporationII.MicrosoftFamily';
-	'Microsoft.WindowsFeedbackHub';
-	'Microsoft.Edge.GameAssist';
-	'Microsoft.GetHelp';
-	'Microsoft.Getstarted';
-	'microsoft.windowscommunicationsapps';
-	'Microsoft.WindowsMaps';
-	'Microsoft.MixedReality.Portal';
-	'Microsoft.BingNews';
-	'Microsoft.MicrosoftOfficeHub';
-	'Microsoft.Office.OneNote';
-	'Microsoft.OutlookForWindows';
-	'Microsoft.People';
-	'Microsoft.PowerAutomateDesktop';
-	'MicrosoftCorporationII.QuickAssist';
-	'Microsoft.SkypeApp';
-	'Microsoft.ScreenSketch';
-	'Microsoft.MicrosoftSolitaireCollection';
-	'Microsoft.MicrosoftStickyNotes';
-	'MicrosoftTeams';
-	'MSTeams';
-	'Microsoft.Todos';
-	'Microsoft.WindowsSoundRecorder';
-	'Microsoft.Wallet';
-	'Microsoft.BingWeather';
-	'Microsoft.YourPhone';
-	'Microsoft.ZuneVideo';
-);
-$getCommand = {
-  Get-AppxProvisionedPackage -Online;
-};
-$filterCommand = {
-  $_.DisplayName -eq $selector;
-};
-$removeCommand = {
-  [CmdletBinding()]
-  param(
-    [Parameter( Mandatory, ValueFromPipeline )]
-    $InputObject
-  );
-  process {
-    $InputObject | Remove-AppxProvisionedPackage -AllUsers -Online -ErrorAction 'Continue';
-  }
-};
-$type = 'Package';
-$logfile = 'C:\Windows\Setup\Scripts\RemovePackages.log';
-&amp; {
-	$installed = &amp; $getCommand;
-	foreach( $selector in $selectors ) {
-		$result = [ordered] @{
-			Selector = $selector;
-		};
-		$found = $installed | Where-Object -FilterScript $filterCommand;
-		if( $found ) {
-			$result.Output = $found | &amp; $removeCommand;
-			if( $? ) {
-				$result.Message = "$type removed.";
-			} else {
-				$result.Message = "$type not removed.";
-				$result.Error = $Error[0];
-			}
-		} else {
-			$result.Message = "$type not installed.";
-		}
-		$result | ConvertTo-Json -Depth 3 -Compress;
-	}
-} *&gt;&amp;1 | Out-String -Width 1KB -Stream &gt;&gt; $logfile;
-		</File>
-		<File path="C:\Windows\Setup\Scripts\RemoveCapabilities.ps1">
-$selectors = @(
-	'Print.Fax.Scan';
-	'Language.Handwriting';
-	'MathRecognizer';
-	'OneCoreUAP.OneSync';
-	'App.Support.QuickAssist';
-	'Microsoft.Windows.SnippingTool';
-	'Language.Speech';
-	'Language.TextToSpeech';
-	'App.StepsRecorder';
-	'Hello.Face.18967';
-	'Hello.Face.Migration.18967';
-	'Hello.Face.20134';
-);
-$getCommand = {
-  Get-WindowsCapability -Online | Where-Object -Property 'State' -NotIn -Value @(
-    'NotPresent';
-    'Removed';
-  );
-};
-$filterCommand = {
-  ($_.Name -split '~')[0] -eq $selector;
-};
-$removeCommand = {
-  [CmdletBinding()]
-  param(
-    [Parameter( Mandatory, ValueFromPipeline )]
-    $InputObject
-  );
-  process {
-    $InputObject | Remove-WindowsCapability -Online -ErrorAction 'Continue';
-  }
-};
-$type = 'Capability';
-$logfile = 'C:\Windows\Setup\Scripts\RemoveCapabilities.log';
-&amp; {
-	$installed = &amp; $getCommand;
-	foreach( $selector in $selectors ) {
-		$result = [ordered] @{
-			Selector = $selector;
-		};
-		$found = $installed | Where-Object -FilterScript $filterCommand;
-		if( $found ) {
-			$result.Output = $found | &amp; $removeCommand;
-			if( $? ) {
-				$result.Message = "$type removed.";
-			} else {
-				$result.Message = "$type not removed.";
-				$result.Error = $Error[0];
-			}
-		} else {
-			$result.Message = "$type not installed.";
-		}
-		$result | ConvertTo-Json -Depth 3 -Compress;
-	}
-} *&gt;&amp;1 | Out-String -Width 1KB -Stream &gt;&gt; $logfile;
-		</File>
-		<File path="C:\Windows\Setup\Scripts\RemoveFeatures.ps1">
-$selectors = @(
-	'Recall';
-	'Microsoft-SnippingTool';
-);
-$getCommand = {
-  Get-WindowsOptionalFeature -Online | Where-Object -Property 'State' -NotIn -Value @(
-    'Disabled';
-    'DisabledWithPayloadRemoved';
-  );
-};
-$filterCommand = {
-  $_.FeatureName -eq $selector;
-};
-$removeCommand = {
-  [CmdletBinding()]
-  param(
-    [Parameter( Mandatory, ValueFromPipeline )]
-    $InputObject
-  );
-  process {
-    $InputObject | Disable-WindowsOptionalFeature -Online -Remove -NoRestart -ErrorAction 'Continue';
-  }
-};
-$type = 'Feature';
-$logfile = 'C:\Windows\Setup\Scripts\RemoveFeatures.log';
-&amp; {
-	$installed = &amp; $getCommand;
-	foreach( $selector in $selectors ) {
-		$result = [ordered] @{
-			Selector = $selector;
-		};
-		$found = $installed | Where-Object -FilterScript $filterCommand;
-		if( $found ) {
-			$result.Output = $found | &amp; $removeCommand;
-			if( $? ) {
-				$result.Message = "$type removed.";
-			} else {
-				$result.Message = "$type not removed.";
-				$result.Error = $Error[0];
-			}
-		} else {
-			$result.Message = "$type not installed.";
-		}
-		$result | ConvertTo-Json -Depth 3 -Compress;
-	}
-} *&gt;&amp;1 | Out-String -Width 1KB -Stream &gt;&gt; $logfile;
-		</File>
 		<File path="C:\Windows\Setup\Scripts\TaskbarLayoutModification.xml">
 &lt;LayoutModificationTemplate xmlns="http://schemas.microsoft.com/Start/2014/LayoutModification" xmlns:defaultlayout="http://schemas.microsoft.com/Start/2014/FullDefaultLayout" xmlns:start="http://schemas.microsoft.com/Start/2014/StartLayout" xmlns:taskbar="http://schemas.microsoft.com/Start/2014/TaskbarLayout" Version="1"&gt;
 	&lt;CustomTaskbarLayoutCollection PinListPlacement="Replace"&gt;
@@ -599,46 +424,6 @@ $htmlAccentColor = '#D300D6';
 	$palette[ $index++ ] = $accentColor.A;
 	Set-ItemProperty @params -Value $palette -Type 'Binary' -Force;
 };
-		</File>
-		<File path="C:\Windows\Setup\Scripts\unattend-01.cmd">
-powercfg.exe /hibernate off
-fsutil behavior set DisableLastAccess 1
-fsutil behavior set disable8dot3 1
-fsutil behavior set disableencryption 1
-fsutil behavior set disablecompression 1
-		</File>
-		<File path="C:\Windows\Setup\Scripts\unattend-02.reg">
-Windows Registry Editor Version 5.00
-
-[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\PolicyManager\current\device\Update]
-"ExcludeWUDriversInQualityUpdate"=dword:00000001
-
-[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\PolicyManager\default\Update]
-"ExcludeWUDriversInQualityUpdate"=dword:00000001
-
-[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\WindowsUpdate\UX\Settings]
-"ExcludeWUDriversInQualityUpdate"=dword:00000001
-
-[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate]
-"ExcludeWUDriversInQualityUpdate"=dword:00000001
-
-[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\PolicyManager\default\Update\ExcludeWUDriversInQualityUpdate]
-"value"=dword:00000001
-
-[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Device Metadata]
-"PreventDeviceMetadataFromNetwork"=dword:00000001
-
-[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\DriverSearching]
-"SearchOrderConfig"=dword:00000000
-"DontSearchWindowsUpdate"=dword:00000001
-		</File>
-		<File path="C:\Windows\Setup\Scripts\unattend-03.cmd">
-powercfg.exe /hibernate off
-fsutil behavior set DisableLastAccess 1
-fsutil behavior set disable8dot3 1
-fsutil behavior set disableencryption 1
-fsutil behavior set disablecompression 1
-fsutil behavior set encryptpagingfile 0
 		</File>
 		<File path="C:\Windows\Setup\Scripts\Specialize.ps1">
 $scripts = @(
@@ -974,7 +759,7 @@ $scripts = @(
   [float] $complete = 0;
   [float] $increment = 100 / $scripts.Count;
   foreach( $script in $scripts ) {
-    Write-Progress -Id 0 -Activity 'Running scripts to modify the default user&#x2019;s registry hive. Do not close this window.' -PercentComplete $complete;
+    Write-Progress -Id 0 -Activity 'Running scripts to modify the default user&#x2019;&#x2019;s registry hive. Do not close this window.' -PercentComplete $complete;
     '*** Will now execute command &#xAB;{0}&#xBB;.' -f $(
       $script.ToString().Trim() -replace '\s+', ' ' -replace '^(.{99})(.+)$', '$1&#x2026;';
     );
@@ -1006,14 +791,60 @@ $scripts = @(
 		cmd.exe /c "rmdir C:\Windows.old";
 	};
 	{
-		C:\Windows\Setup\Scripts\unattend-03.cmd;
-	};
-	{
 		Remove-Item -LiteralPath @(
 		  'C:\Windows\Panther\unattend.xml';
 		  'C:\Windows\Panther\unattend-original.xml';
 		  'C:\Windows\Setup\Scripts\Wifi.xml';
 		) -Force -ErrorAction 'SilentlyContinue' -Verbose;
+	};
+	{
+		reg.exe delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU" /v NoAutoUpdate              /f;
+		reg.exe delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU" /v AUOptions                 /f;
+		reg.exe delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU" /v UseWUServer               /f;
+		reg.exe delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate"    /v DisableWindowsUpdateAccess /f;
+		reg.exe delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate"    /v WUServer                  /f;
+		reg.exe delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate"    /v WUStatusServer            /f;
+		reg.exe delete "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\DeliveryOptimization\\Config" /v DODownloadMode /f;
+		reg.exe add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\BITS"         /v Start /t REG_DWORD /d 3 /f;
+		reg.exe add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\wuauserv"     /v Start /t REG_DWORD /d 3 /f;
+		reg.exe add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\UsoSvc"       /v Start /t REG_DWORD /d 2 /f;
+		reg.exe add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\WaaSMedicSvc" /v Start /t REG_DWORD /d 3 /f;
+	};
+	{
+		reg.exe add "HKLM\\SOFTWARE\\Microsoft\\PolicyManager\\current\\device\\Education" /f;
+		reg.exe add "HKLM\\SOFTWARE\\Microsoft\\PolicyManager\\current\\device\\Start" /f;
+		reg.exe add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer" /f;
+		reg.exe add "HKLM\\SOFTWARE\\Microsoft\\PolicyManager\\current\\device\\Education" /v IsEducationEnvironment /t REG_DWORD /d 1 /f;
+		reg.exe add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer" /v HideRecommendedSection /t REG_DWORD /d 1 /f;
+		reg.exe add "HKLM\\SOFTWARE\\Microsoft\\PolicyManager\\current\\device\\Start" /v HideRecommendedSection /t REG_DWORD /d 1 /f;
+	};
+	{
+		$recallFeature = Get-WindowsOptionalFeature -Online -ErrorAction SilentlyContinue | Where-Object { $_.State -eq 'Enabled' -and $_.FeatureName -like 'Recall' };
+		if( $recallFeature ) {
+			Disable-WindowsOptionalFeature -Online -FeatureName 'Recall' -Remove -ErrorAction SilentlyContinue;
+		}
+	};
+	{
+		$viveDir = Join-Path $env:TEMP 'ViVeTool';
+		$viveZip = Join-Path $env:TEMP 'ViVeTool.zip';
+		Invoke-WebRequest 'https://github.com/thebookisclosed/ViVe/releases/download/v0.3.4/ViVeTool-v0.3.4-IntelAmd.zip' -OutFile $viveZip;
+		Expand-Archive -Path $viveZip -DestinationPath $viveDir -Force;
+		Remove-Item -Path $viveZip -Force;
+		Start-Process -FilePath (Join-Path $viveDir 'ViVeTool.exe') -ArgumentList '/disable /id:47205210' -Wait -NoNewWindow;
+		Remove-Item -Path $viveDir -Recurse -Force;
+	};
+	{
+		if( (Get-BitLockerVolume -MountPoint $Env:SystemDrive).ProtectionStatus -eq 'On' ) {
+			Disable-BitLocker -MountPoint $Env:SystemDrive;
+		}
+	};
+	{
+		if( (bcdedit | Select-String 'path').Count -eq 2 ) {
+			bcdedit /set `{bootmgr`} timeout 0;
+		}
+	};
+	{
+		&amp; 'C:\Windows\Setup\Scripts\install.ps1';
 	};
 );
 
@@ -1032,6 +863,353 @@ $scripts = @(
     $complete += $increment;
   }
 } *&gt;&amp;1 | Out-String -Width 1KB -Stream &gt;&gt; "C:\Windows\Setup\Scripts\FirstLogon.log";
+		</File>
+	<File path="C:\Windows\Setup\Scripts\RemovePackages.ps1">
+$selectors = @(
+	'Microsoft.Microsoft3DViewer';
+	'Microsoft.BingSearch';
+	'Microsoft.WindowsCamera';
+	'Clipchamp.Clipchamp';
+	'Microsoft.WindowsAlarms';
+	'Microsoft.Copilot';
+	'Microsoft.549981C3F5F10';
+	'MicrosoftCorporationII.MicrosoftFamily';
+	'Microsoft.WindowsFeedbackHub';
+	'Microsoft.Edge.GameAssist';
+	'Microsoft.GetHelp';
+	'Microsoft.Getstarted';
+	'microsoft.windowscommunicationsapps';
+	'Microsoft.WindowsMaps';
+	'Microsoft.MixedReality.Portal';
+	'Microsoft.BingNews';
+	'Microsoft.MicrosoftOfficeHub';
+	'Microsoft.Office.OneNote';
+	'Microsoft.OutlookForWindows';
+	'Microsoft.People';
+	'Microsoft.PowerAutomateDesktop';
+	'MicrosoftCorporationII.QuickAssist';
+	'Microsoft.SkypeApp';
+	'Microsoft.ScreenSketch';
+	'Microsoft.MicrosoftSolitaireCollection';
+	'Microsoft.MicrosoftStickyNotes';
+	'MicrosoftTeams';
+	'MSTeams';
+	'Microsoft.Todos';
+	'Microsoft.WindowsSoundRecorder';
+	'Microsoft.Wallet';
+	'Microsoft.BingWeather';
+	'Microsoft.YourPhone';
+	'Microsoft.ZuneVideo';
+);
+$getCommand = {
+  Get-AppxProvisionedPackage -Online;
+};
+$filterCommand = {
+  $_.DisplayName -eq $selector;
+};
+$removeCommand = {
+  [CmdletBinding()]
+  param(
+    [Parameter( Mandatory, ValueFromPipeline )]
+    $InputObject
+  );
+  process {
+    $InputObject | Remove-AppxProvisionedPackage -AllUsers -Online -ErrorAction 'Continue';
+  }
+};
+$type = 'Package';
+$logfile = 'C:\Windows\Setup\Scripts\RemovePackages.log';
+&amp; {
+	$installed = &amp; $getCommand;
+	foreach( $selector in $selectors ) {
+		$result = [ordered] @{
+			Selector = $selector;
+		};
+		$found = $installed | Where-Object -FilterScript $filterCommand;
+		if( $found ) {
+			$result.Output = $found | &amp; $removeCommand;
+			if( $? ) {
+				$result.Message = "$type removed.";
+			} else {
+				$result.Message = "$type not removed.";
+				$result.Error = $Error[0];
+			}
+		} else {
+			$result.Message = "$type not installed.";
+		}
+		$result | ConvertTo-Json -Depth 3 -Compress;
+	}
+} *&gt;&amp;1 | Out-String -Width 1KB -Stream &gt;&gt; $logfile;
+		</File>
+<File path="C:\Windows\Setup\Scripts\RemoveCapabilities.ps1">
+$selectors = @(
+	'Print.Fax.Scan';
+	'Language.Handwriting';
+	'MathRecognizer';
+	'OneCoreUAP.OneSync';
+	'App.Support.QuickAssist';
+	'Microsoft.Windows.SnippingTool';
+	'Language.Speech';
+	'Language.TextToSpeech';
+	'App.StepsRecorder';
+	'Hello.Face.18967';
+	'Hello.Face.Migration.18967';
+	'Hello.Face.20134';
+);
+$getCommand = {
+  Get-WindowsCapability -Online | Where-Object -Property 'State' -NotIn -Value @(
+    'NotPresent';
+    'Removed';
+  );
+};
+$filterCommand = {
+  ($_.Name -split '~')[0] -eq $selector;
+};
+$removeCommand = {
+  [CmdletBinding()]
+  param(
+    [Parameter( Mandatory, ValueFromPipeline )]
+    $InputObject
+  );
+  process {
+    $InputObject | Remove-WindowsCapability -Online -ErrorAction 'Continue';
+  }
+};
+$type = 'Capability';
+$logfile = 'C:\Windows\Setup\Scripts\RemoveCapabilities.log';
+&amp; {
+	$installed = &amp; $getCommand;
+	foreach( $selector in $selectors ) {
+		$result = [ordered] @{
+			Selector = $selector;
+		};
+		$found = $installed | Where-Object -FilterScript $filterCommand;
+		if( $found ) {
+			$result.Output = $found | &amp; $removeCommand;
+			if( $? ) {
+				$result.Message = "$type removed.";
+			} else {
+				$result.Message = "$type not removed.";
+				$result.Error = $Error[0];
+			}
+		} else {
+			$result.Message = "$type not installed.";
+		}
+		$result | ConvertTo-Json -Depth 3 -Compress;
+	}
+} *&gt;&amp;1 | Out-String -Width 1KB -Stream &gt;&gt; $logfile;
+		</File>
+<File path="C:\Windows\Setup\Scripts\RemoveFeatures.ps1">
+$selectors = @(
+	'Recall';
+	'Microsoft-SnippingTool';
+);
+$getCommand = {
+  Get-WindowsOptionalFeature -Online | Where-Object -Property 'State' -NotIn -Value @(
+    'Disabled';
+    'DisabledWithPayloadRemoved';
+  );
+};
+$filterCommand = {
+  $_.FeatureName -eq $selector;
+};
+$removeCommand = {
+  [CmdletBinding()]
+  param(
+    [Parameter( Mandatory, ValueFromPipeline )]
+    $InputObject
+  );
+  process {
+    $InputObject | Disable-WindowsOptionalFeature -Online -Remove -NoRestart -ErrorAction 'Continue';
+  }
+};
+$type = 'Feature';
+$logfile = 'C:\Windows\Setup\Scripts\RemoveFeatures.log';
+&amp; {
+	$installed = &amp; $getCommand;
+	foreach( $selector in $selectors ) {
+		$result = [ordered] @{
+			Selector = $selector;
+		};
+		$found = $installed | Where-Object -FilterScript $filterCommand;
+		if( $found ) {
+			$result.Output = $found | &amp; $removeCommand;
+			if( $? ) {
+				$result.Message = "$type removed.";
+			} else {
+				$result.Message = "$type not removed.";
+				$result.Error = $Error[0];
+			}
+		} else {
+			$result.Message = "$type not installed.";
+		}
+		$result | ConvertTo-Json -Depth 3 -Compress;
+	}
+} *&gt;&amp;1 | Out-String -Width 1KB -Stream &gt;&gt; $logfile;
+		</File>
+<File path="C:\Windows\Setup\Scripts\unattend-01.cmd">
+powercfg.exe /hibernate off
+fsutil behavior set DisableLastAccess 1
+fsutil behavior set disable8dot3 1
+fsutil behavior set disableencryption 1
+fsutil behavior set disablecompression 1
+		</File>
+<File path="C:\Windows\Setup\Scripts\unattend-02.reg">
+Windows Registry Editor Version 5.00
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\PolicyManager\current\device\Update]
+"ExcludeWUDriversInQualityUpdate"=dword:00000001
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\PolicyManager\default\Update]
+"ExcludeWUDriversInQualityUpdate"=dword:00000001
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\WindowsUpdate\UX\Settings]
+"ExcludeWUDriversInQualityUpdate"=dword:00000001
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate]
+"ExcludeWUDriversInQualityUpdate"=dword:00000001
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\PolicyManager\default\Update\ExcludeWUDriversInQualityUpdate]
+"value"=dword:00000001
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Device Metadata]
+"PreventDeviceMetadataFromNetwork"=dword:00000001
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\DriverSearching]
+"SearchOrderConfig"=dword:00000000
+"DontSearchWindowsUpdate"=dword:00000001
+		</File>
+<File path="C:\Windows\Setup\Scripts\unattend-03.cmd">
+powercfg.exe /hibernate off
+fsutil behavior set DisableLastAccess 1
+fsutil behavior set disable8dot3 1
+fsutil behavior set disableencryption 1
+fsutil behavior set disablecompression 1
+fsutil behavior set encryptpagingfile 0
+		</File>
+<File path="C:\Windows\Setup\Scripts\install.ps1">
+#Requires -Version 5.1
+#Requires -RunAsAdministrator
+
+$ErrorActionPreference = 'Continue'
+$ProgressPreference    = 'SilentlyContinue'
+Start-Transcript -Path 'C:\Windows\Setup\Scripts\install.log' -Append
+
+function Test-InternetConnectivity {
+    $testUrls = @('https://github.com', 'https://microsoft.com', 'https://winget.azureedge.net')
+    foreach ($url in $testUrls) {
+        try {
+            $response = Invoke-WebRequest -Uri $url -Method Head -TimeoutSec 10 -UseBasicParsing -ErrorAction Stop
+            if ($response.StatusCode -eq 200) { return $true }
+        } catch { continue }
+    }
+    return $false
+}
+
+function Install-WingetPackage {
+    param([string[]]$Packages, [string[]]$ExtraArgs = @(), [int]$MaxRetries = 3)
+    if (-not (Test-InternetConnectivity)) {
+        Write-Host "[WARN] No internet connectivity, skipping: $($Packages -join ', ')" -ForegroundColor Yellow
+        return
+    }
+    for ($i = 1; $i -le $MaxRetries; $i++) {
+        $result = winget install @W @Packages @ExtraArgs 2>&amp;1
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "[OK] Installed: $($Packages[0])" -ForegroundColor Green
+            return
+        }
+        Write-Host "[RETRY $i/$MaxRetries] Failed: $($Packages[0])" -ForegroundColor Yellow
+        Start-Sleep -Seconds 5
+    }
+    Write-Host "[FAIL] Failed after $MaxRetries attempts: $($Packages[0])" -ForegroundColor Red
+}
+
+$W = @('--accept-package-agreements', '--accept-source-agreements', '-h')
+
+if (-not (Test-InternetConnectivity)) {
+    Write-Host '[WARN] No internet detected. Skipping winget installations.' -ForegroundColor Yellow
+    Write-Host '[INFO] Run manually after connecting to internet:' -ForegroundColor Cyan
+    Write-Host '  powershell -ExecutionPolicy Bypass -File C:\Windows\Setup\Scripts\install.ps1' -ForegroundColor Cyan
+} else {
+    Write-Host '[INFO] Internet connectivity confirmed. Proceeding with installations...' -ForegroundColor Green
+    winget upgrade -r -u @W --disable-interactivity
+
+    Install-WingetPackage -Packages @('Microsoft.VCRedist.2015+.x64', 'Microsoft.VCRedist.2013.x64', 'Microsoft.VCLibs.14', 'Microsoft.VCLibs.Desktop.14', 'Microsoft.WindowsAppRuntime.1.8', 'Microsoft.DotNet.Framework.DeveloperPack_4', 'Microsoft.DotNet.Runtime.6', 'Microsoft.DotNet.DesktopRuntime.5', 'Microsoft.DotNet.DesktopRuntime.6', 'Microsoft.DotNet.DesktopRuntime.7', 'Microsoft.DotNet.DesktopRuntime.8', 'Microsoft.DotNet.DesktopRuntime.9', 'Microsoft.DotNet.DesktopRuntime.10', 'Microsoft.DirectX', 'Microsoft.XNARedist', 'KhronosGroup.VulkanRT', 'KhronosGroup.VulkanSDK', 'Microsoft.OpenCLGLVulkanCompatibilityPack', 'Oracle.JavaRuntimeEnvironment', 'EclipseAdoptium.Temurin.21.JRE', 'EclipseAdoptium.Temurin.25.JRE', 'OpenAL.OpenAL', 'Gyan.FFmpeg')
+
+    Install-WingetPackage -Packages @('astral-sh.uv', 'Oven-sh.Bun', 'Schniz.fnm', 'jdx.mise', 'OpenJS.NodeJS', 'Python.Python.3.13', 'MartinStorsjo.LLVM-MinGW.UCRT', 'Rustlang.Rust.MSVC', 'SQLite.SQLite', 'ast-grep.ast-grep', 'koalaman.shellcheck', 'oxc-project.oxlint', 'BiomeJS.Biome', 'evilmartians.lefthook')
+
+    Install-WingetPackage -Packages @('Git.Git') -ExtraArgs @('--source', 'winget')
+    Install-WingetPackage -Packages @('Microsoft.PowerShell', 'Microsoft.WindowsTerminal', 'Microsoft.AppInstaller', 'Microsoft.VisualStudioCode', 'VSCodium.VSCodium', 'GitHub.cli', 'Notepad++.Notepad++', 'CodeSector.TeraCopy', 'MathiasCodes.Winstow', 'PuTTY.PuTTY', 'Eugeny.Terminus')
+    Install-WingetPackage -Packages @('eza-community.eza', 'BurntSushi.ripgrep.MSVC', 'sharkdp.fd', 'sharkdp.bat', 'dandavison.delta', 'Starship.Starship', 'JanDeDobbeleer.OhMyPosh', 'aria2.aria2', '7zip.7zip')
+
+Install-WingetPackage -Packages @('VideoLAN.VLC', 'mpv.net', 'GIMP.GIMP', 'tannerhelland.PhotoDemon', 'XnSoft.XnViewMP', 'XnSoft.XnConvert', 'eibol.FFmpegBatchAVConverter', 'HandBrake.HandBrake', 'Avidemux.Avidemux', 'Meltytech.Shotcut', 'KDE.Kdenlive', 'OBSProject.OBSStudio', 'Audacity.Audacity', 'chaiNNer-org.chaiNNer', 'Upscayl.Upscayl', 'Greenshot.Greenshot', 'ShareX.ShareX')
+
+    Install-WingetPackage -Packages @('IridiumIO.CompactGUI', 'Nikkho.FileOptimizer', 'xanderfrangos.crushee', 'SaeraSoft.CaesiumImageCompressor', 'OptiPNG.OptiPNG', 'fhanau.Efficient-Compression-Tool', 'Kornelski.DSSIM', 'GiantPinkRobots.Varia', 'aandrew-me.ytDownloader')
+
+    Install-WingetPackage -Packages @('Mozilla.Firefox', 'Ablaze.Floorp', 'Microsoft.EdgeDriver')
+
+    Install-WingetPackage -Packages @('Valve.Steam', 'EpicGames.EpicGamesLauncher', 'HeroicGamesLauncher.HeroicGamesLauncher', 'PrismLauncher.PrismLauncher', 'Playnite.Playnite', 'DevelopedMethods.playit', 'GorillaDevs.Ferium', 'smartfrigde.Legcord')
+
+    Install-WingetPackage -Packages @('Microsoft.PowerToys', 'Microsoft.Sysinternals.Autoruns', 'Sysinternals.Autologon', 'AutoHotkey.AutoHotkey', 'voidtools.Everything', 'Guru3D.Afterburner.Beta', 'BleachBit.BleachBit', 'RevoUninstaller.RevoUninstaller', 'SteelSeries.GG', 'ToastyX.CustomResolutionUtility', 'TechPowerUp.NVCleanstall', 'Wagnardsoft.DisplayDriverUninstaller', 'Recol.DLSSUpdater', 'MartiCliment.UniGetUI', 'CodecGuide.K-LiteCodecPack.Basic', 'topgrade-rs.topgrade', 'ONLYOFFICE.DesktopEditors')
+
+    Install-WingetPackage -Packages @('Chocolatey.Chocolatey', 'Chocolatey.ChocolateyGUI')
+    Install-WingetPackage -Packages @('CodeF0x.ffzap')
+    Install-WingetPackage -Packages @('PaulPacifico.ShutterEncoder')
+    Install-WingetPackage -Packages @('Microsoft.Edit')
+}
+
+$env:Path = [System.Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' +
+            [System.Environment]::GetEnvironmentVariable('Path', 'User')
+
+if (-not (Get-Command scoop -ErrorAction SilentlyContinue)) {
+    Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+    Invoke-RestMethod https://get.scoop.sh -OutFile "$env:TEMP\scoop-install.ps1"
+    &amp; "$env:TEMP\scoop-install.ps1" -NoProxy
+    Remove-Item "$env:TEMP\scoop-install.ps1" -Force -ErrorAction SilentlyContinue
+    $env:Path = [System.Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' +
+                [System.Environment]::GetEnvironmentVariable('Path', 'User')
+}
+if (Get-Command scoop -ErrorAction SilentlyContinue) {
+    scoop bucket add extras
+    scoop install extras/sdi-origin
+}
+
+if (Get-Command uv -ErrorAction SilentlyContinue) {
+    uv python install
+}
+
+dism /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
+dism /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
+dism /online /enable-feature /featurename:LegacyComponents /all /norestart
+dism /online /enable-feature /featurename:DirectPlay /all /norestart
+
+Install-Module PSWindowsUpdate -Force
+Import-Module PSWindowsUpdate
+Install-WindowsUpdate -AcceptAll -IgnoreReboot
+
+schtasks /create /tn "post-reboot" /sc onlogon /rl highest /tr "powershell -ExecutionPolicy Bypass -File C:\Windows\Setup\Scripts\stage2.ps1"
+
+sfc /scannow
+dism /online /cleanup-image /restoreHealth
+
+Stop-Transcript
+shutdown /r /t 0
+		</File>
+<File path="C:\Windows\Setup\Scripts\stage2.ps1">
+#Requires -Version 5.1
+
+Start-Transcript -Path 'C:\Windows\Setup\Scripts\stage2.log' -Append
+
+wsl --install -d Ubuntu --web-download
+wsl --set-default-version 2
+winget install -h Microsoft.WSL Canonical.Ubuntu Bostrot.WSLManager
+
+# Chris Titus WinUtil — opens on next logon (Win11 Creator compatible)
+New-Item -LiteralPath 'Registry::HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce' -Force -ErrorAction SilentlyContinue | Out-Null
+Set-ItemProperty -LiteralPath 'Registry::HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce' -Name 'WinUtil' -Type String -Force -Value 'powershell.exe -ExecutionPolicy Bypass -Command "iex ((New-Object System.Net.WebClient).DownloadString(''https://christitus.com/win''))"'
+
+Unregister-ScheduledTask -TaskName 'post-reboot' -Confirm:$false
+Stop-Transcript
 		</File>
 	</Extensions>
 </unattend>

@@ -128,7 +128,8 @@ run = [
 [tasks.windows]
 description = "Install build dependencies on Windows (Admin)"
 run = [
-  "choco install -y wimlib aria2 cabextract genisoimage",
+  # TODO / FIXME: install "cabextract genisoimage" on windows. Neither choco nor scoop have them
+  "choco install -y wimlib aria2",
   "winget install -h Microsoft.WindowsADK"
 ]
 

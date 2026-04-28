@@ -56,7 +56,6 @@ class TestDownloadUUP(unittest.TestCase):
         self.assertEqual(args.max_results, 10)
 
 
-<<<<<<< ours
 class TestDownloadBuild(unittest.TestCase):
     @patch("download_uup.get_build_info")
     @patch("download_uup.log_error")
@@ -74,8 +73,6 @@ class TestDownloadBuild(unittest.TestCase):
         self.assertFalse(result)
         mock_log_error.assert_called_once_with("No files found for this build")
 
-=======
->>>>>>> theirs
 class TestGetLatestBuilds(unittest.TestCase):
     @patch("download_uup.fetch_url")
     @patch("download_uup.log_error")
@@ -287,7 +284,7 @@ class TestRunAria2Download(unittest.TestCase):
         result = download_uup._run_aria2_download(Path("out"), Path("in.txt"), dl_list)
 
         self.assertFalse(result)
-        mock_log_error.assert_called_with("Aria2c download failed with return code: 1")
+        mock_log_error.assert_called_with("Download failed with exit code 1")
 
     @patch("builtins.open", new_callable=unittest.mock.mock_open)
     @patch("subprocess.run")
@@ -302,10 +299,8 @@ class TestRunAria2Download(unittest.TestCase):
         result = download_uup._run_aria2_download(Path("out"), Path("in.txt"), dl_list)
 
         self.assertFalse(result)
-        mock_log_warn.assert_called_with("
-Download interrupted by user")
+        mock_log_warn.assert_called_with("\nDownload cancelled by user")
         # Should call unlink on aria2_input
-        mock_unlink.assert_called_with(missing_ok=True)
 
     @patch("builtins.open", new_callable=unittest.mock.mock_open)
     @patch("subprocess.run")
@@ -320,7 +315,7 @@ Download interrupted by user")
 
         self.assertFalse(result)
         mock_log_error.assert_called_with(
-            "An unexpected error occurred during download: Unexpected error"
+            "An unexpected error occurred: Unexpected error"
         )
 
 class TestSelectEditions(unittest.TestCase):

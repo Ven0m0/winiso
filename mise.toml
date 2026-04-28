@@ -2,12 +2,10 @@
 # mise.toml - Cross-platform development environment
 # =============================================================================
 # Usage:
-#   mise trust mise.toml
+#   mise trust
 #   mise run install-deps
 #   mise run build
 # =============================================================================
-
-min_version = "2024.9.5"
 
 [settings]
 experimental = true
@@ -26,9 +24,10 @@ uvx = true
 python = "3.14"
 uv = "latest"
 ruff = "latest"
+ty = "latest"
 prek = "latest"
-pytest = "latest"
-basedpyright = "latest"
+"pipx:pytest" = "latest"
+"pipx:basedpyright" = "latest"
 
 [env]
 PROJECT_ROOT = "{{config_root}}"

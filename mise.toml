@@ -20,6 +20,9 @@ uv_venv_create_args = ["--seed", "--system-site-packages"]
 [settings.pipx]
 uvx = true
 
+[settings.dotnet]
+cli_telemetry_optout = true
+
 [tools]
 python = "3.14"
 uv = "latest"
@@ -28,6 +31,7 @@ ty = "latest"
 prek = "latest"
 "pipx:pytest" = "latest"
 "pipx:basedpyright" = "latest"
+dotnet = "latest"
 
 [env]
 PROJECT_ROOT = "{{config_root}}"

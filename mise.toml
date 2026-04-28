@@ -31,7 +31,6 @@ ty = "latest"
 prek = "latest"
 "pipx:pytest" = "latest"
 "pipx:basedpyright" = "latest"
-dotnet = "latest"
 
 [env]
 PROJECT_ROOT = "{{config_root}}"

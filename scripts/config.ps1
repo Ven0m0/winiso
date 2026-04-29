@@ -11,8 +11,8 @@ $DefaultMountDir = "C:\Mount"
 # Install.wim index to use (1 = Pro, 2 = Home, etc.)
 $InstallWimIndex = 1
 
-# Boot.wim indexes to process
-$BootWimIndexes = @(1, 2)
+# Boot.wim indexes to process (only index 1 exists in standard Windows 11 ISOs)
+$BootWimIndexes = @(1)
 
 # ISO Volume Label
 $VolumeLabel = "WIN11"

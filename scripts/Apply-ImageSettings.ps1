@@ -1,4 +1,7 @@
 #Requires -RunAsAdministrator
+#Requires -Version 5.1
+# Script analysis suppressed - Write-Host is intentional for colored console output
+# noqa: PSAvoidUsingWriteHost
 
 param(
     [Parameter(Mandatory=$false)]
@@ -44,12 +47,11 @@ if ($ISOPath -and $ExtractPath) {
 }
 
 if (-not $MountDir) { $MountDir = $DefaultMountDir }
-if (-not $OscdimgPath) {
-    $OscdimgPath = Find-Oscdimg
-}
 
 function Find-Oscdimg {
+    $WingetPath = Join-Path $env:USERPROFILE "AppData\Local\Microsoft\WinGet\Links\oscdimg.exe"
     $Paths = @(
+        $WingetPath,
         "C:\Program Files (x86)\Windows Kits\10\Assessment and Deployment Kit\Deployment Tools\amd64\Oscdimg\oscdimg.exe",
         "C:\Program Files (x86)\Windows Kits\11\Assessment and Deployment Kit\Deployment Tools\amd64\Oscdimg\oscdimg.exe",
         "${env:ProgramFiles(x86)}\Windows Kits\10\Deployment Tools\amd64\Oscdimg\oscdimg.exe"
@@ -57,8 +59,12 @@ function Find-Oscdimg {
     foreach ($p in $Paths) {
         if (Test-Path $p) { return $p }
     }
-    Write-Error "oscdimg.exe not found. Install Windows ADK Deployment Tools."
+    Write-Error "oscdimg.exe not found. Install Windows ADK Deployment Tools or winget it."
     exit 1
+}
+
+if (-not $OscdimgPath) {
+    $OscdimgPath = Find-Oscdimg
 }
 
 function Write-Step {
@@ -75,6 +81,24 @@ function Write-ErrorExit {
     param([string]$Message)
     Write-Host "[ERROR] $Message" -ForegroundColor Red
     exit 1
+}
+
+function Safe-RemoveDirectory {
+    param([string]$Path)
+    if (-not (Test-Path $Path)) { return }
+    try {
+        Remove-Item $Path -Recurse -Force -ErrorAction Stop
+    }
+    catch {
+        Write-Host "      Retrying cleanup..." -ForegroundColor Yellow
+        Start-Sleep -Seconds 2
+        try {
+            Remove-Item $Path -Recurse -Force -ErrorAction SilentlyContinue
+        }
+        catch {
+            Write-Host "      Warning: Could not fully clean $Path" -ForegroundColor Yellow
+        }
+    }
 }
 
 if ($ExtractPath) {
@@ -122,20 +146,44 @@ if (-not (Test-Path $MountDir)) {
 foreach ($idx in $BootWimIndexes) {
     Write-Step "Processing boot.wim index $idx..."
     $BootMount = Join-Path $MountDir "boot$idx"
-    if (Test-Path $BootMount) { Remove-Item $BootMount -Recurse -Force }
+
+    # Check if already mounted and remount if necessary
+    try {
+        $existingMount = Get-WindowsImage -Mounted | Where-Object { $_.Path -eq $BootMount }
+        if ($existingMount) {
+            Write-Host "      Image already mounted, remounting..." -ForegroundColor Yellow
+            Dismount-WindowsImage -Path $BootMount -Discard -ErrorAction SilentlyContinue
+            Start-Sleep -Seconds 1
+        }
+    }
+    catch { }
+
+    Safe-RemoveDirectory $BootMount
     New-Item -ItemType Directory -Path $BootMount -Force | Out-Null
 
     Mount-WindowsImage -ImagePath "$ExtractDir\sources\boot.wim" -Index $idx -Path $BootMount -Optimize -ErrorAction Stop | Out-Null
     Copy-Item "$ScriptDir\autounattend.xml" "$BootMount\autounattend.xml" -Force
     Write-Success "Copied autounattend.xml to boot.wim index $idx"
 
-    Dismount-WindowsImage -Path $BootMount -Commit -ErrorAction Stop | Out-Null
+    Dismount-WindowsImage -Path $BootMount -Save -ErrorAction Stop | Out-Null
     Write-Success "Unmounted boot.wim index $idx"
 }
 
 Write-Step "Processing install.wim index $InstallWimIndex..."
 $InstallMount = Join-Path $MountDir "install"
-if (Test-Path $InstallMount) { Remove-Item $InstallMount -Recurse -Force }
+
+# Check if already mounted and remount if necessary
+try {
+    $existingMount = Get-WindowsImage -Mounted | Where-Object { $_.Path -eq $InstallMount }
+    if ($existingMount) {
+        Write-Host "      Image already mounted, remounting..." -ForegroundColor Yellow
+        Dismount-WindowsImage -Path $InstallMount -Discard -ErrorAction SilentlyContinue
+        Start-Sleep -Seconds 1
+    }
+}
+catch { }
+
+Safe-RemoveDirectory $InstallMount
 New-Item -ItemType Directory -Path $InstallMount -Force | Out-Null
 
 Mount-WindowsImage -ImagePath "$ExtractDir\sources\install.wim" -Index $InstallWimIndex -Path $InstallMount -Optimize -ErrorAction Stop | Out-Null
@@ -170,7 +218,7 @@ del /q /f "%0"
 $SetupComplete | Out-File "$ScriptsDir\SetupComplete.cmd" -Encoding ASCII -Force
 Write-Success "Post-install scripts injected"
 
-Dismount-WindowsImage -Path $InstallMount -Commit -ErrorAction Stop | Out-Null
+Dismount-WindowsImage -Path $InstallMount -Save -ErrorAction Stop | Out-Null
 Write-Success "Unmounted install.wim"
 
 if ($SkipISO) {
@@ -192,8 +240,8 @@ if ($SkipISO) {
     if (-not (Test-Path $BootEfi)) { Write-ErrorExit "efisys.bin not found" }
 
     $BootData = "bootdata:2#p0,e,b$BootEtfs#pEF,e,b$BootEfi"
-    $Args = @("-m", "-o", "-u2", "-udfver102", "-l$VolumeLabel", $BootData, $ExtractDir, $OutputPath)
-    & $OscdimgPath $Args
+    $OscdimgArgs = @("-m", "-o", "-u2", "-udfver102", "-l$VolumeLabel", $BootData, $ExtractDir, $OutputPath)
+    & $OscdimgPath $OscdimgArgs
 
     if ($LASTEXITCODE -ne 0) { Write-ErrorExit "ISO creation failed" }
     Write-Success "ISO created: $OutputPath"
@@ -203,10 +251,10 @@ Write-Step "Cleaning up..."
 if ($ExtractPath) {
     Write-Success "Kept extracted folder: $ExtractDir"
 } else {
-    if (Test-Path $TempExtractDir) { Remove-Item $TempExtractDir -Recurse -Force -ErrorAction SilentlyContinue }
+    Safe-RemoveDirectory $TempExtractDir
     Write-Success "Removed temp extraction folder"
 }
-if (Test-Path $MountDir) { Remove-Item $MountDir -Recurse -Force -ErrorAction SilentlyContinue }
+Safe-RemoveDirectory $MountDir
 Write-Success "Removed mount directory"
 
 Write-Host ""

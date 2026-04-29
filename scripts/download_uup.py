@@ -440,7 +440,7 @@ def _process_selected_build(selected_build, output_dir):
         .strip()
         .lower()
     )
-    if confirm == "" or confirm == "y":
+    if confirm in ("", "y", "yes"):
         return download_build(
             build_id, output_dir, edition_filter, build_info=build_info
         )

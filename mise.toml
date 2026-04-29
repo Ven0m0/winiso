@@ -6,7 +6,6 @@
 #   mise run install-deps
 #   mise run build
 # =============================================================================
-
 [settings]
 experimental = true
 color = true
@@ -34,7 +33,6 @@ prek = "latest"
 "pipx:basedpyright" = "latest"
 "pipx:py-psscriptanalyzer" = "latest"
 ripgrep = "latest"
-ast-grep = "latest"
 
 [env]
 PROJECT_ROOT = "{{config_root}}"

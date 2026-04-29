@@ -227,9 +227,13 @@ if ($SkipISO) {
 } else {
     if (-not $OutputPath) {
         if ($ExtractPath) {
-            Write-ErrorExit "OutputPath required when using ExtractPath. Use -OutputPath <path>"
+            # Default to current directory with modified ISO name
+            $BaseName = Split-Path (Get-Location) -Leaf
+            if (-not $BaseName) { $BaseName = "modified" }
+            $OutputPath = Join-Path (Get-Location) "$BaseName`_modified.iso"
+        } else {
+            $OutputPath = [System.IO.Path]::ChangeExtension($ISOPath, "_modified.iso")
         }
-        $OutputPath = [System.IO.Path]::ChangeExtension($ISOPath, "_modified.iso")
     }
 
     Write-Step "Creating ISO..."

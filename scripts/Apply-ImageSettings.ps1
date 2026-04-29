@@ -1,14 +1,20 @@
 #Requires -RunAsAdministrator
 
 param(
-    [Parameter(Mandatory=$true)]
+    [Parameter(Mandatory=$false)]
     [string]$ISOPath,
+
+    [Parameter(Mandatory=$false)]
+    [string]$ExtractPath,
 
     [Parameter(Mandatory=$false)]
     [string]$OutputPath,
 
     [Parameter(Mandatory=$false)]
-    [string]$MountDir
+    [string]$MountDir,
+
+    [Parameter(Mandatory=$false)]
+    [switch]$SkipISO
 )
 
 $ErrorActionPreference = "Stop"
@@ -22,10 +28,22 @@ if (-not (Test-Path $ConfigFile)) {
 
 . $ConfigFile
 
-if (-not $MountDir) { $MountDir = $DefaultMountDir }
-if (-not $OutputPath) {
-    $OutputPath = [System.IO.Path]::ChangeExtension($ISOPath, "_modified.iso")
+if (-not $ISOPath -and -not $ExtractPath) {
+    Write-Host "ERROR: Must specify either -ISOPath or -ExtractPath" -ForegroundColor Red
+    Write-Host ""
+    Write-Host "Usage:"
+    Write-Host "  .\Apply-ImageSettings.ps1 -ISOPath <path>           # From ISO"
+    Write-Host "  .\Apply-ImageSettings.ps1 -ExtractPath <path>    # From extracted folder"
+    Write-Host "  .\Apply-ImageSettings.ps1 -ISOPath <path> -SkipISO  # Modify only, no ISO creation"
+    exit 1
 }
+
+if ($ISOPath -and $ExtractPath) {
+    Write-Host "ERROR: Cannot specify both -ISOPath and -ExtractPath" -ForegroundColor Red
+    exit 1
+}
+
+if (-not $MountDir) { $MountDir = $DefaultMountDir }
 if (-not $OscdimgPath) {
     $OscdimgPath = Find-Oscdimg
 }
@@ -59,30 +77,40 @@ function Write-ErrorExit {
     exit 1
 }
 
-if (-not (Test-Path $ISOPath)) { Write-ErrorExit "ISO not found: $ISOPath" }
+if ($ExtractPath) {
+    if (-not (Test-Path $ExtractPath)) { Write-ErrorExit "ExtractPath not found: $ExtractPath" }
+    $ExtractDir = $ExtractPath
+    Write-Step "Using extracted folder: $ExtractDir"
+} else {
+    if (-not (Test-Path $ISOPath)) { Write-ErrorExit "ISO not found: $ISOPath" }
 
-$ExtractDir = $TempExtractDir
-if (Test-Path $ExtractDir) {
-    Remove-Item $ExtractDir -Recurse -Force
-}
-New-Item -ItemType Directory -Path $ExtractDir -Force | Out-Null
-
-Write-Step "Extracting ISO..."
-$Shell = New-Object -ComObject Shell.Application
-$Zip = $Shell.Namespace($ISOPath)
-$Zip.CopyHere($Zip.Items(), 0x100) | Out-Null
-
-Start-Sleep -Seconds 2
-
-$ExtractDir = (Get-ChildItem $ExtractDir | Select-Object -First 1).FullName
-if (-not $ExtractDir) {
-    Get-ChildItem $ISOPath | ForEach-Object {
-        Copy-Item $_.FullName "$TempExtractDir\" -Recurse -Force
+    if (-not $OutputPath) {
+        $OutputPath = [System.IO.Path]::ChangeExtension($ISOPath, "_modified.iso")
     }
-    $ExtractDir = $TempExtractDir
-}
 
-Write-Success "ISO extracted to: $ExtractDir"
+    $ExtractDir = $TempExtractDir
+    if (Test-Path $ExtractDir) {
+        Remove-Item $ExtractDir -Recurse -Force
+    }
+    New-Item -ItemType Directory -Path $ExtractDir -Force | Out-Null
+
+    Write-Step "Extracting ISO..."
+    $Shell = New-Object -ComObject Shell.Application
+    $Zip = $Shell.Namespace($ISOPath)
+    $Zip.CopyHere($Zip.Items(), 0x100) | Out-Null
+
+    Start-Sleep -Seconds 2
+
+    $ExtractDir = (Get-ChildItem $ExtractDir | Select-Object -First 1).FullName
+    if (-not $ExtractDir) {
+        Get-ChildItem $ISOPath | ForEach-Object {
+            Copy-Item $_.FullName "$TempExtractDir\" -Recurse -Force
+        }
+        $ExtractDir = $TempExtractDir
+    }
+
+    Write-Success "ISO extracted to: $ExtractDir"
+}
 
 if (-not (Test-Path "$ExtractDir\sources\boot.wim")) { Write-ErrorExit "boot.wim not found" }
 if (-not (Test-Path "$ExtractDir\sources\install.wim")) { Write-ErrorExit "install.wim not found" }
@@ -145,25 +173,46 @@ Write-Success "Post-install scripts injected"
 Dismount-WindowsImage -Path $InstallMount -Commit -ErrorAction Stop | Out-Null
 Write-Success "Unmounted install.wim"
 
-Write-Step "Creating ISO..."
-$BootEtfs = "$ExtractDir\boot\etfsboot.com"
-$BootEfi = "$ExtractDir\efi\microsoft\boot\efisys.bin"
+if ($SkipISO) {
+    Write-Step "Skipping ISO creation ( -SkipISO specified)"
+    Write-Success "Modified files remain in: $ExtractDir"
+} else {
+    if (-not $OutputPath) {
+        if ($ExtractPath) {
+            Write-ErrorExit "OutputPath required when using ExtractPath. Use -OutputPath <path>"
+        }
+        $OutputPath = [System.IO.Path]::ChangeExtension($ISOPath, "_modified.iso")
+    }
 
-if (-not (Test-Path $BootEtfs)) { Write-ErrorExit "etfsboot.com not found" }
-if (-not (Test-Path $BootEfi)) { Write-ErrorExit "efisys.bin not found" }
+    Write-Step "Creating ISO..."
+    $BootEtfs = "$ExtractDir\boot\etfsboot.com"
+    $BootEfi = "$ExtractDir\efi\microsoft\boot\efisys.bin"
 
-$BootData = "bootdata:2#p0,e,b$BootEtfs#pEF,e,b$BootEfi"
-$Args = @("-m", "-o", "-u2", "-udfver102", "-l$VolumeLabel", $BootData, $ExtractDir, $OutputPath)
-& $OscdimgPath $Args
+    if (-not (Test-Path $BootEtfs)) { Write-ErrorExit "etfsboot.com not found" }
+    if (-not (Test-Path $BootEfi)) { Write-ErrorExit "efisys.bin not found" }
 
-if ($LASTEXITCODE -ne 0) { Write-ErrorExit "ISO creation failed" }
-Write-Success "ISO created: $OutputPath"
+    $BootData = "bootdata:2#p0,e,b$BootEtfs#pEF,e,b$BootEfi"
+    $Args = @("-m", "-o", "-u2", "-udfver102", "-l$VolumeLabel", $BootData, $ExtractDir, $OutputPath)
+    & $OscdimgPath $Args
+
+    if ($LASTEXITCODE -ne 0) { Write-ErrorExit "ISO creation failed" }
+    Write-Success "ISO created: $OutputPath"
+}
 
 Write-Step "Cleaning up..."
-if (Test-Path $TempExtractDir) { Remove-Item $TempExtractDir -Recurse -Force -ErrorAction SilentlyContinue }
+if ($ExtractPath) {
+    Write-Success "Kept extracted folder: $ExtractDir"
+} else {
+    if (Test-Path $TempExtractDir) { Remove-Item $TempExtractDir -Recurse -Force -ErrorAction SilentlyContinue }
+    Write-Success "Removed temp extraction folder"
+}
 if (Test-Path $MountDir) { Remove-Item $MountDir -Recurse -Force -ErrorAction SilentlyContinue }
-Write-Success "Cleanup complete"
+Write-Success "Removed mount directory"
 
 Write-Host ""
 Write-Host "=== SUCCESS ===" -ForegroundColor Green
-Write-Host "Output: $OutputPath" -ForegroundColor White
+if ($SkipISO) {
+    Write-Host "Modified folder: $ExtractDir" -ForegroundColor White
+} else {
+    Write-Host "Output: $OutputPath" -ForegroundColor White
+}

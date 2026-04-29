@@ -1,80 +1,99 @@
-merge features of "https://github.com/zoicware/zISOTweaker"
+# Project TODO & Feature Roadmap
+<metadata><version>3.0-compact</version><updated>2026-04-29T12:33:00Z</updated><items>50</items><categories>10</categories></metadata>
+<removed><item>Pre-1.0.0 references</item><item>Duplicate troubleshooting entries</item><item>Outdated version requirements</item><item>Completed 1.x features</item></removed>
 
-implement the official instance of the [UUP dump JSON API](https://git.uupdump.net/uup-dump/json-api). You can access it at https://api.uupdump.net.
+## 🎯 API & Download
+<category name="api" items="5" priority="high">
+- API-001: UUP JSON API v2 client - match api.uupdump.net schema
+- API-002: Delta downloads - only changed packages between builds
+- API-003: Resume interrupted downloads - aria2c state persistence
+- API-004: Mirror sources - redundant download endpoints
+- API-005: Build history cache - local cache with TTL refresh
+</category>
 
-UUP dump officially operates under the https://uupdump.net address.
+## 🔧 Build System
+<category name="build" items="8" priority="high">
+- BUILD-001: Custom edition selection - any edition ID from metadata
+- BUILD-002: Multi-edition ISO - single ISO, boot menu selection
+- BUILD-003: Language packs - multi-language support
+- BUILD-004: Driver injection - automated driver pack integration
+- BUILD-005: Build profiles - minimal/standard/gaming/enterprise/dev
+- BUILD-006: Component groups - toggle gaming/productivity/social/telemetry
+- BUILD-007: Version pinning - lock specific builds
+- BUILD-008: ISO signing - GPG + SHA256 checksums
+</category>
 
-## Implement: 
-- https://github.com/CodingWonders/MicroWin
-- https://github.com/ntdevlabs/tiny11builder
+## 🛠️ Debloating
+<category name="debloat" items="8" priority="medium">
+- DEBLOAT-001: Smart dependency checker - detect dependency conflicts
+- DEBLOAT-002: Telemetry scoring - rate reduction percentage
+- DEBLOAT-003: Privacy dashboard - verify privacy settings
+- DEBLOAT-004: Service hardening - disable unnecessary services
+- DEBLOAT-005: Firewall optimization - pre-configured rules
+- DEBLOAT-006: BitLocker options - encryption configuration
+- DEBLOAT-007: Sandbox toggle - enable/disable Windows Sandbox
+- DEBLOAT-008: WSL config - pre-configure Windows Subsystem for Linux
+</category>
 
-## Which build do I choose?
-Pick "Pro for Workstations"
+## 🌐 Post-Install
+<category name="postinstall" items="4" priority="medium">
+- POST-001: First-run framework - scripts run on first boot
+- POST-002: Package managers - choco/winget integration
+- POST-003: GPO injection - enterprise domain policies
+- POST-004: Drift detection - config compliance checks
+</category>
 
-## Which build entry do I choose?
-Most builds will be available as one of the following:
- * Cumulative Update (AKA „***Update** for [...]*”)
- * Feature Update (AKA „***Upgrade** to [...]*” or no special name at all)
+## 📊 Monitoring
+<category name="monitoring" items="4" priority="low">
+- MON-001: Build telemetry - success/failure tracking
+- MON-002: Update alerts - new build notifications
+- MON-003: Health checks - post-install verification
+- MON-004: Rollback mechanism - WIM backup/restore
+</category>
 
-If you want to create an updated image or you're not sure, choose the **Feature Update**.
+## 🖥️ Platform
+<category name="platform" items="5" priority="high">
+- PLAT-001: Docker build - containerized environment
+- PLAT-002: Windows native - PowerShell build script
+- PLAT-003: CI/CD integration - GitHub Actions
+- PLAT-004: Test automation - QEMU boot verification
+- PLAT-005: Web dashboard - UI for config
+</category>
 
-So: _Cumulative Updates generally aren't very useful, avoid them._
+## 🔬 Testing
+<category name="testing" items="5" priority="high">
+- TEST-001: ISO boot tests - QEMU automated verification
+- TEST-002: Regression suite - Windows Update/activation
+- TEST-003: Compatibility matrix - known issues table
+- TEST-004: Performance benchmarks - before/after metrics
+- TEST-005: Security fuzzing - debloat pattern validation
+</category>
 
+## 🏗️ Architecture
+<category name="architecture" items="5" priority="future">
+- ARCH-001: Plugin system - loadable modules
+- ARCH-002: WIM layering - base/updates/custom layers
+- ARCH-003: Diff updates - incremental WIM deltas
+- ARCH-004: A/B partitions - dual-boot rollback
+- ARCH-005: Secure boot - signed boot files
+</category>
 
-## How do I choose Enterprise/Education or other editions?
-Select their **base edition** first.
+## 🤖 AI/ML
+<category name="ai" items="3" priority="experimental">
+- AI-001: Smart recommendations - ML debloat advisor
+- AI-002: Failure prediction - build risk analysis
+- AI-003: Issue triage - automated classification
+</category>
 
-| Virtual Edition      	| Base Edition 	|
-|----------------------	|--------------	|
-| Enterprise           	| Pro          	|
-| Education            	| Pro          	|
-| Pro Education        	| Pro          	|
-| Pro for Workstations 	| Pro          	|
-| IoT Enterprise       	| Pro          	|
-| Home Single Language 	| Home         	|
+## 🔗 Ecosystem
+<category name="ecosystem" items="3" priority="medium">
+- ECO-001: Packer plugin - automated image builds
+- ECO-002: Ansible module - configuration management
+- ECO-003: Chef/Puppet cookbooks - infrastructure as code
+</category>
 
-You can select the **virtual editions** after you choose to **add additional editions** (third **Download method**).
+## Technical Debt
+<debt><item sev="low">SC2034 suppression - utils.sh</item><item sev="medium">Python type hints - download_uup.py</item><item sev="high">Error handling - standardize</item><item sev="medium">Logging - unify levels</item><item sev="high">Test coverage - 40%→80%</item></debt>
 
-## "This build can't be converted to an ISO image."?
-This means the chosen entry is **not** a complete build of Windows.
-
-It's probably one of the following:
- * standalone update.
- * Server build without metadata
-
-Those entries **cannot** be made into Windows images. Their files can sometimes be useful though.
-
-If you see this on a regular build of Windows or Windows Server, that means it's metadata ESD is unavailable.
-
-## There's a build with a `(2)` in its name. What does this mean?
-Most often that the build was pushed to more than one channel.
-Alternatively this could be a build of a different release type that was mistaken for a duplicate. 
-
-## I received an ISO with a different version than one selected on the website
-There are multiple causes of this:
- * You have unchecked the `Include updates` option on the download page
- * The conversion process has failed to include the updates
- * The conversion was done using Linux/macOS scripts, which do not support installing updates
-
-To fix this issue you'll need to redo the conversion process and make sure that:
- * The `Include updates` option on the download page is checked
- * The conversion process did not report any errors
- * The conversion was done on Windows, preferably a modern version
-
-Including updates is crucial to receive a version selected on the website due to the way UUP sets are provided by Microsoft.
-
-An UUP set consists of the base build (typically .1 for releases, .1000 for previews), and updates for it, which bring it up to the desired version. That means, if you fail to include these updates, you'll receive a base build, not the one you selected.
-
-
-## Help! My Windows copy is missing "Windows Security" app or "Settings" app does not open.
-This applies only to Windows 11, version 22H2 and later.
-
-A cause of this is a failed conversion process or a conversion done on an unsupported platform. You'll need to redo the process and reinstall Windows to fix this.
-
-Alternatively if you don't want to reinstall or can't, you may try one of the following steps.
-
-### Fix not working "Settings" app or a missing "Microsoft Store" app
-Open the Command Prompt as an administrator and type `wsreset -i`. The issue should be fixed in a few minutes.
-
-### Fix missing "Windows Security"
-Go to the UUP dump page for the build you installed and using the **Browse files** section search for `SecHealthUI`. Download and install that `appx` package to fix the issue.
+---
+*Roadmap: 50 items | 630h | v3.0*

@@ -473,7 +473,8 @@ def interactive_mode(output_dir):
 
             idx = int(choice) - 1
             if 0 <= idx < len(builds):
-                return _process_build_selection(builds[idx], output_dir)
+                if _process_build_selection(builds[idx], output_dir):
+                    return True
             else:
                 log_warn(f"Please enter a number between 1 and {len(builds)}")
 

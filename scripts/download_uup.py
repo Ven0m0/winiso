@@ -300,7 +300,9 @@ def _prepare_output_directory(output_path):
     output_path.mkdir(parents=True, exist_ok=True)
     existing_files = list(output_path.glob("*"))
     if existing_files:
-        print(f"\n{Colors.YELLOW}Warning:{Colors.RESET} {len(existing_files)} files exist in {output_path}")
+        print(
+            f"\n{Colors.YELLOW}Warning:{Colors.RESET} {len(existing_files)} files exist in {output_path}"
+        )
         response = input("Clear existing files? [y/N]: ").strip().lower()
         if response == "y":
             log_info("Clearing existing files...")
@@ -322,25 +324,24 @@ def _prepare_download_list(build_id, files, edition_filter):
         )
     return download_list
 
+
 def _run_aria2_download(output_path, aria2_input, download_list):
     import subprocess
+
     try:
         lines = []
         for item in download_list:
-            sanitized_name = str(Path(item['name'].replace('\\', '/')).name)
-            if '..' in sanitized_name or '/' in sanitized_name:
+            sanitized_name = str(Path(item["name"].replace("\\", "/")).name)
+            if ".." in sanitized_name or "/" in sanitized_name:
                 log_error(f"Invalid filename detected: {item['name']}")
                 return False
-            url = str(item['url'])
-            name = str(item['name'])
-            if (
-                "\n" in url
-                or "\r" in url
-                or "\n" in name
-                or "\r" in name
-            ):
-                url = url.replace('\n', '').replace('\r', '')
-                name = name.replace('\n', '').replace('\r', '')
+            url = str(item["url"])
+            if "\n" in url or "\r" in url:
+                url = url.replace("\n", "").replace("\r", "")
+
+            name = str(item["name"])
+            if "\n" in name or "\r" in name:
+                name = name.replace("\n", "").replace("\r", "")
             lines.append(f"{url}\n  out={name}")
 
         with open(aria2_input, "w") as f:
@@ -381,6 +382,7 @@ def _run_aria2_download(output_path, aria2_input, download_list):
             except Exception:
                 pass
 
+
 def download_build(build_id, output_dir, edition_filter=None, build_info=None):
     """Download UUP files for a specific build"""
     if build_info is None:
@@ -419,6 +421,7 @@ def download_build(build_id, output_dir, edition_filter=None, build_info=None):
 
     aria2_input = output_path / "aria2_input.txt"
     return _run_aria2_download(output_path, aria2_input, download_list)
+
 
 def interactive_mode(output_dir):
     """Interactive mode for selecting and downloading builds"""
@@ -534,13 +537,13 @@ For more information, visit: https://uupdump.net
         "--languages",
         const="",
         nargs="?",
-        help="List available languages (optionally for a specific build ID)"
+        help="List available languages (optionally for a specific build ID)",
     )
 
     parser.add_argument(
         "--latest",
         action="store_true",
-        help="Fetch latest build info from Windows Update servers"
+        help="Fetch latest build info from Windows Update servers",
     )
 
     parser.add_argument(
@@ -568,7 +571,13 @@ def main():
     args = parse_args()
 
     # Check dependencies (skip for info-only commands)
-    info_only = args.list or args.editions or args.languages is not None or args.latest or args.version
+    info_only = (
+        args.list
+        or args.editions
+        or args.languages is not None
+        or args.latest
+        or args.version
+    )
     if not info_only and not check_dependencies():
         return 1
 
@@ -576,10 +585,7 @@ def main():
     # Info-only modes should exit before any download/output-dir setup so they can
     # run without invoking normal-path dependency or filesystem checks.
     info_only_mode = (
-        args.version
-        or args.editions
-        or args.languages is not None
-        or args.latest
+        args.version or args.editions or args.languages is not None or args.latest
     )
 
     if info_only_mode:

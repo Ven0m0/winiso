@@ -33,7 +33,7 @@ prek = "latest"
 "pipx:basedpyright" = "latest"
 "pipx:py-psscriptanalyzer" = "latest"
 "pipx:pwsh" = "latest"
-"pipx:WMI" = "latest"
+#"pipx:WMI" = "latest"
 "pipx:psutil" = "latest"
 
 [env]

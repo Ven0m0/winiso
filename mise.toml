@@ -24,6 +24,7 @@ uvx = true
 cli_telemetry_optout = true
 
 [tools]
+powershell = "latest"
 python = "3.14"
 uv = "latest"
 ruff = "latest"
@@ -32,11 +33,11 @@ prek = "latest"
 "pipx:pytest" = "latest"
 "pipx:basedpyright" = "latest"
 "pipx:py-psscriptanalyzer" = "latest"
+ripgrep = "latest"
+ast-grep = "latest"
 
 [env]
 PROJECT_ROOT = "{{config_root}}"
-# Ensure uv uses the exact Python interpreter installed by `mise install`.
-# `tools = true` makes `tools.python.path` available when mise resolves tool-aware env vars at runtime.
 UV_PYTHON = { value = "{{ tools.python.path }}", tools = true }
 UV_LINK_MODE = "symlink"
 _.python.venv = { path = ".venv", create = true, uv_create_args = ["--seed", "--system-site-packages"] }
@@ -153,3 +154,9 @@ run = "ruff ."
 [task.dev]
 description = "Install powershell lint+format utils"
 run = ["curl -sSfL https://webi.sh/pwsh-essentials | bash && source ~/.config/envman/PATH.env"]
+
+[tasks.pwsh-install]
+description = "Install pwsh lint"
+run = '''
+pwsh -NoLogo -NoProfile -Command "Set-PSRepository PSGallery -InstallationPolicy Trusted; Install-Module PSScriptAnalyzer -Scope CurrentUser -Force -AllowClobber"
+'''

@@ -73,6 +73,7 @@ class TestDownloadBuild(unittest.TestCase):
         self.assertFalse(result)
         mock_log_error.assert_called_once_with("No files found for this build")
 
+
 class TestGetLatestBuilds(unittest.TestCase):
     @patch("download_uup.fetch_url")
     @patch("download_uup.log_error")
@@ -110,8 +111,6 @@ class TestGetLatestBuilds(unittest.TestCase):
         self.assertTrue(
             mock_log_error.call_args[0][0].startswith("Failed to parse JSON response:")
         )
-
-
 
     @patch("download_uup.fetch_url")
     def test_get_latest_builds_success(self, mock_fetch_url):
@@ -235,7 +234,6 @@ class TestFetchUrl(unittest.TestCase):
         mock_log_error.assert_called_once()
         self.assertIn("Error fetching URL", mock_log_error.call_args[0][0])
 
-
     @patch("download_uup.urlopen")
     @patch("download_uup.log_error")
     def test_fetch_url_timeout_error(self, mock_log_error, mock_urlopen):
@@ -270,6 +268,7 @@ class TestFetchUrl(unittest.TestCase):
         self.assertIsNone(result)
         mock_log_error.assert_called_once()
         self.assertIn("Error fetching URL", mock_log_error.call_args[0][0])
+
 
 class TestRunAria2Download(unittest.TestCase):
     @patch("builtins.open", new_callable=unittest.mock.mock_open)
@@ -317,6 +316,7 @@ class TestRunAria2Download(unittest.TestCase):
         mock_log_error.assert_called_with(
             "An unexpected error occurred: Unexpected error"
         )
+
 
 class TestSelectEditions(unittest.TestCase):
     @patch("download_uup.log_warn")
@@ -399,47 +399,14 @@ class TestInteractiveMode(unittest.TestCase):
     @patch("builtins.input", return_value="q")
     @patch("download_uup.display_builds")
     @patch("download_uup.get_latest_builds")
-    def test_interactive_mode_quit(self, mock_get_builds, mock_display_builds, mock_input, mock_log_info):
+    def test_interactive_mode_quit(
+        self, mock_get_builds, mock_display_builds, mock_input, mock_log_info
+    ):
         mock_get_builds.return_value = [{"id": "1", "title": "Build 1"}]
         result = download_uup.interactive_mode(Path("/tmp"))
         self.assertFalse(result)
         mock_log_info.assert_called_once_with("Cancelled by user")
 
+
 if __name__ == "__main__":
     unittest.main()
-
-    @patch("download_uup.urlopen")
-    @patch("download_uup.log_error")
-    def test_fetch_url_timeout_error(self, mock_log_error, mock_urlopen):
-        import socket
-
-        mock_urlopen.side_effect = socket.timeout("timed out")
-
-        result = download_uup.fetch_url("http://example.com")
-
-        self.assertIsNone(result)
-        mock_log_error.assert_called_once()
-        self.assertIn("Error fetching URL", mock_log_error.call_args[0][0])
-
-    @patch("download_uup.urlopen")
-    @patch("download_uup.log_error")
-    def test_fetch_url_timeout_error_timeout(self, mock_log_error, mock_urlopen):
-        mock_urlopen.side_effect = TimeoutError("timed out")
-
-        result = download_uup.fetch_url("http://example.com")
-
-        self.assertIsNone(result)
-        mock_log_error.assert_called_once()
-        self.assertIn("Error fetching URL", mock_log_error.call_args[0][0])
-
-    @patch("download_uup.urlopen")
-    @patch("download_uup.log_error")
-    def test_fetch_url_connection_reset_error(self, mock_log_error, mock_urlopen):
-        mock_urlopen.side_effect = ConnectionResetError("Connection reset by peer")
-
-        result = download_uup.fetch_url("http://example.com")
-
-        self.assertIsNone(result)
-        mock_log_error.assert_called_once()
-        self.assertIn("Error fetching URL", mock_log_error.call_args[0][0])
-

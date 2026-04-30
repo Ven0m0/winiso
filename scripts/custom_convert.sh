@@ -417,7 +417,6 @@ list=()
 firstMetadata="${metadataFiles[0]}"
 getLang=$(wimlib-imagex info "$firstMetadata" 3)
 lang=$(grep -i "^Default Language:" <<<"$getLang" | sed "s/.*  //g")
-#lang=$(grep -i "_..-.*.esd" <<< "${metadataFiles[@]}" | head -1 | tr '[:upper:]' '[:lower:]' | sed 's/.*_//g;s/.esd//g')
 mapfile -t metadataFiles < <(printf '%s\n' "${metadataFiles[@]}" | grep -i "$lang" | sort | uniq)
 firstMetadata="${metadataFiles[0]}"
 
@@ -432,7 +431,8 @@ for file in "$(find "$uupDir" -type f -iname "*windows1*-kb*.cab" -or -iname "ss
 done
 
 if [[ $updatesDetected == true ]]; then
-  echo -e "\033[33mNote: This script does not and cannot support the integration of updates.\nUse the Windows version of the converter to integrate updates."
+  echo -e "\033[33mNote: This script does not and cannot support integration of updates."
+  echo "Use the Windows version of the converter to integrate updates."
 fi
 
 if [[ $runVirtualEditions -eq 1 ]] && [[ $VIRTUAL_EDITIONS_PLUGIN_LOADED != "1" ]]; then
@@ -447,7 +447,11 @@ if [[ "$(version "$cabextractVersion")" -ge "$(version "1.10")" ]]; then
 else
   keepSymlinks=""
 fi
-for file in "$(find "$uupDir" -type f -iname "*.cab" -not -iname "*windows1*-kb*.cab" -not -iname "ssu-*.cab" -not -iname "*desktopdeployment*.cab" -not -iname "*aggregatedmetadata*.cab")"; do
+for file in "$(find "$uupDir" -type f -iname "*.cab" \
+  -not -iname "*windows1*-kb*.cab" \
+  -not -iname "ssu-*.cab" \
+  -not -iname "*desktopdeployment*.cab" \
+  -not -iname "*aggregatedmetadata*.cab")"; do
   fileName=$(basename "$file" .cab)
   echo -e "${infoColor}""CAB -> ESD:""$resetColor"" ${fileName}"
 
@@ -570,7 +574,8 @@ errorHandler $? "Failed to add required files to second index of boot.wim"
 
 # Apply Hardware Bypasses to boot.wim (Setup environment)
 echo -e "${infoColor}""Applying hardware bypasses to boot.wim...""$resetColor"
-wimlib-imagex extract ISODIR/sources/boot.wim 2 "/Windows/System32/config/SYSTEM" --dest-dir="$tempDir" --no-acls >/dev/null
+wimlib-imagex extract ISODIR/sources/boot.wim 2 \
+  "/Windows/System32/config/SYSTEM" --dest-dir="$tempDir" --no-acls >/dev/null
 echo 'nk LabConfig
 cd LabConfig
 nv 4 BypassTPMCheck
@@ -594,7 +599,8 @@ if [[ $? -ne 0 ]]; then
   echo "Error: Failed to apply registry tweaks to SYSTEM hive; aborting." >&2
   exit 1
 fi
-wimlib-imagex update ISODIR/sources/boot.wim 2 --command "add '${tempDir}/SYSTEM' '/Windows/System32/config/SYSTEM'" >/dev/null
+wimlib-imagex update ISODIR/sources/boot.wim 2 \
+  --command "add '${tempDir}/SYSTEM' '/Windows/System32/config/SYSTEM'" >/dev/null
 if [[ $? -ne 0 ]]; then
   echo "Error: Failed to update boot.wim with modified SYSTEM hive; aborting." >&2
   exit 1

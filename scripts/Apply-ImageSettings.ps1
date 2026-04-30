@@ -1,7 +1,5 @@
-#Requires -RunAsAdministrator
 #Requires -Version 5.1
-# Script analysis suppressed - Write-Host is intentional for colored console output
-# noqa: PSAvoidUsingWriteHost
+#Requires -RunAsAdministrator
 
 param(
     [Parameter(Mandatory=$false)]
@@ -17,7 +15,10 @@ param(
     [string]$MountDir,
 
     [Parameter(Mandatory=$false)]
-    [switch]$SkipISO
+    [switch]$SkipISO,
+
+    [Parameter(Mandatory=$false)]
+    [switch]$Debloat
 )
 
 $ErrorActionPreference = "Stop"
@@ -31,13 +32,14 @@ if (-not (Test-Path $ConfigFile)) {
 
 . $ConfigFile
 
-if (-not $ISOPath -and -not $ExtractPath) {
-    Write-Host "ERROR: Must specify either -ISOPath or -ExtractPath" -ForegroundColor Red
+if (-not $ISOPath -and -not $ExtractPath -and -not $Debloat) {
+    Write-Host "ERROR: Must specify either -ISOPath, -ExtractPath, or -Debloat" -ForegroundColor Red
     Write-Host ""
     Write-Host "Usage:"
     Write-Host "  .\Apply-ImageSettings.ps1 -ISOPath <path>           # From ISO"
     Write-Host "  .\Apply-ImageSettings.ps1 -ExtractPath <path>    # From extracted folder"
     Write-Host "  .\Apply-ImageSettings.ps1 -ISOPath <path> -SkipISO  # Modify only, no ISO creation"
+    Write-Host "  .\Apply-ImageSettings.ps1 -Debloat -MountDir <path> -WimPath <path> # Debloat WIM directly"
     exit 1
 }
 
@@ -63,7 +65,7 @@ function Find-Oscdimg {
     exit 1
 }
 
-if (-not $OscdimgPath) {
+if (-not $OscdimgPath -and -not $Debloat) {
     $OscdimgPath = Find-Oscdimg
 }
 
@@ -99,6 +101,152 @@ function Safe-RemoveDirectory {
             Write-Host "      Warning: Could not fully clean $Path" -ForegroundColor Yellow
         }
     }
+}
+
+function Remove-Edge {
+    Write-Host "Removing Microsoft Edge..." -ForegroundColor Yellow
+    Remove-Item "$MountDir\Program Files (x86)\Microsoft\Edge" -Recurse -Force -ErrorAction SilentlyContinue
+    Remove-Item "$MountDir\Program Files (x86)\Microsoft\EdgeCore" -Recurse -Force -ErrorAction SilentlyContinue
+    Remove-Item "$MountDir\Program Files (x86)\Microsoft\EdgeUpdate" -Recurse -Force -ErrorAction SilentlyContinue
+}
+
+function Remove-Packages {
+    Write-Host "Removing Windows Packages..." -ForegroundColor Yellow
+    $packages = @(
+        "Microsoft-Windows-Hello-Face-Package*",
+        "Microsoft-Windows-MSPaint-FoD-Package*",
+        "Microsoft-Windows-Notepad-FoD-Package*",
+        "Microsoft-Windows-PowerShell-ISE-FOD-Package*",
+        "Microsoft-Windows-SnippingTool-FoD-Package*",
+        "Microsoft-Windows-StepsRecorder-Package*",
+        "Microsoft-Windows-TabletPCMath-Package*",
+        "Microsoft-Windows-Wallpaper-Content-Extended-FoD-Package*"
+    )
+    foreach ($p in $packages) {
+        Get-WindowsPackage -Path $MountDir | Where-Object { $_.PackageName -like $p -and $_.State -eq 'Installed' } | ForEach-Object {
+            Remove-WindowsPackage -Path $MountDir -PackageName $_.PackageName -NoRestart
+        }
+    }
+}
+
+function Set-Features {
+    Write-Host "Configuring Optional Features..." -ForegroundColor Yellow
+    $disable = @(
+        "MicrosoftWindowsPowerShellV2Root",
+        "MicrosoftWindowsPowerShellV2",
+        "WorkFolders-Client",
+        "SmbDirect",
+        "Printing-PrintToPDFServices-Features",
+        "Recall",
+        "Microsoft-RemoteDesktopConnection",
+        "Printing-Foundation-Features",
+        "Printing-Foundation-InternetPrinting-Client"
+    )
+    foreach ($f in $disable) {
+        try { Disable-WindowsOptionalFeature -Path $MountDir -FeatureName $f -NoRestart -ErrorAction Stop } catch { }
+    }
+    $enable = @("DirectPlay")
+    foreach ($f in $enable) {
+        try { Enable-WindowsOptionalFeature -Path $MountDir -FeatureName $f -All -NoRestart -ErrorAction Stop } catch { }
+    }
+}
+
+function Remove-AppxPackages {
+    Write-Host "Removing AppX Packages..." -ForegroundColor Yellow
+    $appx = @(
+        "Clipchamp.Clipchamp*",
+        "Microsoft.549981C3F5F10*",
+        "Microsoft.BingNews*",
+        "Microsoft.BingWeather*",
+        "Microsoft.GamingApp*",
+        "Microsoft.GetHelp*",
+        "Microsoft.Getstarted*",
+        "Microsoft.MicrosoftOfficeHub*",
+        "Microsoft.MicrosoftSolitaireCollection*",
+        "Microsoft.MicrosoftStickyNotes*",
+        "Microsoft.Paint*",
+        "Microsoft.People*",
+        "Microsoft.PowerAutomateDesktop*",
+        "Microsoft.ScreenSketch*",
+        "Microsoft.SecHealthUI*",
+        "Microsoft.StorePurchaseApp*",
+        "Microsoft.Todos*",
+        "Microsoft.Windows.Photos*",
+        "Microsoft.WindowsAlarms*",
+        "Microsoft.WindowsCalculator*",
+        "Microsoft.WindowsCamera*",
+        "microsoft.windowscommunicationsapps*",
+        "Microsoft.WindowsFeedbackHub*",
+        "Microsoft.WindowsMaps*",
+        "Microsoft.WindowsNotepad*",
+        "Microsoft.WindowsSoundRecorder*",
+        "Microsoft.WindowsStore*",
+        "Microsoft.Xbox.TCUI*",
+        "Microsoft.XboxGameOverlay*",
+        "Microsoft.XboxGamingOverlay*",
+        "Microsoft.XboxIdentityProvider*",
+        "Microsoft.XboxSpeechToTextOverlay*",
+        "Microsoft.YourPhone*",
+        "Microsoft.ZuneMusic*",
+        "Microsoft.ZuneVideo*",
+        "MicrosoftCorporationII.QuickAssist*",
+        "MicrosoftWindows.Client.WebExperience*"
+    )
+    foreach ($p in $appx) {
+        Get-AppxProvisionedAppxPackage -Path $MountDir | Where-Object { $_.DisplayName -like $p } | ForEach-Object {
+            try { Remove-AppxProvisionedAppxPackage -Path $MountDir -PackageName $_.PackageName -ErrorAction Stop } catch { }
+        }
+    }
+}
+
+function Remove-Capabilities {
+    Write-Host "Removing Capabilities..." -ForegroundColor Yellow
+    $capability = @(
+        "App.StepsRecorder*",
+        "Browser.InternetExplorer*",
+        "Hello.Face*",
+        "MathRecognizer*",
+        "Microsoft.Wallpapers.Extended*",
+        "Microsoft.Windows.MSPaint*",
+        "Microsoft.Windows.Notepad*",
+        "Microsoft.Windows.PowerShell.ISE*",
+        "Microsoft.Windows.SnippingTool*",
+        "Microsoft.Windows.Wifi.Client*",
+        "OneCoreUAP.OneSync*"
+    )
+    foreach ($c in $capability) {
+        Get-WindowsCapability -Path $MountDir | Where-Object { $_.Name -like $c } | ForEach-Object {
+            try { Remove-WindowsCapability -Path $MountDir -Name $_.Name -ErrorAction Stop } catch { }
+        }
+    }
+}
+
+if ($Debloat) {
+    if (-not $MountDir -or -not $WimPath) {
+        Write-ErrorExit "Debloat mode requires -MountDir and -WimPath"
+    }
+    if (-not (Test-Path $MountDir)) {
+        New-Item -ItemType Directory -Path $MountDir -Force | Out-Null
+    }
+    if (-not (Test-Path $WimPath)) {
+        Write-ErrorExit "WIM file not found: $WimPath"
+    }
+    Write-Host "Mounting Windows Image..." -ForegroundColor Cyan
+    Mount-WindowsImage -ImagePath $WimPath -Index 1 -Path $MountDir
+
+    try {
+        Remove-Edge
+        Remove-Packages
+        Set-Features
+        Remove-AppxPackages
+        Remove-Capabilities
+        Write-Host "Customization complete." -ForegroundColor Green
+    }
+    finally {
+        Write-Host "Dismounting and saving image..." -ForegroundColor Cyan
+        Dismount-WindowsImage -Path $MountDir -Save
+    }
+    exit 0
 }
 
 if ($ExtractPath) {
@@ -147,7 +295,6 @@ foreach ($idx in $BootWimIndexes) {
     Write-Step "Processing boot.wim index $idx..."
     $BootMount = Join-Path $MountDir "boot$idx"
 
-    # Check if already mounted and remount if necessary
     try {
         $existingMount = Get-WindowsImage -Mounted | Where-Object { $_.Path -eq $BootMount }
         if ($existingMount) {
@@ -172,7 +319,6 @@ foreach ($idx in $BootWimIndexes) {
 Write-Step "Processing install.wim index $InstallWimIndex..."
 $InstallMount = Join-Path $MountDir "install"
 
-# Check if already mounted and remount if necessary
 try {
     $existingMount = Get-WindowsImage -Mounted | Where-Object { $_.Path -eq $InstallMount }
     if ($existingMount) {
@@ -210,15 +356,17 @@ if (Test-Path $PostInstallSrc) {
     Copy-Item $PostInstallSrc "$ScriptsDir\Setup-PostInstall.ps1" -Force
 }
 
-$SetupComplete = @"
-@echo off
-PowerShell -NoProfile -ExecutionPolicy Bypass -File "%~dp0Setup-PostInstall.ps1"
-del /q /f "%0"
-"@
+$SetupComplete = "@echo off`nPowerShell -NoProfile -ExecutionPolicy Bypass -File \"%~dp0Setup-PostInstall.ps1\"`ndel /q /f \"%0\"`n"
 $SetupComplete | Out-File "$ScriptsDir\SetupComplete.cmd" -Encoding ASCII -Force
 Write-Success "Post-install scripts injected"
 
-Dismount-WindowsImage -Path $InstallMount -Save -ErrorAction Stop | Out-Null
+if ($Debloat) {
+    $WorkMount = $InstallMount
+} else {
+    $WorkMount = $InstallMount
+}
+
+Dismount-WindowsImage -Path $WorkMount -Save -ErrorAction Stop | Out-Null
 Write-Success "Unmounted install.wim"
 
 if ($SkipISO) {
@@ -227,7 +375,6 @@ if ($SkipISO) {
 } else {
     if (-not $OutputPath) {
         if ($ExtractPath) {
-            # Default to current directory with modified ISO name
             $BaseName = Split-Path (Get-Location) -Leaf
             if (-not $BaseName) { $BaseName = "modified" }
             $OutputPath = Join-Path (Get-Location) "$BaseName`_modified.iso"

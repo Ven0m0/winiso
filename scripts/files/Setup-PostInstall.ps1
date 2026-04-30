@@ -4,31 +4,21 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-function Write-Step {
-    param([string]$Message)
-    Write-Host "[+] $Message" -ForegroundColor Cyan
-}
-
-function Write-Success {
-    param([string]$Message)
-    Write-Host "[OK] $Message" -ForegroundColor Green
-}
-
 Write-Host ""
 Write-Host "=== First Logon Configuration ===" -ForegroundColor Yellow
 Write-Host ""
 
-Write-Step "Disabling Hibernate..."
+Write-Host "[+] Disabling Hibernate..." -ForegroundColor Cyan
 powercfg /hibernate off
-Write-Success "Hibernate disabled"
+Write-Host "[OK] Hibernate disabled" -ForegroundColor Green
 
-Write-Step "Stripping 8.3 filenames (this may take a while)..."
+Write-Host "[+] Stripping 8.3 filenames (this may take a while)..." -ForegroundColor Cyan
 Get-Volume | Where-Object { $_.DriveLetter -and $_.DriveType -eq 'Fixed' } | ForEach-Object {
     $drive = $_.DriveLetter + ":"
-    Write-Host "    Processing $drive..."
+    Write-Host "    Processing $drive..." -ForegroundColor Gray
     fsutil 8dot3name strip /d $drive /s 2>$null
 }
-Write-Success "8.3 filenames stripped"
+Write-Host "[OK] 8.3 filenames stripped" -ForegroundColor Green
 
 Write-Host ""
 Write-Host "=== Configuration Complete ===" -ForegroundColor Green

@@ -34,6 +34,9 @@ prek = "latest"
 "pipx:py-psscriptanalyzer" = "latest"
 ripgrep = "latest"
 fd = "latest"
+"actionlint" = "latest"
+"shellcheck" = "latest"
+"shfmt" = "latest"
 
 [env]
 PROJECT_ROOT = "{{config_root}}"

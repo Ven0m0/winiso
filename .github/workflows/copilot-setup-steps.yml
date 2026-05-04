@@ -33,15 +33,22 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@v8.1.0
         with:
-          python-version: "3.13"
+          python-version: "3.14"
           enable-cache: true
           cache-python: true
 
       - name: Install system packages
-        uses: awalsh128/cache-apt-pkgs-action@v1
-        with:
-          packages: aria2 cabextract chntpw genisoimage libxml2-utils shellcheck shfmt wimtools
-          version: 1.0
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -yqq --no-install-recommends \
+            aria2 \
+            cabextract \
+            chntpw \
+            genisoimage \
+            libxml2-utils \
+            shellcheck \
+            shfmt \
+            wimtools
 
       - name: Inspect uv-managed Python
         run: |
@@ -49,9 +56,9 @@ jobs:
           which python
           uv python list --only-installed
 
-      - name: Install Python validation tools with uv
+      - name: Install repo Python tools with uv
         run: |
-          for tool in ruff flake8 pytest; do
+          for tool in basedpyright pytest ruff ty; do
             echo "Installing $tool"
             uv tool install "$tool"
           done
@@ -59,3 +66,23 @@ jobs:
 
       - name: Prepare executable scripts
         run: chmod +x scripts/*.sh
+
+      - name: Validate shell scripts
+        run: |
+          for f in scripts/*.sh; do
+            bash -n "$f"
+          done
+
+      - name: Validate XML configuration
+        run: xmllint --noout config/autounattend.xml
+
+      - name: Run Python unit tests
+        run: uvx --with pytest pytest tests/
+
+      - name: Run prerequisite validation when local UUP inputs are present
+        run: |
+          if [ -d uup_files ] && find uup_files -maxdepth 1 \( -name '*.cab' -o -name '*.esd' \) | grep -q .; then
+            make validate
+          else
+            echo "Skipping make validate: add repository-local UUP inputs in uup_files/ to exercise prerequisite checks."
+          fi

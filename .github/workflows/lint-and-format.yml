@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: ["main", "master"]
 
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -13,20 +16,37 @@ concurrency:
 jobs:
   lint-bash:
     name: Lint Bash Scripts
-    runs-on:  ubuntu-latest
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v6
 
-      - name: Run ShellCheck
-        uses: ludeeus/action-shellcheck@2.0.0
-        with:
-          scandir: './scripts'
-          ignore_names: 'custom_convert.sh convert_config.sh'
+      - name: Install shell tooling
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -yqq --no-install-recommends shellcheck shfmt
+
+      - name: Run ShellCheck on maintained shell entrypoints
+        run: |
+          shellcheck \
+            scripts/build.sh \
+            scripts/debloat_wim.sh \
+            scripts/setup_env.sh \
+            scripts/utils.sh \
+            scripts/validate_prereqs.sh
+
+      - name: Check shell formatting
+        run: |
+          shfmt -d \
+            scripts/build.sh \
+            scripts/debloat_wim.sh \
+            scripts/setup_env.sh \
+            scripts/utils.sh \
+            scripts/validate_prereqs.sh
 
   lint-python:
     name: Lint Python Scripts
-    runs-on:  ubuntu-latest
+    runs-on: ubuntu-latest
     env:
       UV_PYTHON_PREFERENCE: only-managed
     steps:
@@ -36,27 +56,27 @@ jobs:
       - name: Set up uv-managed Python
         uses: astral-sh/setup-uv@v8.1.0
         with:
-          python-version: "3.13"
+          python-version: "3.14"
           enable-cache: true
           cache-python: true
 
-      - name: Check format with Ruff (non-blocking)
-        run: uvx ruff format --check scripts/
-        continue-on-error: true
+      - name: Lint with Ruff
+        run: uvx ruff check scripts/download_uup.py tests
 
-      - name: Lint with Flake8
-        run: uvx flake8 scripts/ --max-line-length=120
+      - name: Check Python formatting
+        run: uvx ruff format --check scripts/download_uup.py tests
 
   lint-xml:
     name: Lint XML Config
-    runs-on:  ubuntu-latest
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v6
 
       - name: Install libxml2-utils
-        run: sudo apt-get update && sudo apt-get install -y libxml2-utils
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -yqq --no-install-recommends libxml2-utils
 
       - name: Check XML syntax
-        run: |
-          find . -name "*.xml" -exec xmllint --noout {} +
+        run: xmllint --noout config/autounattend.xml

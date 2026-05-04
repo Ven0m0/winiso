@@ -1,4 +1,5 @@
 ---
+description: "Rules for UUP downloader changes and Python safety checks."
 applyTo: "scripts/download_uup.py,tests/**/*.py"
 ---
 
@@ -8,4 +9,4 @@ applyTo: "scripts/download_uup.py,tests/**/*.py"
 - Prefer Python stdlib modules unless a dependency is already part of the repository workflow.
 - Preserve the current download route through `uupdump.net`; do not add direct Microsoft download calls.
 - Keep path validation and traversal protections intact, and extend tests when behavior changes.
-- Use `python3 -m pytest tests/` for validation when downloader logic or tests change.
+- Use `uvx --with pytest pytest tests/` for validation when downloader logic or tests change.

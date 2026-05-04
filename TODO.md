@@ -95,5 +95,8 @@
 ## Technical Debt
 <debt><item sev="low">SC2034 suppression - utils.sh</item><item sev="medium">Python type hints - download_uup.py</item><item sev="high">Error handling - standardize</item><item sev="medium">Logging - unify levels</item><item sev="high">Test coverage - 40%→80%</item></debt>
 
+Merge the two open pull requests into main
+
+
 ---
 *Roadmap: 50 items | 630h | v3.0*

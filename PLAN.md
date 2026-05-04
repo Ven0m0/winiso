@@ -243,7 +243,7 @@ Comprehensive implementation plan integrating technical debt from existing PLAN.
 - [ ] Accept comma-separated language list
 - [ ] Download appropriate language packs
 - [ ] Configure locale in autounattend.xml
-- [ ] Support 语言en-US,zh-CN,de-DE format
+- [ ] Support comma-separated language format like `en-US,zh-CN,de-DE`
 **Implementation:** Add `--languages` flag, integrate with lp.cab downloads
 
 ### T015 · Driver injection

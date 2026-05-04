@@ -455,17 +455,17 @@ Comprehensive implementation plan integrating technical debt from existing PLAN.
 **Implementation:** Add `inject_gpo(gpo_files, wim_path)` using reg add
 
 ### T031 · Drift detection
-**File:** `scripts/setup_env.sh`
+**File:** `scripts/postinstall_drift.ps1`
 **Severity:** medium · **Category:** feature · **Size:** S
 **Blocks:** —  **Blocked by:** T028
 **Context:** POST-004: Drift detection - config compliance checks
-**Intent:** Detect configuration drift from baseline
+**Intent:** Detect configuration drift on the installed Windows system against a baseline
 **Acceptance criteria:**
 - [ ] Define baseline config JSON
-- [ ] Compare current vs baseline
+- [ ] Collect current installed-system state and compare it to the baseline
 - [ ] Report drift differences
 - [ ] Optional auto-remediation
-**Implementation:** Add `detect_drift(baseline, current)` returning drift report
+**Implementation:** Add a post-install `detect_drift(baseline, current)` flow in `scripts/postinstall_drift.ps1` that gathers current Windows configuration state and returns a drift report
 
 ### T032 · Build telemetry
 **File:** `scripts/build.sh`

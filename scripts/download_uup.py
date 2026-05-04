@@ -334,8 +334,13 @@ def _run_aria2_download(output_path, aria2_input, download_list):
             if ".." in sanitized_name or "/" in sanitized_name:
                 log_error(f"Invalid filename detected: {item['name']}")
                 return False
-            url = str(item["url"]).replace("\n", "").replace("\r", "")
-            name = str(item["name"]).replace("\n", "").replace("\r", "")
+            url = str(item["url"])
+            if "\n" in url or "\r" in url:
+                url = url.replace("\n", "").replace("\r", "")
+
+            name = str(item["name"])
+            if "\n" in name or "\r" in name:
+                name = name.replace("\n", "").replace("\r", "")
             lines.append(f"{url}\n  out={name}")
 
         with open(aria2_input, "w") as f:

@@ -30,6 +30,9 @@ project_name: "agent_8e90fe08-9cf6-4702-ab68-8e8d1652455f"
 # Note that when using the JetBrains backend, language servers are not used and this list is correspondingly ignored.
 languages:
 - bash
+- python_ty
+- python
+- powershell
 
 # the encoding used by text files in the project
 # For a list of possible encodings, see https://docs.python.org/3.11/library/codecs.html#standard-encodings

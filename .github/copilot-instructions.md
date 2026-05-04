@@ -1,13 +1,13 @@
 # Copilot Instructions — Debloated Windows 11 ISO Builder
 
-Start here, then read `AGENTS.md` for the canonical repo-wide guide.
-Precedence: direct task instructions first, then matching files in `.github/instructions/`, then relevant `.github/skills/`, then this bootstrap, then `AGENTS.md`.
+Use this file as the quick bootstrap, then read `AGENTS.md` for the canonical repo-wide guide.
 
 ## Quick bootstrap
 - User entry point: `Makefile`
 - Main build flow: `make deps -> make download -> make validate -> make build`
 - Build orchestrator: `scripts/build.sh`
 - Downloader: `scripts/download_uup.py`
+- Optional Windows servicing handoff: `scripts/windows_service.cmd`
 
 ## Rules to keep in mind
 - Keep the Linux build pipeline runnable as a regular user.
@@ -26,8 +26,7 @@ Precedence: direct task instructions first, then matching files in `.github/inst
 ```bash
 for f in scripts/*.sh; do bash -n "$f"; done
 xmllint --noout config/autounattend.xml
-python3 -m pytest tests/
-make validate
+uvx --with pytest pytest tests/
 ```
 
-`make validate` is expected to fail until a local `uup_files` directory and real UUP inputs are present.
+Run `make validate` only when a local `uup_files/` directory with real UUP inputs is present; otherwise rely on the shell, XML, and pytest checks above.

@@ -5,12 +5,18 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
-- Added a dedicated `test-matrix.yml` workflow for Python tests across Ubuntu and macOS on uv-managed Python 3.9-3.13.
+- Added a dedicated `test-matrix.yml` workflow for Python tests on uv-managed Python runtimes.
+- Added `.github/instructions/windows-servicing.instructions.md` to keep Windows-only servicing changes separate from the default Linux build path.
+- Added matching `.claude/rules/` and `.kilo/rules/` guidance so Claude and Kilo can reuse the same repo-specific rule set.
 
 ### Changed
 - Refreshed `AGENTS.md`, `.github/copilot-instructions.md`, and repo-specific Copilot instructions/skills to use a canonical long-form guide plus focused instruction files.
 - Updated `.github/workflows/copilot-setup-steps.yml` to install only the toolchain this repository actually uses.
 - Switched `.github/workflows/copilot-setup-steps.yml` to use `uv` for Python tooling bootstrap while validating the uv-managed runtime.
+- Refined `.github/workflows/copilot-setup-steps.yml` to run shell syntax, XML, and Python test checks while skipping `make validate` unless real local UUP inputs are present.
+- Updated `.github/workflows/lint-and-format.yml` to use repo-native shell and Ruff checks instead of generic Python linting.
+- Narrowed `.github/workflows/test-matrix.yml` to Linux-based Python coverage aligned with the repository's active toolchain.
+- Added frontmatter descriptions and input-aware validation rules to the focused `.github/instructions/*.instructions.md` files and `.github/skills/iso-build-pipeline/SKILL.md`.
 - Normalized `mise.toml` to `[tools]` entries and wired `UV_PYTHON` to the mise-managed interpreter for consistent uv integration.
 - Replaced Black with Ruff in workflow-based Python formatting checks and Copilot setup tool bootstrap.
 - Updated the repository Python toolchain to 3.13 and switched CI/bootstrap Python provisioning to uv-managed Python.

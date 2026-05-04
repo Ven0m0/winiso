@@ -1,6 +1,7 @@
 ---
-description: "Rules for UUP downloader changes and Python safety checks."
-applyTo: "scripts/download_uup.py,tests/**/*.py"
+paths:
+  - "scripts/download_uup.py"
+  - "tests/**/*.py"
 ---
 
 # Python downloader rules

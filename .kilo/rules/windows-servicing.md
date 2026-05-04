@@ -1,0 +1,1 @@
+../../.claude/rules/windows-servicing.md

@@ -1,6 +1,8 @@
 ---
-description: "Rules for the Linux shell build pipeline and Makefile entrypoints."
-applyTo: "Makefile,scripts/**/*.sh,scripts/convert_ve_plugin"
+paths:
+  - "Makefile"
+  - "scripts/**/*.sh"
+  - "scripts/convert_ve_plugin"
 ---
 
 # Shell build pipeline rules

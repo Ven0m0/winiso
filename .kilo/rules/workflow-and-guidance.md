@@ -1,0 +1,1 @@
+../../.claude/rules/workflow-and-guidance.md

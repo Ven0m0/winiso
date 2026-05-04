@@ -12,7 +12,9 @@
 </category>
 
 
-implement https://github.com/Raphire/Win11Debloat
+implement 
+- https://github.com/Raphire/Win11Debloat
+- https://github.com/ravendevteam/talon
 
 ## 🔧 Build System
 <category name="build" items="8" priority="high">

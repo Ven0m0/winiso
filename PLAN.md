@@ -140,7 +140,7 @@ Comprehensive implementation plan integrating technical debt from existing PLAN.
 - [ ] Add unit tests for utils.sh functions (mocked)
 - [ ] Add integration tests for full download flow
 - [ ] Run pytest with --cov and verify 80%+ coverage
-**Implementation:** Use pytest fixtures, unittest.mock for external calls, add parametrized tests
+**Implementation:** Expand the existing unittest/unittest.mock suite, use mocks for external calls, add table-driven coverage with unittest subTest where helpful, and run coverage via pytest --cov
 
 ### T007 · UUP JSON API v2 client
 **File:** `scripts/download_uup.py`

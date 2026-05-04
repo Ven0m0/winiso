@@ -11,6 +11,9 @@
 - API-005: Build history cache - local cache with TTL refresh
 </category>
 
+
+implement https://github.com/Raphire/Win11Debloat
+
 ## 🔧 Build System
 <category name="build" items="8" priority="high">
 - BUILD-001: Custom edition selection - any edition ID from metadata

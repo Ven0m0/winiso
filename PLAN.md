@@ -546,17 +546,17 @@ Comprehensive implementation plan integrating technical debt from existing PLAN.
 **Implementation:** Create scripts/build.ps1 with same interface as build.sh
 
 ### T038 · CI/CD integration
-**File:** `.github/workflows/build.yml`
+**File:** `.github/workflows/build-and-deploy.yml`
 **Severity:** high · **Category:** feature · **Size:** M
 **Blocks:** —  **Blocked by:** —
 **Context:** PLAT-003: CI/CD integration - GitHub Actions
-**Intent:** Automated CI/CD pipeline
+**Intent:** Extend the existing CI/CD pipeline without duplicating push/PR ISO artifact builds
 **Acceptance criteria:**
-- [ ] GitHub Actions workflow
-- [ ] Run on PR and push
-- [ ] Build with cached UUP files
-- [ ] Upload ISO as artifact
-**Implementation:** Create .github/workflows/build.yml with ubuntu-latest runner
+- [ ] Extend the existing GitHub Actions workflow
+- [ ] Preserve current PR and push behavior
+- [ ] Add or refine cached UUP file handling in the existing workflow
+- [ ] Preserve ISO artifact upload in the existing workflow
+**Implementation:** Update .github/workflows/build-and-deploy.yml with the required ubuntu-latest job changes instead of creating a new build.yml
 
 ### T039 · Test automation QEMU
 **File:** `tests/qemu_test.sh`

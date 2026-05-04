@@ -497,14 +497,14 @@ Comprehensive implementation plan integrating technical debt from existing PLAN.
 **File:** `scripts/build.sh`
 **Severity:** low · **Category:** feature · **Size:** S
 **Blocks:** —  **Blocked by:** —
-**Context:** MON-003: Health checks - post-install verification
-**Intent:** Verify Windows health after installation
+**Context:** MON-003: Health checks - offline image/build verification with optional Windows post-install handoff
+**Intent:** Verify build artifact health in the Linux pipeline and document optional Windows-only post-install checks separately
 **Acceptance criteria:**
-- [ ] Check SFC/DFS consistency
-- [ ] Verify disk health
-- [ ] Check Windows Update status
-- [ ] Generate health report
-**Implementation:** Add `run_health_checks(wim_path)` returning health dict
+- [ ] Validate offline image/build artifacts from Linux (for example: required files present, image metadata readable, mount/export steps succeeded)
+- [ ] Verify available host disk space and report image/output sizes relevant to the build
+- [ ] Generate a health report that clearly distinguishes offline checks from Windows-only runtime checks
+- [ ] If Windows post-install verification is desired, emit guidance or handoff data for `scripts/windows_service.cmd` instead of attempting SFC/DISM/Windows Update checks in `build.sh`
+**Implementation:** Add `run_offline_health_checks(wim_path)` in `scripts/build.sh` returning an offline health report dict/summary; do not require SFC/DISM or Windows Update checks in the Linux build path
 
 ### T035 · Rollback mechanism
 **File:** `scripts/build.sh`

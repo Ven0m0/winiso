@@ -15,7 +15,8 @@
 implement 
 - https://github.com/Raphire/Win11Debloat
 - https://github.com/ravendevteam/talon
-- https://github.com/couleur-tweak-tips/TweakList/tree/master
+- https://github.com/couleur-tweak-tips/TweakList
+- https://github.com/chrisGrando/tiny11maker-reforged
 
 ## 🔧 Build System
 <category name="build" items="8" priority="high">

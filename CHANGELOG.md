@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 - Added a dedicated `test-matrix.yml` workflow for Python tests on uv-managed Python runtimes.
 - Added `.github/instructions/windows-servicing.instructions.md` to keep Windows-only servicing changes separate from the default Linux build path.
+- Added matching `.claude/rules/` and `.kilo/rules/` guidance so Claude and Kilo can reuse the same repo-specific rule set.
 
 ### Changed
 - Refreshed `AGENTS.md`, `.github/copilot-instructions.md`, and repo-specific Copilot instructions/skills to use a canonical long-form guide plus focused instruction files.

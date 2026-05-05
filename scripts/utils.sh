@@ -21,7 +21,7 @@ log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 # =============================================================================
 check_tool() {
   local tool="$1"
-  if ! command -v "$tool" &> /dev/null; then
+  if ! command -v "$tool" &>/dev/null; then
     return 1
   else
     log_success "$tool found"
@@ -38,10 +38,10 @@ REQUIRED_TOOLS=("aria2c" "cabextract" "wimlib-imagex" "chntpw")
 # Returns 0 if genisoimage or mkisofs is found, 1 otherwise.
 # =============================================================================
 check_iso_tool() {
-  if command -v genisoimage &> /dev/null; then
+  if command -v genisoimage &>/dev/null; then
     log_success "genisoimage found"
     return 0
-  elif command -v mkisofs &> /dev/null; then
+  elif command -v mkisofs &>/dev/null; then
     log_success "mkisofs found"
     return 0
   else

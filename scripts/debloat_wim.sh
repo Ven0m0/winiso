@@ -183,8 +183,8 @@ EOF
 }
 
 # Generate deletion commands
-generate_commands() {
-  local pattern
+CMD_FILE=$(mktemp)
+{
   for pattern in "${PATTERNS[@]}"; do
     echo "delete --recursive --force \"/Program Files/WindowsApps/$pattern\""
     echo "delete --recursive --force \"/ProgramData/Microsoft/Windows/AppRepository/Packages/$pattern\""
@@ -200,10 +200,7 @@ generate_commands() {
     echo "delete --recursive --force \"/Windows/Fonts/msyhl.ttc\""
     echo "delete --recursive --force \"/Windows/Fonts/msyhbd.ttc\""
   fi
-}
-
-CMD_FILE=$(mktemp)
-generate_commands >"$CMD_FILE"
+} >"$CMD_FILE"
 
 # Process each index
 for index in $(seq 1 "$IMAGE_COUNT"); do

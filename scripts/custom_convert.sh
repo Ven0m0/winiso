@@ -426,9 +426,9 @@ extractDir="${tempDir}/extract"
 echo -e "\033[1m${scriptName}\033[0m"
 
 updatesDetected=false
-for file in "$(find "$uupDir" -type f -iname "*windows1*-kb*.cab" -or -iname "ssu-*.cab")"; do
+if find "$uupDir" -type f \( -iname "*windows1*-kb*.cab" -o -iname "ssu-*.cab" \) -print -quit | grep -q .; then
   updatesDetected=true
-done
+fi
 
 if [[ $updatesDetected == true ]]; then
   echo -e "\033[33mNote: This script does not and cannot support integration of updates."
@@ -447,11 +447,12 @@ if [[ "$(version "$cabextractVersion")" -ge "$(version "1.10")" ]]; then
 else
   keepSymlinks=""
 fi
-for file in "$(find "$uupDir" -type f -iname "*.cab" \
+mapfile -t cabFiles < <(find "$uupDir" -type f \( -iname "*.cab" \
   -not -iname "*windows1*-kb*.cab" \
   -not -iname "ssu-*.cab" \
   -not -iname "*desktopdeployment*.cab" \
-  -not -iname "*aggregatedmetadata*.cab")"; do
+  -not -iname "*aggregatedmetadata*.cab" \))
+for file in "${cabFiles[@]}"; do
   fileName=$(basename "$file" .cab)
   echo -e "${infoColor}""CAB -> ESD:""$resetColor"" ${fileName}"
 

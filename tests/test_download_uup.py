@@ -110,7 +110,6 @@ class TestGetLatestBuilds(unittest.TestCase):
 
     @patch("download_uup.fetch_url")
     def test_get_latest_builds_success(self, mock_fetch_url):
-        import json
 
         mock_fetch_url.return_value = {
             "response": {
@@ -145,7 +144,6 @@ class TestGetLatestBuilds(unittest.TestCase):
 class TestGetBuildInfo(unittest.TestCase):
     @patch("download_uup.fetch_url")
     def test_get_build_info_success(self, mock_fetch_url):
-        import json
 
         mock_fetch_url.return_value = {"response": {"build": "info", "files": {}}}
 

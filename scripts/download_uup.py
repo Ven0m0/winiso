@@ -54,16 +54,36 @@ def check_dependencies():
     return True
 
 
-def fetch_url(url, headers=None, data=None):
-    """Fetch URL with error handling"""
+_url_cache = {}
+
+
+def fetch_url(url, headers=None, data=None, return_json=False):
+    """Fetch URL with error handling and optional caching"""
     if headers is None:
         headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"}
+
+    cache_key = f"{url}:{return_json}" if not data else None
+    if cache_key and cache_key in _url_cache:
+        return _url_cache[cache_key]
+
     try:
         if data:
             data = urlencode(data).encode("utf-8")
         req = Request(url, headers=headers, data=data)
         with urlopen(req, timeout=30) as response:
-            return response.read().decode("utf-8")
+            result = response.read().decode("utf-8")
+
+            if return_json:
+                try:
+                    result = json.loads(result)
+                except json.JSONDecodeError as e:
+                    log_error(f"Failed to parse JSON response: {e}")
+                    return None
+
+            if cache_key:
+                _url_cache[cache_key] = result
+
+            return result
     except HTTPError as e:
         log_error(f"HTTP Error {e.code}: {e.reason}")
         return None
@@ -86,14 +106,13 @@ def get_latest_builds(max_results=10):
     params = {"search": "windows 11", "sortByDate": "1"}
 
     url = f"{api_url}?{urlencode(params)}"
-    response = fetch_url(url)
+    data = fetch_url(url, return_json=True)
 
-    if not response:
+    if not data:
         log_error("Failed to fetch builds from uupdump.net")
         return None
 
     try:
-        data = json.loads(response)
         if data.get("response", {}).get("error"):
             log_error(f"API Error: {data['response']['error']}")
             return None
@@ -139,21 +158,16 @@ def get_build_info(build_id):
     log_info(f"Fetching build information for ID: {build_id}")
 
     api_url = f"https://api.uupdump.net/get.php?id={build_id}"
-    response = fetch_url(api_url)
+    data = fetch_url(api_url, return_json=True)
 
-    if not response:
+    if not data:
         return None
 
-    try:
-        data = json.loads(response)
-        if data.get("response", {}).get("error"):
-            log_error(f"API Error: {data['response']['error']}")
-            return None
-
-        return data.get("response")
-    except json.JSONDecodeError as e:
-        log_error(f"Failed to parse JSON response: {e}")
+    if data.get("response", {}).get("error"):
+        log_error(f"API Error: {data['response']['error']}")
         return None
+
+    return data.get("response")
 
 
 def get_available_editions(build_id):
@@ -162,22 +176,17 @@ def get_available_editions(build_id):
 
     params = {"id": build_id}
     api_url = f"https://api.uupdump.net/listeditions.php?{urlencode(params)}"
-    response = fetch_url(api_url)
+    data = fetch_url(api_url, return_json=True)
 
-    if not response:
+    if not data:
         return None
 
-    try:
-        data = json.loads(response)
-        response_data = data.get("response") or {}
-        if response_data.get("error"):
-            log_error(f"API Error: {response_data['error']}")
-            return None
-
-        return response_data
-    except json.JSONDecodeError as e:
-        log_error(f"Failed to parse JSON response: {e}")
+    response_data = data.get("response") or {}
+    if response_data.get("error"):
+        log_error(f"API Error: {response_data['error']}")
         return None
+
+    return response_data
 
 
 def get_available_languages(build_id=None):
@@ -190,21 +199,16 @@ def get_available_languages(build_id=None):
         log_info("Fetching all available languages")
         api_url = "https://api.uupdump.net/listlangs.php"
 
-    response = fetch_url(api_url)
+    data = fetch_url(api_url, return_json=True)
 
-    if not response:
+    if not data:
         return None
 
-    try:
-        data = json.loads(response)
-        if data.get("response", {}).get("error"):
-            log_error(f"API Error: {data['response']['error']}")
-            return None
-
-        return data.get("response", {})
-    except json.JSONDecodeError as e:
-        log_error(f"Failed to parse JSON response: {e}")
+    if data.get("response", {}).get("error"):
+        log_error(f"API Error: {data['response']['error']}")
         return None
+
+    return data.get("response", {})
 
 
 def fetch_latest_from_wu(arch="amd64", ring="Retail"):
@@ -213,38 +217,28 @@ def fetch_latest_from_wu(arch="amd64", ring="Retail"):
 
     params = {"arch": arch, "ring": ring}
     api_url = f"https://api.uupdump.net/fetchupd.php?{urlencode(params)}"
-    response = fetch_url(api_url)
+    data = fetch_url(api_url, return_json=True)
 
-    if not response:
+    if not data:
         log_warn("Failed to fetch from Windows Update, falling back to cached builds")
         return None
 
-    try:
-        data = json.loads(response)
-        if data.get("response", {}).get("error"):
-            log_error(f"API Error: {data['response']['error']}")
-            return None
-
-        return data.get("response", {})
-    except json.JSONDecodeError as e:
-        log_error(f"Failed to parse JSON response: {e}")
+    if data.get("response", {}).get("error"):
+        log_error(f"API Error: {data['response']['error']}")
         return None
+
+    return data.get("response", {})
 
 
 def get_api_version():
     """Get the current UUP dump API version"""
     api_url = "https://api.uupdump.net/"
-    response = fetch_url(api_url)
+    data = fetch_url(api_url, return_json=True)
 
-    if not response:
+    if not data:
         return None
 
-    try:
-        data = json.loads(response)
-        return data.get("response", {})
-    except json.JSONDecodeError as e:
-        log_error(f"Failed to parse JSON response: {e}")
-        return None
+    return data.get("response", {})
 
 
 def select_editions(build_info):

@@ -824,7 +824,7 @@ if [[ "${PAUSE_FOR_WINDOWS_STAGE:-0}" == "1" ]]; then
 fi
 
 echo -e "${infoColor}""Creating ISO image...""$resetColor"
-find ISODIR -exec touch {} +
+find ISODIR -print0 | xargs -0 -P 0 touch
 
 # Use mkisofs as fallback to genisoimage
 genisoimage="$(command -v genisoimage)"

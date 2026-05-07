@@ -110,6 +110,9 @@ class TestGetLatestBuilds(unittest.TestCase):
         mock_log_error.assert_called_once()
         self.assertTrue(
             mock_log_error.call_args[0][0].startswith("Failed to parse JSON response:")
+            or mock_log_error.call_args[0][0].startswith(
+                "Failed to parse API response:"
+            )
         )
 
     @patch("download_uup.fetch_url")
@@ -162,6 +165,28 @@ class TestGetBuildInfo(unittest.TestCase):
         self.assertEqual(result, {"build": "info", "files": {}})
         mock_fetch_url.assert_called_once_with(
             "https://api.uupdump.net/get.php?id=fake-id"
+        )
+
+
+class TestGetAvailableLanguages(unittest.TestCase):
+    @patch("download_uup.fetch_url")
+    @patch("download_uup.log_error")
+    def test_get_available_languages_json_decode_error(
+        self, mock_log_error, mock_fetch_url
+    ):
+        # Simulate an invalid JSON string
+        mock_fetch_url.return_value = "Not a JSON string"
+
+        result = download_uup.get_available_languages()
+
+        self.assertIsNone(result)
+        # Check that log_error was called with the JSON decode error
+        mock_log_error.assert_called_once()
+        self.assertTrue(
+            mock_log_error.call_args[0][0].startswith("Failed to parse JSON response:")
+            or mock_log_error.call_args[0][0].startswith(
+                "Failed to parse API response:"
+            )
         )
 
 

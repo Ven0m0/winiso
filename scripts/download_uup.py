@@ -4,6 +4,7 @@ Automates the download of UUP files from uupdump.net
 """
 
 import sys
+import os
 import json
 import argparse
 import shutil
@@ -397,13 +398,13 @@ def download_build(build_id, output_dir, edition_filter=None, build_info=None):
         return False
 
     output_path = Path(output_dir)
-    try:
-        if output_path.is_absolute():
-            output_path = output_path.resolve()
-        else:
-            output_path = Path.cwd().joinpath(output_path).resolve()
-        output_path.relative_to(Path.cwd().resolve())
-    except (ValueError, RuntimeError):
+    if output_path.is_absolute():
+        output_path = output_path.resolve()
+    else:
+        output_path = Path.cwd().joinpath(output_path).resolve()
+
+    resolved_cwd = Path.cwd().resolve()
+    if os.path.commonpath([output_path, resolved_cwd]) != str(resolved_cwd):
         log_error("Output directory must be within the current directory")
         return False
 
@@ -650,9 +651,9 @@ def main():
     if not output_dir.is_absolute():
         output_dir = project_root.joinpath(output_dir)
 
-    try:
-        output_dir.resolve().relative_to(project_root.resolve())
-    except (ValueError, RuntimeError):
+    resolved_output = output_dir.resolve()
+    resolved_root = project_root.resolve()
+    if os.path.commonpath([resolved_output, resolved_root]) != str(resolved_root):
         log_error(f"Path traversal attempt detected for output: {args.output}")
         return 1
 

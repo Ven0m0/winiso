@@ -15,17 +15,22 @@ class TestSecurity(unittest.TestCase):
         # We'll use a mock project root for testing
         project_root = Path("/tmp/project_root").resolve()
 
+        import os
+
         def is_safe(output_arg, root):
             # This replicates the logic in download_uup.main()
             output_dir = Path(output_arg)
             if not output_dir.is_absolute():
                 output_dir = root.joinpath(output_dir)
 
-            try:
-                output_dir.resolve().relative_to(root.resolve())
-                return True
-            except (ValueError, RuntimeError):
+            resolved_output = output_dir.resolve()
+            resolved_root = root.resolve()
+
+            if os.path.commonpath([resolved_output, resolved_root]) != str(
+                resolved_root
+            ):
                 return False
+            return True
 
         # Normal case
         self.assertTrue(is_safe("uup_files", project_root))

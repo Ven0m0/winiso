@@ -148,6 +148,60 @@ class TestGetLatestBuilds(unittest.TestCase):
         self.assertEqual(result[1]["title"], "Windows 11 Build 3")
 
 
+class TestFetchLatestFromWU(unittest.TestCase):
+    @patch("download_uup.fetch_url")
+    @patch("download_uup.log_error")
+    def test_fetch_latest_from_wu_api_error(self, mock_log_error, mock_fetch_url):
+        mock_fetch_url.return_value = '{"response": {"error": "Invalid ring"}}'
+        result = download_uup.fetch_latest_from_wu()
+        self.assertIsNone(result)
+        mock_log_error.assert_called_with("API Error: Invalid ring")
+
+    @patch("download_uup.fetch_url")
+    @patch("download_uup.log_warn")
+    def test_fetch_latest_from_wu_no_response(self, mock_log_warn, mock_fetch_url):
+        mock_fetch_url.return_value = None
+        result = download_uup.fetch_latest_from_wu()
+        self.assertIsNone(result)
+        mock_log_warn.assert_called_with(
+            "Failed to fetch from Windows Update, falling back to cached builds"
+        )
+
+    @patch("download_uup.fetch_url")
+    @patch("download_uup.log_error")
+    def test_fetch_latest_from_wu_json_decode_error(
+        self, mock_log_error, mock_fetch_url
+    ):
+        mock_fetch_url.return_value = "Not a JSON string"
+        result = download_uup.fetch_latest_from_wu()
+        self.assertIsNone(result)
+        mock_log_error.assert_called_once()
+        self.assertTrue(
+            mock_log_error.call_args[0][0].startswith("Failed to parse JSON response:")
+        )
+
+    @patch("download_uup.fetch_url")
+    def test_fetch_latest_from_wu_success(self, mock_fetch_url):
+        import json
+
+        mock_fetch_url.return_value = json.dumps(
+            {
+                "response": {
+                    "updateId": "12345",
+                    "updateTitle": "Windows 11 Build",
+                    "foundBuild": "22621.1",
+                    "arch": "amd64",
+                }
+            }
+        )
+        result = download_uup.fetch_latest_from_wu(arch="amd64", ring="Retail")
+        self.assertIsNotNone(result)
+        self.assertEqual(result["updateId"], "12345")
+        self.assertEqual(result["updateTitle"], "Windows 11 Build")
+        self.assertEqual(result["foundBuild"], "22621.1")
+        self.assertEqual(result["arch"], "amd64")
+
+
 class TestGetBuildInfo(unittest.TestCase):
     @patch("download_uup.fetch_url")
     def test_get_build_info_success(self, mock_fetch_url):

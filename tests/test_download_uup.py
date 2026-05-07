@@ -43,8 +43,54 @@ class TestCheckDependencies(unittest.TestCase):
     def test_check_dependencies_all_present(
         self, mock_log_info, mock_log_error, mock_which
     ):
-        # Mock shutil.which to return a path for aria2c
-        mock_which.return_value = "/usr/bin/aria2c"
+        # Mock shutil.which to return a path for aria2c, wimlib-imagex, cabextract
+        mock_which.return_value = "/usr/bin/tool"
+
+        result = download_uup.check_dependencies()
+
+        self.assertTrue(result)
+        mock_log_error.assert_not_called()
+        mock_log_info.assert_not_called()
+        self.assertEqual(mock_which.call_count, 3)
+
+    @patch("shutil.which")
+    @patch("download_uup.log_error")
+    @patch("download_uup.log_info")
+    def test_check_dependencies_missing_tools(
+        self, mock_log_info, mock_log_error, mock_which
+    ):
+        mock_which.return_value = None
+
+        result = download_uup.check_dependencies()
+
+        self.assertFalse(result)
+        mock_log_error.assert_called_once_with(
+            "Missing required tools: aria2c, wimlib-imagex, cabextract"
+        )
+        mock_log_info.assert_called_once_with("Run 'make deps' to install dependencies")
+        self.assertEqual(mock_which.call_count, 3)
+
+    @patch("shutil.which")
+    @patch("download_uup.log_error")
+    @patch("download_uup.log_info")
+    def test_check_dependencies_some_missing(
+        self, mock_log_info, mock_log_error, mock_which
+    ):
+        def side_effect(tool):
+            if tool == "aria2c":
+                return "/usr/bin/aria2c"
+            return None
+
+        mock_which.side_effect = side_effect
+
+        result = download_uup.check_dependencies()
+
+        self.assertFalse(result)
+        mock_log_error.assert_called_once_with(
+            "Missing required tools: wimlib-imagex, cabextract"
+        )
+        mock_log_info.assert_called_once_with("Run 'make deps' to install dependencies")
+        self.assertEqual(mock_which.call_count, 3)
 
 
 class TestDownloadUUP(unittest.TestCase):

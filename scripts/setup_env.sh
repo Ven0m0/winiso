@@ -12,14 +12,14 @@ source "$SCRIPT_DIR/utils.sh"
 log_info "Checking and installing dependencies..."
 
 # Detect package manager
-if command -v pacman &> /dev/null; then
+if command -v pacman &>/dev/null; then
   log_info "Detected Arch Linux (pacman)"
   sudo pacman -S --needed aria2 cabextract wimlib chntpw cdrtools
-elif command -v apt &> /dev/null; then
+elif command -v apt &>/dev/null; then
   log_info "Detected Debian/Ubuntu (apt)"
   sudo apt update
   sudo apt install -y aria2 cabextract wimtools chntpw genisoimage
-elif command -v dnf &> /dev/null; then
+elif command -v dnf &>/dev/null; then
   log_info "Detected Fedora (dnf)"
   sudo dnf install -y aria2 cabextract wimlib-utils chntpw genisoimage
 else

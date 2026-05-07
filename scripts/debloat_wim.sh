@@ -46,7 +46,7 @@ while IFS= read -r line; do
     EDITION_NAMES[CURRENT_INDEX]="${name%$'\r'}"
     CURRENT_INDEX=""
   fi
-done <<< "$WIM_INFO_OUTPUT"
+done <<<"$WIM_INFO_OUTPUT"
 
 # Parse config file
 PATTERNS=()
@@ -209,8 +209,8 @@ for index in $(seq 1 "$IMAGE_COUNT"); do
 
   # AppX Debloating
   if [[ ${#PATTERNS[@]} -gt 0 ]] || [[ "${NANO:-0}" == "1" ]]; then
-    wimlib-imagex update "$WIM_FILE" "$index" <"$CMD_FILE" 2>&1 \
-      | grep -v "does not exist" | head -n 20 || true
+    wimlib-imagex update "$WIM_FILE" "$index" <"$CMD_FILE" 2>&1 |
+      grep -v "does not exist" | head -n 20 || true
   fi
 
   # Registry Tweaking

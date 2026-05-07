@@ -407,6 +407,30 @@ class TestInteractiveMode(unittest.TestCase):
         self.assertFalse(result)
         mock_log_info.assert_called_once_with("Cancelled by user")
 
+    @patch("download_uup.log_warn")
+    @patch("builtins.input", side_effect=["invalid", "q"])
+    @patch("download_uup.display_builds")
+    @patch("download_uup.get_latest_builds")
+    def test_interactive_mode_value_error(
+        self, mock_get_builds, mock_display_builds, mock_input, mock_log_warn
+    ):
+        mock_get_builds.return_value = [{"id": "1", "title": "Build 1"}]
+        result = download_uup.interactive_mode(Path("/tmp"))
+        self.assertFalse(result)
+        mock_log_warn.assert_any_call("Invalid input. Please enter a number.")
+
+    @patch("download_uup.log_info")
+    @patch("builtins.input", side_effect=KeyboardInterrupt)
+    @patch("download_uup.display_builds")
+    @patch("download_uup.get_latest_builds")
+    def test_interactive_mode_keyboard_interrupt(
+        self, mock_get_builds, mock_display_builds, mock_input, mock_log_info
+    ):
+        mock_get_builds.return_value = [{"id": "1", "title": "Build 1"}]
+        result = download_uup.interactive_mode(Path("/tmp"))
+        self.assertFalse(result)
+        mock_log_info.assert_any_call("Cancelled by user")
+
 
 if __name__ == "__main__":
     unittest.main()

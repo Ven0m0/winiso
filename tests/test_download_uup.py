@@ -408,5 +408,34 @@ class TestInteractiveMode(unittest.TestCase):
         mock_log_info.assert_called_once_with("Cancelled by user")
 
 
+class TestGetApiVersion(unittest.TestCase):
+    @patch("download_uup.fetch_url")
+    def test_get_api_version_success(self, mock_fetch_url):
+        mock_fetch_url.return_value = '{"response": {"version": "1.0.0"}}'
+        result = download_uup.get_api_version()
+        self.assertEqual(result, {"version": "1.0.0"})
+        mock_fetch_url.assert_called_once_with("https://api.uupdump.net/")
+
+    @patch("download_uup.fetch_url")
+    def test_get_api_version_fetch_fails(self, mock_fetch_url):
+        mock_fetch_url.return_value = None
+        result = download_uup.get_api_version()
+        self.assertIsNone(result)
+
+    @patch("download_uup.log_error")
+    @patch("download_uup.fetch_url")
+    def test_get_api_version_invalid_json(self, mock_fetch_url, mock_log_error):
+        mock_fetch_url.return_value = "Invalid JSON!"
+        result = download_uup.get_api_version()
+        self.assertIsNone(result)
+        mock_log_error.assert_called_once()
+
+    @patch("download_uup.fetch_url")
+    def test_get_api_version_no_response_key(self, mock_fetch_url):
+        mock_fetch_url.return_value = '{"other_key": "value"}'
+        result = download_uup.get_api_version()
+        self.assertEqual(result, {})
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1,4 +1,3 @@
-from typing import Optional
 
 #!/usr/bin/env python3
 """UUP File Downloader for Windows 11 ISO Builder
@@ -6,6 +5,7 @@ Automates the download of UUP files from uupdump.net
 """
 
 import sys
+from typing import Optional
 import json
 import argparse
 import shutil

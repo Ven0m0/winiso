@@ -68,16 +68,18 @@ fi
 # Function to apply registry tweaks using chntpw
 apply_registry_tweaks() {
   local index=$1
-  local temp_reg_dir
-  temp_reg_dir=$(mktemp -d)
+  local temp_reg_dir=$2
+  local index_cmd_file=$3
 
   log_info "Applying registry tweaks to index $index..."
 
-  # 1. SOFTWARE HIVE
+  # Extract SOFTWARE and SYSTEM hives in one pass
   wimlib-imagex extract "$WIM_FILE" "$index" \
     "/Windows/System32/config/SOFTWARE" \
+    "/Windows/System32/config/SYSTEM" \
     --dest-dir="$temp_reg_dir" --no-acls >/dev/null 2>&1 || true
 
+  # 1. SOFTWARE HIVE
   if [[ -f "$temp_reg_dir/SOFTWARE" ]]; then
     # Disable Consumer Experience, Telemetry, and AI. Using nk to ensure
     # keys exist before navigation.
@@ -117,16 +119,10 @@ ed HubMode
 q
 y
 EOF
-    wimlib-imagex update "$WIM_FILE" "$index" \
-      --command "add '$temp_reg_dir/SOFTWARE' '/Windows/System32/config/SOFTWARE'" \
-      >/dev/null 2>&1
+    echo "add '$temp_reg_dir/SOFTWARE' '/Windows/System32/config/SOFTWARE'" >> "$index_cmd_file"
   fi
 
   # 2. SYSTEM HIVE
-  wimlib-imagex extract "$WIM_FILE" "$index" \
-    "/Windows/System32/config/SYSTEM" \
-    --dest-dir="$temp_reg_dir" --no-acls >/dev/null 2>&1 || true
-
   if [[ -f "$temp_reg_dir/SYSTEM" ]]; then
     # Apply registry tweaks to SYSTEM hive (merged for performance)
     {
@@ -174,12 +170,8 @@ EOF
       echo "q"
       echo "y"
     } | chntpw -e "$temp_reg_dir/SYSTEM" >/dev/null 2>&1
-    wimlib-imagex update "$WIM_FILE" "$index" \
-      --command "add '$temp_reg_dir/SYSTEM' '/Windows/System32/config/SYSTEM'" \
-      >/dev/null 2>&1
+    echo "add '$temp_reg_dir/SYSTEM' '/Windows/System32/config/SYSTEM'" >> "$index_cmd_file"
   fi
-
-  rm -rf "$temp_reg_dir"
 }
 
 # Generate deletion commands
@@ -210,24 +202,34 @@ for index in $(seq 1 "$IMAGE_COUNT"); do
   EDITION="${EDITION_NAMES[$index]:-Unknown}"
   log_info "Processing index $index: $EDITION"
 
-  # AppX Debloating
+  INDEX_CMD_FILE=$(mktemp)
+  TEMP_REG_DIR=$(mktemp -d)
+
+  # 1. AppX Debloating
   if [[ ${#PATTERNS[@]} -gt 0 ]] || [[ "${NANO:-0}" == "1" ]]; then
-    wimlib-imagex update "$WIM_FILE" "$index" <"$CMD_FILE" 2>&1 \
-      | grep -v "does not exist" | head -n 20 || true
+    cat "$CMD_FILE" > "$INDEX_CMD_FILE"
   fi
 
-  # Registry Tweaking
-  apply_registry_tweaks "$index"
+  # 2. Registry Tweaking
+  apply_registry_tweaks "$index" "$TEMP_REG_DIR" "$INDEX_CMD_FILE"
 
-  # WinSxS Slimming (Nano mode only)
+  # 3. WinSxS Slimming (Nano mode only)
   if [[ "${NANO:-0}" == "1" ]]; then
-    log_info "Performing WinSxS slimming for index $index..."
-    wimlib-imagex update "$WIM_FILE" "$index" <<EOF >/dev/null 2>&1 || true
+    log_info "Adding WinSxS slimming commands for index $index..."
+    cat >> "$INDEX_CMD_FILE" <<EOF
 delete --recursive --force "/Windows/WinSxS/Backup"
 delete --recursive --force "/Windows/WinSxS/ManifestCache"
 delete --recursive --force "/Windows/WinSxS/Temp"
 EOF
   fi
+
+  # Execute batched update
+  if [[ -s "$INDEX_CMD_FILE" ]]; then
+    wimlib-imagex update "$WIM_FILE" "$index" <"$INDEX_CMD_FILE" 2>&1 \
+      | grep -v "does not exist" | head -n 20 || true
+  fi
+
+  rm -rf "$TEMP_REG_DIR" "$INDEX_CMD_FILE"
 done
 
 rm -f "$CMD_FILE"

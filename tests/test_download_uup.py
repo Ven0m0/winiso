@@ -408,5 +408,66 @@ class TestInteractiveMode(unittest.TestCase):
         mock_log_info.assert_called_once_with("Cancelled by user")
 
 
+class TestGetAvailableEditions(unittest.TestCase):
+    @patch("download_uup.fetch_url")
+    @patch("download_uup.log_info")
+    def test_get_available_editions_success(self, mock_log_info, mock_fetch_url):
+        import json
+
+        mock_fetch_url.return_value = json.dumps(
+            {"response": {"editionList": ["Core", "Professional"]}}
+        )
+
+        result = download_uup.get_available_editions("fake-build-id")
+
+        self.assertEqual(result, {"editionList": ["Core", "Professional"]})
+        mock_fetch_url.assert_called_once_with(
+            "https://api.uupdump.net/listeditions.php?id=fake-build-id&lang=en-us"
+        )
+        mock_log_info.assert_called_once_with(
+            "Fetching available editions for build: fake-build-id"
+        )
+
+    @patch("download_uup.fetch_url")
+    @patch("download_uup.log_info")
+    def test_get_available_editions_no_response(self, mock_log_info, mock_fetch_url):
+        mock_fetch_url.return_value = None
+
+        result = download_uup.get_available_editions("fake-build-id")
+
+        self.assertIsNone(result)
+
+    @patch("download_uup.fetch_url")
+    @patch("download_uup.log_error")
+    @patch("download_uup.log_info")
+    def test_get_available_editions_api_error(
+        self, mock_log_info, mock_log_error, mock_fetch_url
+    ):
+        import json
+
+        mock_fetch_url.return_value = json.dumps(
+            {"response": {"error": "Invalid build ID"}}
+        )
+
+        result = download_uup.get_available_editions("fake-build-id")
+
+        self.assertIsNone(result)
+        mock_log_error.assert_called_once_with("API Error: Invalid build ID")
+
+    @patch("download_uup.fetch_url")
+    @patch("download_uup.log_error")
+    @patch("download_uup.log_info")
+    def test_get_available_editions_json_decode_error(
+        self, mock_log_info, mock_log_error, mock_fetch_url
+    ):
+        mock_fetch_url.return_value = "invalid json"
+
+        result = download_uup.get_available_editions("fake-build-id")
+
+        self.assertIsNone(result)
+        mock_log_error.assert_called_once()
+        self.assertIn("Failed to parse JSON response:", mock_log_error.call_args[0][0])
+
+
 if __name__ == "__main__":
     unittest.main()

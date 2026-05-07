@@ -46,7 +46,7 @@ while IFS= read -r line; do
     EDITION_NAMES[CURRENT_INDEX]="${name%$'\r'}"
     CURRENT_INDEX=""
   fi
-done <<< "$WIM_INFO_OUTPUT"
+done <<<"$WIM_INFO_OUTPUT"
 
 # Parse config file
 PATTERNS=()
@@ -119,7 +119,7 @@ ed HubMode
 q
 y
 EOF
-    echo "add '$temp_reg_dir/SOFTWARE' '/Windows/System32/config/SOFTWARE'" >> "$index_cmd_file"
+    echo "add '$temp_reg_dir/SOFTWARE' '/Windows/System32/config/SOFTWARE'" >>"$index_cmd_file"
   fi
 
   # 2. SYSTEM HIVE
@@ -170,7 +170,7 @@ EOF
       echo "q"
       echo "y"
     } | chntpw -e "$temp_reg_dir/SYSTEM" >/dev/null 2>&1
-    echo "add '$temp_reg_dir/SYSTEM' '/Windows/System32/config/SYSTEM'" >> "$index_cmd_file"
+    echo "add '$temp_reg_dir/SYSTEM' '/Windows/System32/config/SYSTEM'" >>"$index_cmd_file"
   fi
 }
 
@@ -207,7 +207,7 @@ for index in $(seq 1 "$IMAGE_COUNT"); do
 
   # 1. AppX Debloating
   if [[ ${#PATTERNS[@]} -gt 0 ]] || [[ "${NANO:-0}" == "1" ]]; then
-    cat "$CMD_FILE" > "$INDEX_CMD_FILE"
+    cat "$CMD_FILE" >"$INDEX_CMD_FILE"
   fi
 
   # 2. Registry Tweaking
@@ -216,7 +216,7 @@ for index in $(seq 1 "$IMAGE_COUNT"); do
   # 3. WinSxS Slimming (Nano mode only)
   if [[ "${NANO:-0}" == "1" ]]; then
     log_info "Adding WinSxS slimming commands for index $index..."
-    cat >> "$INDEX_CMD_FILE" <<EOF
+    cat >>"$INDEX_CMD_FILE" <<EOF
 delete --recursive --force "/Windows/WinSxS/Backup"
 delete --recursive --force "/Windows/WinSxS/ManifestCache"
 delete --recursive --force "/Windows/WinSxS/Temp"
@@ -225,8 +225,8 @@ EOF
 
   # Execute batched update
   if [[ -s "$INDEX_CMD_FILE" ]]; then
-    wimlib-imagex update "$WIM_FILE" "$index" <"$INDEX_CMD_FILE" 2>&1 \
-      | grep -v "does not exist" | head -n 20 || true
+    wimlib-imagex update "$WIM_FILE" "$index" <"$INDEX_CMD_FILE" 2>&1 |
+      grep -v "does not exist" | head -n 20 || true
   fi
 
   rm -rf "$TEMP_REG_DIR" "$INDEX_CMD_FILE"

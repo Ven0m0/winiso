@@ -92,8 +92,8 @@ log_info "Checking configuration files..."
 
 if [[ -f "$PROJECT_ROOT/config/debloat_list.txt" ]]; then
   log_success "debloat_list.txt found"
-  pattern_count=$(grep -v "^#" "$PROJECT_ROOT/config/debloat_list.txt" \
-    | grep -c -v "^[[:space:]]*$")
+  pattern_count=$(grep -v "^#" "$PROJECT_ROOT/config/debloat_list.txt" |
+    grep -c -v "^[[:space:]]*$")
   log_info "  → $pattern_count debloat patterns configured"
 else
   log_warn "debloat_list.txt not found - no apps will be removed"

@@ -104,6 +104,8 @@ implement
 
 Merge the two open pull requests into main
 
+implement https://github.com/ShivamXD6/Optimize-Windows
+
 
 ---
 *Roadmap: 50 items | 630h | v3.0*

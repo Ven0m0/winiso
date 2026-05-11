@@ -38,6 +38,7 @@ fd = "latest"
 "actionlint" = "latest"
 "shellcheck" = "latest"
 "shfmt" = "latest"
+# xmllint: system package (libxml2-utils on Debian/Ubuntu, libxml2 on Arch)
 
 [env]
 PROJECT_ROOT = "{{config_root}}"
@@ -127,7 +128,7 @@ file = '.mise/tasks/install'
 [tasks.linux]
 description = "Install build dependencies on Linux"
 run = [
-  "sudo pacman -Sq --needed aria2 cabextract wimlib chntpw cdrtools 2>/dev/null || (sudo apt update && sudo apt install -y aria2 cabextract wimtools chntpw genisoimage) 2>/dev/null || (sudo dnf install -y aria2 cabextract wimlib-utils chntpw genisoimage)"
+  "sudo pacman -Sq --needed aria2 cabextract wimlib chntpw cdrtools libxml2 2>/dev/null || (sudo apt update && sudo apt install -y aria2 cabextract wimtools chntpw genisoimage libxml2-utils) 2>/dev/null || (sudo dnf install -y aria2 cabextract wimlib-utils chntpw genisoimage libxml2)"
 ]
 
 [tasks.windows]
@@ -144,7 +145,7 @@ run = ["sudo pacman -Sq --needed aria2 cabextract wimlib chntpw cdrtools"]
 
 [tasks.debian]
 description = "Install deps (Debian/Ubuntu)"
-run = ["sudo apt-get update -qq && sudo DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes apt-get install -yqq --no-install-recommends aria2 cabextract wimtools chntpw genisoimage libfuse2"]
+run = ["sudo apt-get update -qq && sudo DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes apt-get install -yqq --no-install-recommends aria2 cabextract wimtools chntpw genisoimage libxml2-utils libfuse2"]
 
 [tasks.test]
 description = "Run tests"

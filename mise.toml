@@ -38,7 +38,9 @@ fd = "latest"
 "actionlint" = "latest"
 "shellcheck" = "latest"
 "shfmt" = "latest"
-# xmllint: system package (libxml2-utils on Debian/Ubuntu, libxml2 on Arch)
+# xmllint: system package (libxml2-utils on Debian/Ubuntu, libxml2 on Arch/Fedora)
+# biome: npm package for JS/TS/JSON/HTML/CSS linting and formatting
+biome = "2.4"
 
 [env]
 PROJECT_ROOT = "{{config_root}}"
@@ -154,6 +156,21 @@ run = "pytest tests/"
 [tasks.lint]
 description = "Lint the code"
 run = "ruff ."
+
+# XML linting options:
+# 1. System xmllint (recommended): install libxml2-utils via system package manager
+# 2. Python stdlib: use python -c "import xml.etree.ElementTree as ET; ET.parse('config/autounattend.xml')"
+# 3. pipx tool: pipx install xmlschema  # for schema validation
+[tasks.lint-xml]
+description = "Lint XML config files (requires libxml2-utils or python)"
+run = [
+  "xmllint --noout config/autounattend.xml 2>/dev/null || python3 -c \"import xml.etree.ElementTree as ET; ET.parse('config/autounattend.xml'); print('XML valid')\""
+]
+
+# Biome: fast JS/TS/JSON/HTML/CSS linter and formatter
+[tasks.lint-biome]
+description = "Lint and format JS/TS/JSON/HTML/CSS with biome"
+run = ["npx @biomejs/biome check --write . --diagnostic-level=error"]
 
 [task.dev]
 description = "Install powershell lint+format utils"

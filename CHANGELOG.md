@@ -13,6 +13,12 @@ All notable changes to this project will be documented in this file.
 - Added `mise run lint-xml` and `mise run lint-biome` tasks for linting workflows.
 
 ### Changed
+- Refactored shell scripts (utils.sh, debloat_wim.sh, setup_env.sh, validate_prereqs.sh) to use consistent 2-space indentation.
+- Inlined `generate_commands()` function in debloat_wim.sh (single-use function).
+- Removed redundant section comments from shell scripts.
+- Streamlined debloat_wim.sh command generation by inlining the generate_commands function.
+
+### Changed
 - Refreshed `AGENTS.md`, `.github/copilot-instructions.md`, and repo-specific Copilot instructions/skills to use a canonical long-form guide plus focused instruction files.
 - Updated `.github/workflows/copilot-setup-steps.yml` to install only the toolchain this repository actually uses.
 - Switched `.github/workflows/copilot-setup-steps.yml` to use `uv` for Python tooling bootstrap while validating the uv-managed runtime.

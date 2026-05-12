@@ -39,8 +39,7 @@ fd = "latest"
 "shellcheck" = "latest"
 "shfmt" = "latest"
 # xmllint: system package (libxml2-utils on Debian/Ubuntu, libxml2 on Arch/Fedora)
-# biome: npm package for JS/TS/JSON/HTML/CSS linting and formatting
-"npm:@biomejs/biome" = "2.4"
+# biome: JS/TS/JSON/HTML/CSS linter - use bunx @biomejs/biome
 
 [env]
 PROJECT_ROOT = "{{config_root}}"
@@ -171,7 +170,7 @@ run = [
 # Biome: fast JS/TS/JSON/HTML/CSS linter and formatter
 [tasks.lint-biome]
 description = "Lint and format JS/TS/JSON/HTML/CSS with biome"
-run = ["mise x biome check --write . --diagnostic-level=error"]
+run = ["bun x @biomejs/biome check --write . --diagnostic-level=error"]
 
 [task.dev]
 description = "Install powershell lint+format utils"

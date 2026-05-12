@@ -9,7 +9,7 @@ All notable changes to this project will be documented in this file.
 - Added `.github/instructions/windows-servicing.instructions.md` to keep Windows-only servicing changes separate from the default Linux build path.
 - Added matching `.claude/rules/` and `.kilo/rules/` guidance so Claude and Kilo can reuse the same repo-specific rule set.
 - Added `xmllint` documentation to `mise.toml` (system package via libxml2-utils on Debian/Ubuntu, libxml2 on Arch/Fedora).
-- Added `biome` to `mise.toml` for JS/TS/JSON/HTML/CSS linting and formatting (via npm:@biomejs/biome).
+- Added `biome` to `mise.toml` for JS/TS/JSON/HTML/CSS linting and formatting (via bun x @biomejs/biome).
 - Added `mise run lint-xml` and `mise run lint-biome` tasks for linting workflows.
 
 ### Changed

@@ -565,7 +565,9 @@ class TestGetAvailableEditions(unittest.TestCase):
     @patch("download_uup.fetch_url")
     @patch("download_uup.log_info")
     def test_get_available_editions_success(self, mock_log_info, mock_fetch_url):
-        mock_fetch_url.return_value = {"response": {"editionList": ["Core", "Professional"]}}
+        mock_fetch_url.return_value = {
+            "response": {"editionList": ["Core", "Professional"]}
+        }
 
         result = download_uup.get_available_editions("fake-build-id")
 

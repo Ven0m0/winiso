@@ -194,54 +194,58 @@ class TestGetLatestBuilds(unittest.TestCase):
         self.assertEqual(result[1]["title"], "Windows 11 Build 3")
 
 
-class TestGetAvailableEditions(unittest.TestCase):
+class TestFetchLatestFromWU(unittest.TestCase):
     @patch("download_uup.fetch_url")
     @patch("download_uup.log_error")
-    def test_get_available_editions_json_decode_error(
+    def test_fetch_latest_from_wu_api_error(self, mock_log_error, mock_fetch_url):
+        mock_fetch_url.return_value = '{"response": {"error": "Invalid ring"}}'
+        result = download_uup.fetch_latest_from_wu()
+        self.assertIsNone(result)
+        mock_log_error.assert_called_with("API Error: Invalid ring")
+
+    @patch("download_uup.fetch_url")
+    @patch("download_uup.log_warn")
+    def test_fetch_latest_from_wu_no_response(self, mock_log_warn, mock_fetch_url):
+        mock_fetch_url.return_value = None
+        result = download_uup.fetch_latest_from_wu()
+        self.assertIsNone(result)
+        mock_log_warn.assert_called_with(
+            "Failed to fetch from Windows Update, falling back to cached builds"
+        )
+
+    @patch("download_uup.fetch_url")
+    @patch("download_uup.log_error")
+    def test_fetch_latest_from_wu_json_decode_error(
         self, mock_log_error, mock_fetch_url
     ):
-        mock_fetch_url.return_value = "not json"
-
-        result = download_uup.get_available_editions("fake-id")
-
+        mock_fetch_url.return_value = "Not a JSON string"
+        result = download_uup.fetch_latest_from_wu()
         self.assertIsNone(result)
         mock_log_error.assert_called_once()
-        self.assertIn("Failed to parse JSON response:", mock_log_error.call_args[0][0])
+        self.assertTrue(
+            mock_log_error.call_args[0][0].startswith("Failed to parse JSON response:")
+        )
 
     @patch("download_uup.fetch_url")
-    def test_get_available_editions_success(self, mock_fetch_url):
+    def test_fetch_latest_from_wu_success(self, mock_fetch_url):
         import json
 
         mock_fetch_url.return_value = json.dumps(
-            {"response": {"editionList": ["Core", "Professional"]}}
+            {
+                "response": {
+                    "updateId": "12345",
+                    "updateTitle": "Windows 11 Build",
+                    "foundBuild": "22621.1",
+                    "arch": "amd64",
+                }
+            }
         )
-
-        result = download_uup.get_available_editions("fake-id")
-
-        self.assertEqual(result, {"editionList": ["Core", "Professional"]})
-        mock_fetch_url.assert_called_once()
-
-    @patch("download_uup.fetch_url")
-    @patch("download_uup.log_error")
-    def test_get_available_editions_api_error(self, mock_log_error, mock_fetch_url):
-        import json
-
-        mock_fetch_url.return_value = json.dumps(
-            {"response": {"error": "Invalid build ID"}}
-        )
-
-        result = download_uup.get_available_editions("fake-id")
-
-        self.assertIsNone(result)
-        mock_log_error.assert_called_once_with("API Error: Invalid build ID")
-
-    @patch("download_uup.fetch_url")
-    def test_get_available_editions_no_response(self, mock_fetch_url):
-        mock_fetch_url.return_value = None
-
-        result = download_uup.get_available_editions("fake-id")
-
-        self.assertIsNone(result)
+        result = download_uup.fetch_latest_from_wu(arch="amd64", ring="Retail")
+        self.assertIsNotNone(result)
+        self.assertEqual(result["updateId"], "12345")
+        self.assertEqual(result["updateTitle"], "Windows 11 Build")
+        self.assertEqual(result["foundBuild"], "22621.1")
+        self.assertEqual(result["arch"], "amd64")
 
 
 class TestGetBuildInfo(unittest.TestCase):
@@ -563,6 +567,35 @@ class TestGetAvailableEditions(unittest.TestCase):
         self.assertIsNone(result)
         mock_log_error.assert_called_once()
         self.assertIn("Failed to parse JSON response:", mock_log_error.call_args[0][0])
+
+
+class TestGetApiVersion(unittest.TestCase):
+    @patch("download_uup.fetch_url")
+    def test_get_api_version_success(self, mock_fetch_url):
+        mock_fetch_url.return_value = '{"response": {"version": "1.0.0"}}'
+        result = download_uup.get_api_version()
+        self.assertEqual(result, {"version": "1.0.0"})
+        mock_fetch_url.assert_called_once_with("https://api.uupdump.net/")
+
+    @patch("download_uup.fetch_url")
+    def test_get_api_version_fetch_fails(self, mock_fetch_url):
+        mock_fetch_url.return_value = None
+        result = download_uup.get_api_version()
+        self.assertIsNone(result)
+
+    @patch("download_uup.log_error")
+    @patch("download_uup.fetch_url")
+    def test_get_api_version_invalid_json(self, mock_fetch_url, mock_log_error):
+        mock_fetch_url.return_value = "Invalid JSON!"
+        result = download_uup.get_api_version()
+        self.assertIsNone(result)
+        mock_log_error.assert_called_once()
+
+    @patch("download_uup.fetch_url")
+    def test_get_api_version_no_response_key(self, mock_fetch_url):
+        mock_fetch_url.return_value = '{"other_key": "value"}'
+        result = download_uup.get_api_version()
+        self.assertEqual(result, {})
 
 
 if __name__ == "__main__":

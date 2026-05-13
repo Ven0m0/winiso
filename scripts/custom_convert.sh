@@ -426,9 +426,9 @@ extractDir="${tempDir}/extract"
 echo -e "\033[1m${scriptName}\033[0m"
 
 updatesDetected=false
-for file in "$(find "$uupDir" -type f -iname "*windows1*-kb*.cab" -or -iname "ssu-*.cab")"; do
+if find "$uupDir" -type f \( -iname "*windows1*-kb*.cab" -o -iname "ssu-*.cab" \) -print -quit | grep -q .; then
   updatesDetected=true
-done
+fi
 
 if [[ $updatesDetected == true ]]; then
   echo -e "\033[33mNote: This script does not and cannot support integration of updates."
@@ -447,11 +447,12 @@ if [[ "$(version "$cabextractVersion")" -ge "$(version "1.10")" ]]; then
 else
   keepSymlinks=""
 fi
-for file in "$(find "$uupDir" -type f -iname "*.cab" \
+mapfile -t cabFiles < <(find "$uupDir" -type f \( -iname "*.cab" \
   -not -iname "*windows1*-kb*.cab" \
   -not -iname "ssu-*.cab" \
   -not -iname "*desktopdeployment*.cab" \
-  -not -iname "*aggregatedmetadata*.cab")"; do
+  -not -iname "*aggregatedmetadata*.cab" \))
+for file in "${cabFiles[@]}"; do
   fileName=$(basename "$file" .cab)
   echo -e "${infoColor}""CAB -> ESD:""$resetColor"" ${fileName}"
 
@@ -625,10 +626,25 @@ FALLBACK_EDITION="${FALLBACK_EDITION:-Professional}"
 # Pre-scan metadata to find target edition
 targetMetadata=""
 fallbackMetadata=""
-declare -A cachedInfo
+declare -a cachedInfoKeys=()
+declare -a cachedInfoVals=()
+
+get_wim_info() {
+  local metadata="$1"
+  local i
+  for (( i=0; i<${#cachedInfoKeys[@]}; i++ )); do
+    if [[ "${cachedInfoKeys[$i]}" == "$metadata" ]]; then
+      currentInfo="${cachedInfoVals[$i]}"
+      return 0
+    fi
+  done
+  currentInfo=$(wimlib-imagex info "$metadata" 3 2>/dev/null || true)
+  cachedInfoKeys+=("$metadata")
+  cachedInfoVals+=("$currentInfo")
+}
 for metadata in "${metadataFiles[@]}"; do
-  scanInfo=$(wimlib-imagex info "$metadata" 3 2>/dev/null)
-  cachedInfo["$metadata"]="$scanInfo"
+  get_wim_info "$metadata"
+  scanInfo="$currentInfo"
   scanEdition=$(grep -i "^Edition ID:" <<<"$scanInfo" | sed "s/.*  //g")
   if [[ "$scanEdition" == "$TARGET_EDITION" ]]; then
     targetMetadata="$metadata"
@@ -649,11 +665,8 @@ else
   echo -e "${errorColor}""Neither ${TARGET_EDITION} nor ${FALLBACK_EDITION} found in UUP files.""$resetColor"
   echo "Available editions:"
   for metadata in "${metadataFiles[@]}"; do
-    scanInfo="${cachedInfo["$metadata"]}"
-    if [[ -z "$scanInfo" ]]; then
-      scanInfo=$(wimlib-imagex info "$metadata" 3 2>/dev/null)
-      cachedInfo["$metadata"]="$scanInfo"
-    fi
+    get_wim_info "$metadata"
+    scanInfo="$currentInfo"
     scanEdition=$(grep -i "^Edition ID:" <<<"$scanInfo" | sed "s/.*  //g")
     echo "  - $scanEdition"
   done
@@ -663,11 +676,7 @@ fi
 echo ""
 indexesExported=0
 for metadata in "${metadataFiles[@]}"; do
-  currentInfo="${cachedInfo["$metadata"]}"
-  if [[ -z "$currentInfo" ]]; then
-    currentInfo=$(wimlib-imagex info "$metadata" 3)
-    cachedInfo["$metadata"]="$currentInfo"
-  fi
+  get_wim_info "$metadata"
 
   currentEdition=$(grep -i "^Edition ID:" <<<"$currentInfo" | sed "s/.*  //g")
   currentName=$(grep -i "^Name:" <<<"$currentInfo" | sed "s/.*  //g")
@@ -824,7 +833,7 @@ if [[ "${PAUSE_FOR_WINDOWS_STAGE:-0}" == "1" ]]; then
 fi
 
 echo -e "${infoColor}""Creating ISO image...""$resetColor"
-find ISODIR -exec touch {} +
+find ISODIR -print0 | xargs -0 -P 0 touch
 
 # Use mkisofs as fallback to genisoimage
 genisoimage="$(command -v genisoimage)"

@@ -161,7 +161,7 @@ def get_available_editions(build_id):
     """Get available editions for a specific build from the API"""
     log_info(f"Fetching available editions for build: {build_id}")
 
-    params = {"id": build_id}
+    params = {"id": build_id, "lang": "en-us"}
     api_url = f"https://api.uupdump.net/listeditions.php?{urlencode(params)}"
     response = fetch_url(api_url)
 
@@ -185,7 +185,7 @@ def get_available_languages(build_id=None):
     """Get available languages for a specific build from the API"""
     if build_id:
         log_info(f"Fetching available languages for build: {build_id}")
-        params = {"id": build_id}
+        params = {"id": build_id, "lang": "en-us"}
         api_url = f"https://api.uupdump.net/listlangs.php?{urlencode(params)}"
     else:
         log_info("Fetching all available languages")

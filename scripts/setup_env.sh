@@ -11,6 +11,10 @@ source "$SCRIPT_DIR/utils.sh"
 
 log_info "Checking and installing dependencies..."
 
+<<<<<<< HEAD
+=======
+# Detect package manager
+>>>>>>> pr-135
 if command -v pacman &>/dev/null; then
   log_info "Detected Arch Linux (pacman)"
   sudo pacman -S --needed aria2 cabextract wimlib chntpw cdrtools

@@ -16,7 +16,7 @@ class TestSecurity(unittest.TestCase):
         project_root = Path("/tmp/project_root").resolve()
 
         def is_safe(output_arg, root):
-            # This replicates the logic in download_uup.main()
+            # This replicates the logic in download_uup._resolve_output_dir()
             output_dir = Path(output_arg)
             if not output_dir.is_absolute():
                 output_dir = root.joinpath(output_dir)

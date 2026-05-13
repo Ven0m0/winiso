@@ -4,6 +4,7 @@ Automates the download of UUP files from uupdump.net
 """
 
 import sys
+from typing import Optional
 import json
 import argparse
 import shutil
@@ -569,6 +570,79 @@ For more information, visit: https://uupdump.net
     return parser.parse_args(args)
 
 
+def _handle_info_mode(args):
+    """Handles info-only modes and returns the appropriate exit code. Returns None if not handled."""
+    if args.version:
+        version_info = get_api_version()
+        if version_info:
+            log_success("UUP dump API is online")
+            print(f"  API Version: {version_info.get('apiVersion', 'unknown')}")
+            print(
+                f"  JSON API Version: {version_info.get('jsonApiVersion', 'unknown')}"
+            )
+            return 0
+        return 1
+
+    # List editions mode
+    if args.editions:
+        editions_info = get_available_editions(args.editions)
+        if editions_info:
+            print(f"\n{Colors.BOLD}Available Editions for Build:{Colors.RESET}\n")
+            edition_list = editions_info.get("editionList", [])
+            fancy_names = editions_info.get("editionFancyNames", {})
+            for edition in edition_list:
+                fancy_name = fancy_names.get(edition, edition)
+                print(f"  {Colors.CYAN}{edition}{Colors.RESET} - {fancy_name}")
+            return 0
+        return 1
+
+    # List languages mode
+    if args.languages is not None:
+        langs_info = get_available_languages(args.languages or None)
+        if langs_info:
+            print(f"\n{Colors.BOLD}Available Languages:{Colors.RESET}\n")
+            lang_list = langs_info.get("langList", [])
+            fancy_names = langs_info.get("langFancyNames", {})
+            for lang in lang_list:
+                fancy_name = fancy_names.get(lang, lang)
+                print(f"  {Colors.CYAN}{lang}{Colors.RESET} - {fancy_name}")
+            return 0
+        return 1
+
+    # Fetch latest from Windows Update
+    if args.latest:
+        latest_info = fetch_latest_from_wu(args.arch, args.ring)
+        if latest_info:
+            print(f"\n{Colors.BOLD}Latest Build from Windows Update:{Colors.RESET}\n")
+            print(f"  Update ID: {latest_info.get('updateId', 'N/A')}")
+            print(f"  Title: {latest_info.get('updateTitle', 'N/A')}")
+            print(f"  Build: {latest_info.get('foundBuild', 'N/A')}")
+            print(f"  Arch: {latest_info.get('arch', 'N/A')}")
+            return 0
+        return 1
+
+    return None
+
+
+def _resolve_output_dir(output_arg: str) -> Optional[Path]:
+    """Resolves and validates the output directory to prevent traversal."""
+    script_dir = Path(__file__).parent
+    project_root = script_dir.parent
+
+    # Security: Resolve and validate output path to prevent traversal
+    output_dir = Path(output_arg)
+    if not output_dir.is_absolute():
+        output_dir = project_root.joinpath(output_dir)
+
+    try:
+        output_dir.resolve().relative_to(project_root.resolve())
+    except (ValueError, RuntimeError):
+        log_error(f"Path traversal attempt detected for output: {output_arg}")
+        return None
+
+    return output_dir
+
+
 def main():
     args = parse_args()
 
@@ -591,69 +665,12 @@ def main():
     )
 
     if info_only_mode:
-        if args.version:
-            version_info = get_api_version()
-            if version_info:
-                log_success("UUP dump API is online")
-                print(f"  API Version: {version_info.get('apiVersion', 'unknown')}")
-                print(
-                    f"  JSON API Version: {version_info.get('jsonApiVersion', 'unknown')}"
-                )
-                return 0
-            return 1
+        result = _handle_info_mode(args)
+        if result is not None:
+            return result
 
-        # List editions mode
-        if args.editions:
-            editions_info = get_available_editions(args.editions)
-            if editions_info:
-                print(f"\n{Colors.BOLD}Available Editions for Build:{Colors.RESET}\n")
-                edition_list = editions_info.get("editionList", [])
-                fancy_names = editions_info.get("editionFancyNames", {})
-                for edition in edition_list:
-                    fancy_name = fancy_names.get(edition, edition)
-                    print(f"  {Colors.CYAN}{edition}{Colors.RESET} - {fancy_name}")
-                return 0
-            return 1
-
-        # List languages mode
-        if args.languages is not None:
-            langs_info = get_available_languages(args.languages or None)
-            if langs_info:
-                print(f"\n{Colors.BOLD}Available Languages:{Colors.RESET}\n")
-                lang_list = langs_info.get("langList", [])
-                fancy_names = langs_info.get("langFancyNames", {})
-                for lang in lang_list:
-                    fancy_name = fancy_names.get(lang, lang)
-                    print(f"  {Colors.CYAN}{lang}{Colors.RESET} - {fancy_name}")
-                return 0
-            return 1
-
-        # Fetch latest from Windows Update
-        if args.latest:
-            latest_info = fetch_latest_from_wu(args.arch, args.ring)
-            if latest_info:
-                print(
-                    f"\n{Colors.BOLD}Latest Build from Windows Update:{Colors.RESET}\n"
-                )
-                print(f"  Update ID: {latest_info.get('updateId', 'N/A')}")
-                print(f"  Title: {latest_info.get('updateTitle', 'N/A')}")
-                print(f"  Build: {latest_info.get('foundBuild', 'N/A')}")
-                print(f"  Arch: {latest_info.get('arch', 'N/A')}")
-                return 0
-            return 1
-    # Resolve output directory
-    script_dir = Path(__file__).parent
-    project_root = script_dir.parent
-
-    # Security: Resolve and validate output path to prevent traversal
-    output_dir = Path(args.output)
-    if not output_dir.is_absolute():
-        output_dir = project_root.joinpath(output_dir)
-
-    try:
-        output_dir.resolve().relative_to(project_root.resolve())
-    except (ValueError, RuntimeError):
-        log_error(f"Path traversal attempt detected for output: {args.output}")
+    output_dir = _resolve_output_dir(args.output)
+    if not output_dir:
         return 1
 
     # List mode

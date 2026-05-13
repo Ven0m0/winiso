@@ -265,6 +265,58 @@ class TestGetBuildInfo(unittest.TestCase):
         )
 
 
+class TestGetAvailableLanguages(unittest.TestCase):
+    @patch("download_uup.fetch_url")
+    def test_get_available_languages_with_build_id_success(self, mock_fetch_url):
+        import json
+
+        mock_fetch_url.return_value = json.dumps(
+            {"response": {"lang": "en-us", "langList": []}}
+        )
+
+        result = download_uup.get_available_languages("fake-id")
+
+        self.assertEqual(result, {"lang": "en-us", "langList": []})
+        mock_fetch_url.assert_called_once_with(
+            "https://api.uupdump.net/listlangs.php?id=fake-id"
+        )
+
+    @patch("download_uup.fetch_url")
+    def test_get_available_languages_no_build_id_success(self, mock_fetch_url):
+        import json
+
+        mock_fetch_url.return_value = json.dumps(
+            {"response": {"lang": "en-us", "langList": []}}
+        )
+
+        result = download_uup.get_available_languages()
+
+        self.assertEqual(result, {"lang": "en-us", "langList": []})
+        mock_fetch_url.assert_called_once_with("https://api.uupdump.net/listlangs.php")
+
+    @patch("download_uup.fetch_url")
+    def test_get_available_languages_fetch_fails(self, mock_fetch_url):
+        mock_fetch_url.return_value = None
+        result = download_uup.get_available_languages("fake-id")
+        self.assertIsNone(result)
+
+    @patch("download_uup.fetch_url")
+    def test_get_available_languages_api_error(self, mock_fetch_url):
+        import json
+
+        mock_fetch_url.return_value = json.dumps(
+            {"response": {"error": "Invalid build id"}}
+        )
+        result = download_uup.get_available_languages("fake-id")
+        self.assertIsNone(result)
+
+    @patch("download_uup.fetch_url")
+    def test_get_available_languages_json_error(self, mock_fetch_url):
+        mock_fetch_url.return_value = "invalid json"
+        result = download_uup.get_available_languages("fake-id")
+        self.assertIsNone(result)
+
+
 class TestFetchUrl(unittest.TestCase):
     @patch("download_uup.urlopen")
     def test_fetch_url_success_get(self, mock_urlopen):

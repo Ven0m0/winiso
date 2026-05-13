@@ -426,7 +426,7 @@ extractDir="${tempDir}/extract"
 echo -e "\033[1m${scriptName}\033[0m"
 
 updatesDetected=false
-if find "$uupDir" -type f \( -iname "*windows1*-kb*.cab" -o -iname "ssu-*.cab" \) -print -quit | grep -q .; then
+if find "$uupDir" -type f \( -iname "*windows1*-kb*.cab" -o -iname "ssu-*.cab" \) -print | grep -q .; then
   updatesDetected=true
 fi
 
@@ -833,7 +833,7 @@ if [[ "${PAUSE_FOR_WINDOWS_STAGE:-0}" == "1" ]]; then
 fi
 
 echo -e "${infoColor}""Creating ISO image...""$resetColor"
-find ISODIR -print0 | xargs -0 -P 0 touch
+find ISODIR -print0 | xargs -0 -P "$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 8)" touch
 
 # Use mkisofs as fallback to genisoimage
 genisoimage="$(command -v genisoimage)"

@@ -43,7 +43,7 @@ def log_error(msg):
 
 def check_dependencies():
     """Check if required tools are installed"""
-    required = ["aria2c"]
+    required = ["aria2c", "wimlib-imagex", "cabextract"]
     missing = []
     for tool in required:
         if not shutil.which(tool):

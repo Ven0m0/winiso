@@ -536,22 +536,43 @@ class TestInteractiveMode(unittest.TestCase):
         self.assertFalse(result)
         mock_log_info.assert_called_once_with("Cancelled by user")
 
+    @patch("download_uup.log_warn")
+    @patch("builtins.input", side_effect=["invalid", "q"])
+    @patch("download_uup.display_builds")
+    @patch("download_uup.get_latest_builds")
+    def test_interactive_mode_value_error(
+        self, mock_get_builds, mock_display_builds, mock_input, mock_log_warn
+    ):
+        mock_get_builds.return_value = [{"id": "1", "title": "Build 1"}]
+        result = download_uup.interactive_mode(Path("/tmp"))
+        self.assertFalse(result)
+        mock_log_warn.assert_any_call("Invalid input. Please enter a number.")
+
+    @patch("download_uup.log_info")
+    @patch("builtins.input", side_effect=KeyboardInterrupt)
+    @patch("download_uup.display_builds")
+    @patch("download_uup.get_latest_builds")
+    def test_interactive_mode_keyboard_interrupt(
+        self, mock_get_builds, mock_display_builds, mock_input, mock_log_info
+    ):
+        mock_get_builds.return_value = [{"id": "1", "title": "Build 1"}]
+        result = download_uup.interactive_mode(Path("/tmp"))
+        self.assertFalse(result)
+        mock_log_info.assert_any_call("Cancelled by user")
+
 
 class TestGetAvailableEditions(unittest.TestCase):
     @patch("download_uup.fetch_url")
     @patch("download_uup.log_info")
     def test_get_available_editions_success(self, mock_log_info, mock_fetch_url):
-        import json
-
-        mock_fetch_url.return_value = json.dumps(
-            {"response": {"editionList": ["Core", "Professional"]}}
-        )
+        mock_fetch_url.return_value = {"response": {"editionList": ["Core", "Professional"]}}
 
         result = download_uup.get_available_editions("fake-build-id")
 
         self.assertEqual(result, {"editionList": ["Core", "Professional"]})
         mock_fetch_url.assert_called_once_with(
-            "https://api.uupdump.net/listeditions.php?id=fake-build-id&lang=en-us"
+            "https://api.uupdump.net/listeditions.php?id=fake-build-id&lang=en-us",
+            return_json=True,
         )
         mock_log_info.assert_called_once_with(
             "Fetching available editions for build: fake-build-id"
@@ -572,11 +593,7 @@ class TestGetAvailableEditions(unittest.TestCase):
     def test_get_available_editions_api_error(
         self, mock_log_info, mock_log_error, mock_fetch_url
     ):
-        import json
-
-        mock_fetch_url.return_value = json.dumps(
-            {"response": {"error": "Invalid build ID"}}
-        )
+        mock_fetch_url.return_value = {"response": {"error": "Invalid build ID"}}
 
         result = download_uup.get_available_editions("fake-build-id")
 
@@ -584,27 +601,26 @@ class TestGetAvailableEditions(unittest.TestCase):
         mock_log_error.assert_called_once_with("API Error: Invalid build ID")
 
     @patch("download_uup.fetch_url")
-    @patch("download_uup.log_error")
     @patch("download_uup.log_info")
     def test_get_available_editions_json_decode_error(
-        self, mock_log_info, mock_log_error, mock_fetch_url
+        self, mock_log_info, mock_fetch_url
     ):
-        mock_fetch_url.return_value = "invalid json"
+        mock_fetch_url.return_value = None
 
         result = download_uup.get_available_editions("fake-build-id")
 
         self.assertIsNone(result)
-        mock_log_error.assert_called_once()
-        self.assertIn("Failed to parse JSON response:", mock_log_error.call_args[0][0])
 
 
 class TestGetApiVersion(unittest.TestCase):
     @patch("download_uup.fetch_url")
     def test_get_api_version_success(self, mock_fetch_url):
-        mock_fetch_url.return_value = '{"response": {"version": "1.0.0"}}'
+        mock_fetch_url.return_value = {"response": {"version": "1.0.0"}}
         result = download_uup.get_api_version()
         self.assertEqual(result, {"version": "1.0.0"})
-        mock_fetch_url.assert_called_once_with("https://api.uupdump.net/")
+        mock_fetch_url.assert_called_once_with(
+            "https://api.uupdump.net/", return_json=True
+        )
 
     @patch("download_uup.fetch_url")
     def test_get_api_version_fetch_fails(self, mock_fetch_url):
@@ -612,17 +628,15 @@ class TestGetApiVersion(unittest.TestCase):
         result = download_uup.get_api_version()
         self.assertIsNone(result)
 
-    @patch("download_uup.log_error")
     @patch("download_uup.fetch_url")
-    def test_get_api_version_invalid_json(self, mock_fetch_url, mock_log_error):
-        mock_fetch_url.return_value = "Invalid JSON!"
+    def test_get_api_version_invalid_json(self, mock_fetch_url):
+        mock_fetch_url.return_value = None
         result = download_uup.get_api_version()
         self.assertIsNone(result)
-        mock_log_error.assert_called_once()
 
     @patch("download_uup.fetch_url")
     def test_get_api_version_no_response_key(self, mock_fetch_url):
-        mock_fetch_url.return_value = '{"other_key": "value"}'
+        mock_fetch_url.return_value = {"other_key": "value"}
         result = download_uup.get_api_version()
         self.assertEqual(result, {})
 

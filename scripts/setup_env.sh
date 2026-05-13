@@ -11,6 +11,7 @@ source "$SCRIPT_DIR/utils.sh"
 
 log_info "Checking and installing dependencies..."
 
+# Detect package manager
 if command -v pacman &>/dev/null; then
   log_info "Detected Arch Linux (pacman)"
   sudo pacman -S --needed aria2 cabextract wimlib chntpw cdrtools
@@ -31,14 +32,17 @@ else
   exit 1
 fi
 
+# Verify critical tools are available
 log_info "Verifying tool availability..."
 
 MISSING_TOOLS=()
 
+# Check primary tools using centralized list
 for tool in "${REQUIRED_TOOLS[@]}"; do
   check_tool "$tool" || MISSING_TOOLS+=("$tool")
 done
 
+# Check ISO creation tools
 check_iso_tool || MISSING_TOOLS+=("genisoimage/mkisofs")
 
 if [[ ${#MISSING_TOOLS[@]} -gt 0 ]]; then

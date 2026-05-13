@@ -148,6 +148,56 @@ class TestGetLatestBuilds(unittest.TestCase):
         self.assertEqual(result[1]["title"], "Windows 11 Build 3")
 
 
+class TestGetAvailableEditions(unittest.TestCase):
+    @patch("download_uup.fetch_url")
+    @patch("download_uup.log_error")
+    def test_get_available_editions_json_decode_error(
+        self, mock_log_error, mock_fetch_url
+    ):
+        mock_fetch_url.return_value = "not json"
+
+        result = download_uup.get_available_editions("fake-id")
+
+        self.assertIsNone(result)
+        mock_log_error.assert_called_once()
+        self.assertIn("Failed to parse JSON response:", mock_log_error.call_args[0][0])
+
+    @patch("download_uup.fetch_url")
+    def test_get_available_editions_success(self, mock_fetch_url):
+        import json
+
+        mock_fetch_url.return_value = json.dumps(
+            {"response": {"editionList": ["Core", "Professional"]}}
+        )
+
+        result = download_uup.get_available_editions("fake-id")
+
+        self.assertEqual(result, {"editionList": ["Core", "Professional"]})
+        mock_fetch_url.assert_called_once()
+
+    @patch("download_uup.fetch_url")
+    @patch("download_uup.log_error")
+    def test_get_available_editions_api_error(self, mock_log_error, mock_fetch_url):
+        import json
+
+        mock_fetch_url.return_value = json.dumps(
+            {"response": {"error": "Invalid build ID"}}
+        )
+
+        result = download_uup.get_available_editions("fake-id")
+
+        self.assertIsNone(result)
+        mock_log_error.assert_called_once_with("API Error: Invalid build ID")
+
+    @patch("download_uup.fetch_url")
+    def test_get_available_editions_no_response(self, mock_fetch_url):
+        mock_fetch_url.return_value = None
+
+        result = download_uup.get_available_editions("fake-id")
+
+        self.assertIsNone(result)
+
+
 class TestGetBuildInfo(unittest.TestCase):
     @patch("download_uup.fetch_url")
     def test_get_build_info_success(self, mock_fetch_url):

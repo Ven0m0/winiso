@@ -1,0 +1,45 @@
+=== PHASE 0: BASELINE METRICS ===
+
+## File Count (source files only)
+15
+
+## Files List
+./.venv/bin/activate.ps1
+./.venv/bin/activate_this.py
+./.venv/lib/python3.14/site-packages/_virtualenv.py
+./scripts/Apply-ImageSettings.ps1
+./scripts/build.sh
+./scripts/config.ps1
+./scripts/convert_config.sh
+./scripts/custom_convert.sh
+./scripts/debloat_wim.sh
+./scripts/download_uup.py
+./scripts/files/Setup-PostInstall.ps1
+./scripts/setup_env.sh
+./scripts/utils.sh
+./scripts/validate_prereqs.sh
+./scripts/windows_service.cmd
+
+## Lines of Code per File
+    82 ./.venv/bin/activate.ps1
+    59 ./.venv/bin/activate_this.py
+   101 ./.venv/lib/python3.14/site-packages/_virtualenv.py
+   416 ./scripts/Apply-ImageSettings.ps1
+   120 ./scripts/build.sh
+    20 ./scripts/config.ps1
+     4 ./scripts/convert_config.sh
+   847 ./scripts/custom_convert.sh
+   238 ./scripts/debloat_wim.sh
+   679 ./scripts/download_uup.py
+    33 ./scripts/files/Setup-PostInstall.ps1
+    56 ./scripts/setup_env.sh
+    65 ./scripts/utils.sh
+   205 ./scripts/validate_prereqs.sh
+   229 ./scripts/windows_service.cmd
+  3154 total
+
+## Total LOC
+  3154 total
+
+## Total Bytes
+103489 bytes

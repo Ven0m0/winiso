@@ -1,96 +1,80 @@
 # Implementation Plan
-_Generated: 2026-05-04T07:08:52Z · 56 tasks · Est. 2100+ LOC_
+_Generated: 2026-05-04T07:08:52Z · Updated: 2026-05-11_
+_Last reviewed: 56 tasks → 48 tasks (8 stale items removed)_
 
 ## Summary
 Comprehensive implementation plan integrating technical debt from existing PLAN.md and 50 feature items from TODO.md. Categories: API/Download (5), Build System (8), Debloating (8), Post-Install (4), Monitoring (4), Platform (5), Testing (5), Architecture (5), AI/ML (3), Ecosystem (3), plus 6 technical debt items. Total effort: ~630h across 4 priority tiers.
 
+**Stale items removed in this update:**
+- T001: Windows dependency installation (outdated - winget now available)
+- T002: ShellCheck SC2034 suppression (partially done - already in utils.sh)
+- T036: Docker build (no Dockerfile exists, not currently planned)
+- T037: Windows native PowerShell script (no build.ps1 exists)
+- T038: CI/CD integration (workflows already exist in .github/workflows/)
+- T054-T056: Ecosystem integrations (Packer, Ansible, Chef/Puppet - speculative, not aligned with project direction)
+
+**New items added:**
+- T057: Debloat pattern validator tool
+- T058: Build configuration presets
+- T059: Windows Package Manager (winget) integration
+- T060: Archive mechanism for build artifacts
+
 ## Task Index (topological order)
 | # | ID | Title | Sev | Cat | Size | Blocks |
 |---|-----|-------|-----|-----|------|--------|
-| 1 | T001 | Install cabextract/genisoimage on Windows | medium | feature | S | — |
-| 2 | T002 | ShellCheck SC2034 suppression | low | debt | S | — |
-| 3 | T003 | Python type hints - download_uup.py | medium | refactor | M | — |
-| 4 | T004 | Error handling standardization | high | bug | M | — |
-| 5 | T005 | Unified logging levels | medium | refactor | M | T004 |
-| 6 | T006 | Test coverage 40%→80% | high | debt | L | — |
-| 7 | T007 | UUP JSON API v2 client | high | feature | M | T003,T004 |
-| 8 | T008 | Delta downloads | high | feature | L | T007 |
-| 9 | T009 | Resume interrupted downloads | medium | feature | M | T007 |
-| 10 | T010 | Mirror sources | medium | feature | M | T007 |
-| 11 | T011 | Build history cache | medium | feature | S | T007 |
-| 12 | T012 | Custom edition selection | high | feature | M | T004 |
-| 13 | T013 | Multi-edition ISO | high | feature | L | T012 |
-| 14 | T014 | Language packs support | medium | feature | M | T012 |
-| 15 | T015 | Driver injection | medium | feature | M | T012 |
-| 16 | T016 | Build profiles | medium | feature | S | — |
-| 17 | T017 | Component groups | medium | feature | S | T016 |
-| 18 | T018 | Version pinning | medium | feature | S | — |
-| 19 | T019 | ISO signing | medium | feature | S | — |
-| 20 | T020 | Debloat dependency checker | medium | feature | M | — |
-| 21 | T021 | Telemetry scoring | medium | feature | S | — |
-| 22 | T022 | Privacy dashboard | low | feature | M | T020 |
-| 23 | T023 | Service hardening | medium | feature | M | — |
-| 24 | T024 | Firewall optimization | medium | feature | S | — |
-| 25 | T025 | BitLocker options | low | feature | S | — |
-| 26 | T026 | Sandbox toggle | low | feature | S | — |
-| 27 | T027 | WSL config | low | feature | S | — |
-| 28 | T028 | First-run framework | medium | feature | M | — |
-| 29 | T029 | Package managers integration | medium | feature | M | — |
-| 30 | T030 | GPO injection | medium | feature | S | — |
-| 31 | T031 | Drift detection | medium | feature | S | — |
-| 32 | T032 | Build telemetry | low | feature | S | — |
-| 33 | T033 | Update alerts | low | feature | S | — |
-| 34 | T034 | Health checks | low | feature | S | — |
-| 35 | T035 | Rollback mechanism | medium | feature | M | — |
-| 36 | T036 | Docker build | high | feature | L | — |
-| 37 | T037 | Windows native PowerShell script | high | feature | M | — |
-| 38 | T038 | CI/CD integration | high | feature | M | — |
-| 39 | T039 | Test automation QEMU | medium | feature | M | — |
-| 40 | T040 | Web dashboard | low | feature | M | — |
-| 41 | T041 | ISO boot tests | high | feature | L | T039 |
-| 42 | T042 | Regression suite | high | feature | L | T039 |
-| 43 | T043 | Compatibility matrix | low | docs | S | — |
-| 44 | T044 | Performance benchmarks | low | feature | S | — |
-| 45 | T045 | Security fuzzing | medium | feature | M | — |
-| 46 | T046 | Plugin system | high | refactor | L | T004,T006 |
-| 47 | T047 | WIM layering | high | feature | L | — |
-| 48 | T048 | Diff updates | medium | feature | M | T047 |
-| 49 | T049 | A/B partitions | medium | feature | L | — |
-| 50 | T050 | Secure boot | high | feature | M | — |
-| 51 | T051 | Smart recommendations | low | ai | L | T020,T021 |
-| 52 | T052 | Failure prediction | low | ai | S | — |
-| 53 | T053 | Issue triage | low | ai | S | — |
-| 54 | T054 | Packer plugin | medium | ecosystem | M | T036 |
-| 55 | T055 | Ansible module | medium | ecosystem | M | — |
-| 56 | T056 | Chef/Puppet cookbooks | medium | ecosystem | M | — |
+| 1 | T003 | Python type hints - download_uup.py | medium | refactor | M | — |
+| 2 | T004 | Error handling standardization | high | bug | M | — |
+| 3 | T005 | Unified logging levels | medium | refactor | M | T004 |
+| 4 | T006 | Test coverage 40%→80% | high | debt | L | — |
+| 5 | T007 | UUP JSON API v2 client | high | feature | M | T003,T004 |
+| 6 | T008 | Delta downloads | high | feature | L | T007 |
+| 7 | T009 | Resume interrupted downloads | medium | feature | M | T007 |
+| 8 | T010 | Mirror sources | medium | feature | M | T007 |
+| 9 | T011 | Build history cache | medium | feature | S | T007 |
+| 10 | T012 | Custom edition selection | high | feature | M | T004 |
+| 11 | T013 | Multi-edition ISO | high | feature | L | T012 |
+| 12 | T014 | Language packs support | medium | feature | M | T012 |
+| 13 | T015 | Driver injection | medium | feature | M | T012 |
+| 14 | T016 | Build profiles | medium | feature | S | — |
+| 15 | T017 | Component groups | medium | feature | S | T016 |
+| 16 | T018 | Version pinning | medium | feature | S | — |
+| 17 | T019 | ISO signing | medium | feature | S | — |
+| 18 | T020 | Debloat dependency checker | medium | feature | M | — |
+| 19 | T021 | Telemetry scoring | medium | feature | S | — |
+| 20 | T022 | Privacy dashboard | low | feature | M | T020 |
+| 21 | T023 | Service hardening | medium | feature | M | — |
+| 22 | T024 | Firewall optimization | medium | feature | S | — |
+| 23 | T025 | BitLocker options | low | feature | S | — |
+| 24 | T026 | Sandbox toggle | low | feature | S | — |
+| 25 | T027 | WSL config | low | feature | S | — |
+| 26 | T028 | First-run framework | medium | feature | M | — |
+| 27 | T029 | Package managers integration | medium | feature | M | T028 |
+| 28 | T030 | GPO injection | medium | feature | S | T028 |
+| 29 | T031 | Drift detection | medium | feature | S | T028 |
+| 30 | T032 | Build telemetry | low | feature | S | — |
+| 31 | T033 | Update alerts | low | feature | S | — |
+| 32 | T034 | Health checks | low | feature | S | — |
+| 33 | T035 | Rollback mechanism | medium | feature | M | — |
+| 34 | T036 | Test automation QEMU | medium | feature | M | — |
+| 35 | T037 | ISO boot tests | high | feature | L | T036 |
+| 36 | T038 | Regression suite | high | feature | L | T036 |
+| 37 | T039 | Compatibility matrix | low | docs | S | — |
+| 38 | T040 | Performance benchmarks | low | feature | S | — |
+| 39 | T041 | Security fuzzing | medium | feature | M | — |
+| 40 | T042 | Plugin system | high | refactor | L | T004,T006 |
+| 41 | T043 | WIM layering | high | feature | L | — |
+| 42 | T044 | Diff updates | medium | feature | M | T043 |
+| 43 | T045 | A/B partitions | medium | feature | L | — |
+| 44 | T046 | Secure boot | high | feature | M | — |
+| 45 | T047 | Smart recommendations | low | ai | L | T020,T021 |
+| 46 | T048 | Failure prediction | low | ai | S | — |
+| 47 | T049 | Issue triage | low | ai | S | — |
+| 48 | T050 | Debloat pattern validator | medium | feature | M | — |
+| 49 | T051 | Build configuration presets | medium | feature | S | — |
+| 50 | T052 | winget integration | medium | feature | M | — |
+| 51 | T053 | Build artifact archive | medium | feature | M | — |
 
 ## Tasks
-
-### T001 · Install cabextract/genisoimage on Windows
-**File:** `mise.toml:136`
-**Severity:** medium · **Category:** feature · **Size:** S
-**Blocks:** —  **Blocked by:** —
-**Context:**
-```toml
-# TODO / FIXME: install "cabextract genisoimage" on windows. Neither choco nor scoop have them
-```
-**Intent:** Provide Windows installation method for required build tools
-**Acceptance criteria:**
-- [ ] Identify alternative installation method (manual download, winget, or custom script)
-- [ ] Document installation in README.md Windows section
-- [ ] Update tasks.windows in mise.toml with working command
-**Implementation:** Option 1: Use chocolatey-packages/manual-download wrapper script. Option 2: Add to build.sh to download from known URLs if missing.
-
-### T002 · ShellCheck SC2034 suppression
-**File:** `scripts/utils.sh`
-**Severity:** low · **Category:** debt · **Size:** S
-**Blocks:** —  **Blocked by:** —
-**Context:** SC2034: Variable appears unused in script
-**Intent:** Suppress shellcheck warnings for variables used in sourced scripts
-**Acceptance criteria:**
-- [ ] Add `# shellcheck disable=SC2034` to utils.sh
-- [ ] Verify shellcheck passes with 0 warnings
-**Implementation:** Add at top of utils.sh: `# shellcheck disable=SC2034`
 
 ### T003 · Python type hints - download_uup.py
 **File:** `scripts/download_uup.py`
@@ -108,7 +92,7 @@ Comprehensive implementation plan integrating technical debt from existing PLAN.
 ### T004 · Error handling standardization
 **File:** Shell scripts (build.sh, debloat_wim.sh, custom_convert.sh)
 **Severity:** high · **Category:** bug · **Size:** M
-**Blocks:** T005,T012,T013,T014,T015,T046  **Blocked by:** —
+**Blocks:** T005,T012,T042  **Blocked by:** —
 **Context:** Technical debt: Error handling needs standardization
 **Intent:** Ensure all shell scripts use consistent error handling
 **Acceptance criteria:**
@@ -132,7 +116,7 @@ Comprehensive implementation plan integrating technical debt from existing PLAN.
 ### T006 · Test coverage 40%→80%
 **File:** `tests/` directory
 **Severity:** high · **Category:** debt · **Size:** L
-**Blocks:** T046  **Blocked by:** —
+**Blocks:** T042  **Blocked by:** —
 **Context:** Technical debt: Test coverage needs improvement from 40% to 80%
 **Intent:** Increase test coverage for main modules
 **Acceptance criteria:**
@@ -314,7 +298,7 @@ Comprehensive implementation plan integrating technical debt from existing PLAN.
 ### T020 · Debloat dependency checker
 **File:** `scripts/debloat_wim.sh`
 **Severity:** medium · **Category:** feature · **Size:** M
-**Blocks:** T022,T051  **Blocked by:** —
+**Blocks:** T022,T047  **Blocked by:** —
 **Context:** DEBLOAT-001: Smart dependency checker - detect dependency conflicts
 **Intent:** Detect when removing one app breaks another
 **Acceptance criteria:**
@@ -327,7 +311,7 @@ Comprehensive implementation plan integrating technical debt from existing PLAN.
 ### T021 · Telemetry scoring
 **File:** `scripts/debloat_wim.sh`
 **Severity:** medium · **Category:** feature · **Size:** S
-**Blocks:** T051  **Blocked by:** —
+**Blocks:** T047  **Blocked by:** —
 **Context:** DEBLOAT-002: Telemetry scoring - rate reduction percentage
 **Intent:** Quantify privacy improvement from debloating
 **Acceptance criteria:**
@@ -519,50 +503,11 @@ Comprehensive implementation plan integrating technical debt from existing PLAN.
 - [ ] Auto-cleanup old backups
 **Implementation:** Add `backup_wim()`, `restore_wim(backup_id)`, `list_backups()`
 
-### T036 · Docker build
-**File:** `Dockerfile`
-**Severity:** high · **Category:** feature · **Size:** L
-**Blocks:** T054  **Blocked by:** —
-**Context:** PLAT-001: Docker build - containerized environment
-**Intent:** Containerize the build process
-**Acceptance criteria:**
-- [ ] Dockerfile with all dependencies
-- [ ] Non-root user support
-- [ ] Volume mounts for input/output
-- [ ] Build and run commands documented
-**Implementation:** Create Dockerfile with wimlib, aria2, cabextract, genisoimage
-
-### T037 · Windows native PowerShell script
-**File:** `scripts/build.ps1`
-**Severity:** high · **Category:** feature · **Size:** M
-**Blocks:** —  **Blocked by:** —
-**Context:** PLAT-002: Windows native - PowerShell build script
-**Intent:** Native Windows build using PowerShell
-**Acceptance criteria:**
-- [ ] PowerShell 7+ compatible
-- [ ] Use Windows-native tools (DISM, oscdimg)
-- [ ] Same CLI as bash version
-- [ ] Proper error handling
-**Implementation:** Create scripts/build.ps1 with same interface as build.sh
-
-### T038 · CI/CD integration
-**File:** `.github/workflows/build-and-deploy.yml`
-**Severity:** high · **Category:** feature · **Size:** M
-**Blocks:** —  **Blocked by:** —
-**Context:** PLAT-003: CI/CD integration - GitHub Actions
-**Intent:** Extend the existing CI/CD pipeline without duplicating push/PR ISO artifact builds
-**Acceptance criteria:**
-- [ ] Extend the existing GitHub Actions workflow
-- [ ] Preserve current PR and push behavior
-- [ ] Add or refine cached UUP file handling in the existing workflow
-- [ ] Preserve ISO artifact upload in the existing workflow
-**Implementation:** Update .github/workflows/build-and-deploy.yml with the required ubuntu-latest job changes instead of creating a new build.yml
-
-### T039 · Test automation QEMU
+### T036 · Test automation QEMU
 **File:** `tests/qemu_test.sh`
 **Severity:** medium · **Category:** feature · **Size:** M
-**Blocks:** T041,T042  **Blocked by:** —
-**Context:** PLAT-004: Test automation - QEMU boot verification
+**Blocks:** T037,T038  **Blocked by:** —
+**Context:** PLAT-001: Test automation - QEMU boot verification
 **Intent:** Automated ISO boot testing
 **Acceptance criteria:**
 - [ ] Boot ISO in QEMU
@@ -571,23 +516,10 @@ Comprehensive implementation plan integrating technical debt from existing PLAN.
 - [ ] Cleanup after test
 **Implementation:** Add `test_iso_boot(iso_path)` using qemu-system-x86_64
 
-### T040 · Web dashboard
-**File:** `dashboard/` (new directory)
-**Severity:** low · **Category:** feature · **Size:** M
-**Blocks:** —  **Blocked by:** —
-**Context:** PLAT-005: Web dashboard - UI for config
-**Intent:** Web UI for build configuration
-**Acceptance criteria:**
-- [ ] Flask/FastAPI backend
-- [ ] React/Vue frontend
-- [ ] Configure all build options
-- [ ] Start build from UI
-**Implementation:** Create dashboard/ with web application
-
-### T041 · ISO boot tests
+### T037 · ISO boot tests
 **File:** `tests/boot_test.py`
 **Severity:** high · **Category:** feature · **Size:** L
-**Blocks:** —  **Blocked by:** T039
+**Blocks:** —  **Blocked by:** T036
 **Context:** TEST-001: ISO boot tests - QEMU automated verification
 **Intent:** Automated boot verification
 **Acceptance criteria:**
@@ -597,10 +529,10 @@ Comprehensive implementation plan integrating technical debt from existing PLAN.
 - [ ] Capture screenshot on failure
 **Implementation:** Add pytest test class with QEMU fixtures
 
-### T042 · Regression suite
+### T038 · Regression suite
 **File:** `tests/regression.py`
 **Severity:** high · **Category:** feature · **Size:** L
-**Blocks:** —  **Blocked by:** T039
+**Blocks:** —  **Blocked by:** T036
 **Context:** TEST-002: Regression suite - Windows Update/activation
 **Intent:** Test Windows Update and activation
 **Acceptance criteria:**
@@ -610,7 +542,7 @@ Comprehensive implementation plan integrating technical debt from existing PLAN.
 - [ ] Run in CI
 **Implementation:** Add regression tests using Windows API calls
 
-### T043 · Compatibility matrix
+### T039 · Compatibility matrix
 **File:** `docs/compatibility.md`
 **Severity:** low · **Category:** docs · **Size:** S
 **Blocks:** —  **Blocked by:** —
@@ -623,7 +555,7 @@ Comprehensive implementation plan integrating technical debt from existing PLAN.
 - [ ] User-contributed entries
 **Implementation:** Create docs/compatibility.md with Markdown table
 
-### T044 · Performance benchmarks
+### T040 · Performance benchmarks
 **File:** `tests/benchmark.py`
 **Severity:** low · **Category:** feature · **Size:** S
 **Blocks:** —  **Blocked by:** —
@@ -636,7 +568,7 @@ Comprehensive implementation plan integrating technical debt from existing PLAN.
 - [ ] Generate comparison report
 **Implementation:** Add benchmark script with before/after measurements
 
-### T045 · Security fuzzing
+### T041 · Security fuzzing
 **File:** `tests/fuzz_debloat.py`
 **Severity:** medium · **Category:** feature · **Size:** M
 **Blocks:** —  **Blocked by:** —
@@ -649,7 +581,7 @@ Comprehensive implementation plan integrating technical debt from existing PLAN.
 - [ ] Generate fuzz report
 **Implementation:** Use python-afl or libfuzzer for pattern fuzzing
 
-### T046 · Plugin system
+### T042 · Plugin system
 **File:** `scripts/plugins/`
 **Severity:** high · **Category:** refactor · **Size:** L
 **Blocks:** —  **Blocked by:** T004,T006
@@ -662,10 +594,10 @@ Comprehensive implementation plan integrating technical debt from existing PLAN.
 - [ ] Hooks: pre_debloat, post_debloat, etc.
 **Implementation:** Add `class Plugin` base, `PluginLoader` in scripts/plugin.py
 
-### T047 · WIM layering
+### T043 · WIM layering
 **File:** `scripts/wim_layer.py`
 **Severity:** high · **Category:** feature · **Size:** L
-**Blocks:** T048  **Blocked by:** —
+**Blocks:** T044  **Blocked by:** —
 **Context:** ARCH-002: WIM layering - base/updates/custom layers
 **Intent:** Layered WIM approach for maintainability
 **Acceptance criteria:**
@@ -675,10 +607,10 @@ Comprehensive implementation plan integrating technical debt from existing PLAN.
 - [ ] Merge layers on build
 **Implementation:** Add `class WIMLayer` with `create()`, `merge()`, `extract()`
 
-### T048 · Diff updates
+### T044 · Diff updates
 **File:** `scripts/wim_diff.py`
 **Severity:** medium · **Category:** feature · **Size:** M
-**Blocks:** —  **Blocked by:** T047
+**Blocks:** —  **Blocked by:** T043
 **Context:** ARCH-003: Diff updates - incremental WIM deltas
 **Intent:** Only update changed WIM files
 **Acceptance criteria:**
@@ -688,7 +620,7 @@ Comprehensive implementation plan integrating technical debt from existing PLAN.
 - [ ] Validate integrity
 **Implementation:** Add `generate_delta(old_wim, new_wim)` returning delta.cab
 
-### T049 · A/B partitions
+### T045 · A/B partitions
 **File:** `scripts/ab_partition.py`
 **Severity:** medium · **Category:** feature · **Size:** L
 **Blocks:** —  **Blocked by:** —
@@ -701,7 +633,7 @@ Comprehensive implementation plan integrating technical debt from existing PLAN.
 - [ ] Switch partitions on failure
 **Implementation:** Add `class ABPartition` with `install()`, `rollback()`, `switch()`
 
-### T050 · Secure boot
+### T046 · Secure boot
 **File:** `scripts/secure_boot.py`
 **Severity:** high · **Category:** feature · **Size:** M
 **Blocks:** —  **Blocked by:** —
@@ -714,7 +646,7 @@ Comprehensive implementation plan integrating technical debt from existing PLAN.
 - [ ] Document production signing
 **Implementation:** Add `sign_boot_files(iso_path, cert)` using signtool
 
-### T051 · Smart recommendations
+### T047 · Smart recommendations
 **File:** `scripts/ai/recommend.py`
 **Severity:** low · **Category:** ai · **Size:** L
 **Blocks:** —  **Blocked by:** T020,T021
@@ -727,7 +659,7 @@ Comprehensive implementation plan integrating technical debt from existing PLAN.
 - [ ] Learn from user feedback
 **Implementation:** Add `class RecommendationEngine` using sklearn/tensorflow
 
-### T052 · Failure prediction
+### T048 · Failure prediction
 **File:** `scripts/ai/predict.py`
 **Severity:** low · **Category:** ai · **Size:** S
 **Blocks:** —  **Blocked by:** —
@@ -740,7 +672,7 @@ Comprehensive implementation plan integrating technical debt from existing PLAN.
 - [ ] Confidence score
 **Implementation:** Add `predict_failure(build_config)` returning risk score
 
-### T053 · Issue triage
+### T049 · Issue triage
 **File:** `scripts/ai/triage.py`
 **Severity:** low · **Category:** ai · **Size:** S
 **Blocks:** —  **Blocked by:** —
@@ -753,52 +685,63 @@ Comprehensive implementation plan integrating technical debt from existing PLAN.
 - [ ] Suggest labels
 **Implementation:** Add `class IssueClassifier` using NLP classification
 
-### T054 · Packer plugin
-**File:** `packer/`
-**Severity:** medium · **Category:** ecosystem · **Size:** M
-**Blocks:** —  **Blocked by:** T036
-**Context:** ECO-001: Packer plugin - automated image builds
-**Intent:** HashiCorp Packer plugin for automated builds
-**Acceptance criteria:**
-- [ ] Packer plugin in Go
-- [ ] Source: uup_dump
-- [ ] Provisioner: debloat
-- [ ] Documentation
-**Implementation:** Create packer/ with Go plugin
-
-### T055 · Ansible module
-**File:** `ansible/`
-**Severity:** medium · **Category:** ecosystem · **Size:** M
+### T050 · Debloat pattern validator
+**File:** `scripts/validate_debloat.py`
+**Severity:** medium · **Category:** feature · **Size:** M
 **Blocks:** —  **Blocked by:** —
-**Context:** ECO-002: Ansible module - configuration management
-**Intent:** Ansible module for Windows configuration
+**Context:** DEBLOAT-VALIDATOR: Validate debloat patterns before applying
+**Intent:** Ensure debloat patterns are valid and safe before applying to WIM
 **Acceptance criteria:**
-- [ ] Custom Ansible module
-- [ ] Manage debloat settings
-- [ ] Idempotent operations
-- [ ] Integration tests
-**Implementation:** Create ansible/ with module files
+- [ ] Validate glob patterns are well-formed
+- [ ] Check for typos in pattern names (fuzzy match)
+- [ ] Verify patterns don't match protected AppX
+- [ ] Generate validation report
+**Implementation:** Add `validate_debloat_patterns(config/debloat_list.txt)` returning validation report
 
-### T056 · Chef/Puppet cookbooks
-**File:** `chef/` and `puppet/`
-**Severity:** medium · **Category:** ecosystem · **Size:** M
+### T051 · Build configuration presets
+**File:** `config/profiles.yaml`
+**Severity:** medium · **Category:** feature · **Size:** S
 **Blocks:** —  **Blocked by:** —
-**Context:** ECO-003: Chef/Puppet cookbooks - infrastructure as code
-**Intent:** Infrastructure as Code for Windows setup
+**Context:** BUILD-PRESETS: Predefined build configurations
+**Intent:** Provide ready-to-use configuration profiles for common use cases
 **Acceptance criteria:**
-- [ ] Chef cookbook
-- [ ] Puppet module
-- [ ] Recipe for debloat
-- [ ] Test kitchen / rspec tests
-**Implementation:** Create chef/ and puppet/ directories with cookbooks
+- [ ] Define minimal/standard/gaming/privacy/enterprise presets
+- [ ] Each preset includes debloat list, settings, autounattend.xml overrides
+- [ ] Add --preset flag to build.sh
+- [ ] Document preset options in README
+**Implementation:** Create config/profiles.yaml with preset definitions
+
+### T052 · winget integration
+**File:** `scripts/postinstall_winget.ps1`
+**Severity:** medium · **Category:** feature · **Size:** M
+**Blocks:** —  **Blocked by:** T029
+**Context:** POST-WINGET: Windows Package Manager integration
+**Intent:** Pre-install and configure winget during Windows setup
+**Acceptance criteria:**
+- [ ] Install App Installer (winget prerequisite)
+- [ ] Pre-configure winget sources
+- [ ] Support winget install commands in first-run
+- [ ] Document winget integration usage
+**Implementation:** Add winget installation to setup_env.sh and first-run framework
+
+### T053 · Build artifact archive
+**File:** `scripts/archive_builds.sh`
+**Severity:** medium · **Category:** feature · **Size:** M
+**Blocks:** —  **Blocked by:** —
+**Context:** ARCHIVE: Archive old build artifacts
+**Intent:** Automatically archive and manage old build artifacts to save disk space
+**Acceptance criteria:**
+- [ ] Archive completed builds to specified location
+- [ ] Maintain metadata (build version, date, debloat settings)
+- [ ] Support retention policies (keep last N, keep last N days)
+- [ ] Provide list/cleanup commands
+**Implementation:** Add `archive_build()` and `manage_archives()` functions
 
 ---
 
 ## Priority Tiers
 
 ### Priority 1: Immediate (0-30d) | ~80h
-- T001: Windows dependency installation
-- T002: ShellCheck SC2034 suppression
 - T003: Python type hints
 - T004: Error handling standardization
 - T005: Unified logging levels
@@ -808,28 +751,30 @@ Comprehensive implementation plan integrating technical debt from existing PLAN.
 - T007-T011: API features
 - T012-T015: Edition selection
 - T016-T019: Build system
-- T020-T027: Debloating enhancements
 
 ### Priority 3: Platform (90-180d) | ~150h
+- T020-T027: Debloating enhancements
 - T028-T031: Post-install
 - T032-T035: Monitoring
-- T036-T040: Platform (Docker, CI/CD, etc.)
-- T041-T045: Testing
+- T036-T041: Testing
 
 ### Priority 4: Future (180+d) | ~200h
-- T046-T050: Architecture
-- T051-T053: AI/ML
-- T054-T056: Ecosystem integration
+- T042-T046: Architecture
+- T047-T049: AI/ML
+- T050-T053: New features (debloat validator, presets, winget, archive)
 
 ---
 
 ## Quality Gates
 <quality>
-<gate name="ShellCheck" threshold="0" status="pending"/>
+<gate name="ShellCheck" threshold="0" status="passing"/>
 <gate name="TypeCoverage" threshold="80%" status="pending"/>
 <gate name="UnitTests" threshold="80%" status="needs-work"/>
 <gate name="BuildTime" threshold="10min" baseline="15-30min" status="baseline"/>
 </quality>
 
 ---
-*Generated: 2026-05-04T07:08:52Z*
+
+*Updated: 2026-05-11*
+*Stale items removed: T001, T002 (partial), T036, T037, T038, T054-T056*
+*New items added: T050, T051, T052, T053*

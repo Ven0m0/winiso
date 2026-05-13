@@ -18,34 +18,49 @@
 		"openai": {
 			"options": { "apiKey": "{env:OPENAI_API_KEY}" }
 		},
-		"anthropic": { 
-      "options": { "apiKey": "{env:ANTHROPIC_API_KEY}" }
+		"anthropic": {
+			"options": { "apiKey": "{env:ANTHROPIC_API_KEY}" }
 		}
 	},
 	"disabled_providers": ["openai", "google", "anthropic"],
 	"plugin": [
 		"opencode-ignore@1.1.0",
-    "@bastiangx/opencode-unmoji",
+		"@bastiangx/opencode-unmoji",
 		"@gotgenes/opencode-agent-identity@3.0.1",
 		"@nick-vi/opencode-type-inject@1.1.2",
-    "@openspoon/subtask2@0.3.9",
+		"@openspoon/subtask2@0.3.9",
 		"@tarquinen/opencode-dcp@3.1.9",
 		"openslimedit@1.0.4",
-    "opencode-agent-memory@0.2.0",
-    "superpowers@git+https://github.com/obra/superpowers.git"
+		"opencode-agent-memory@0.2.0",
+		"superpowers@git+https://github.com/obra/superpowers.git"
 	],
 	"formatter": {
 		"biome": {
-			"command": ["npx", "-y", "@biomejs/biome", "check", "--write", "--format-with-errors=true", "$FILE"],
+			"command": [
+				"npx",
+				"-y",
+				"@biomejs/biome",
+				"check",
+				"--write",
+				"--format-with-errors=true",
+				"$FILE"
+			],
 			"extensions": [".json", ".jsonc", ".js", ".ts"]
 		},
 		"ruff": {
 			"command": ["ruff", "format", "$FILE"],
-			"extensions": [".py", ".pyi",".pyc"]
+			"extensions": [".py", ".pyi", ".pyc"]
 		}
 	},
 	"watcher": {
-		"ignore": ["node_modules/**", "dist/**", ".git/**", ".venv/**", "__pycache__/**", ".ruff_cache/**"]
+		"ignore": [
+			"node_modules/**",
+			"dist/**",
+			".git/**",
+			".venv/**",
+			"__pycache__/**",
+			".ruff_cache/**"
+		]
 	},
 	"mcp": {
 		"ref-tools": {
@@ -67,10 +82,14 @@
 		"serena": {
 			"type": "local",
 			"command": [
-				"uvx", "--from",
+				"uvx",
+				"--from",
 				"git+https://github.com/oraios/serena",
-				"serena", "start-mcp-server",
-				"--context", "ide", "--project-from-cwd"
+				"serena",
+				"start-mcp-server",
+				"--context",
+				"ide",
+				"--project-from-cwd"
 			],
 			"enabled": true
 		},
@@ -79,12 +98,12 @@
 			"command": ["npx", "-y", "octocode-mcp@latest"],
 			"enabled": true
 		},
-    "morph-mcp": {
-      "type": "local",
-      "command": ["npx", "-y", "@morphllm/morphmcp"],
-      "environment": { "MORPH_API_KEY": "{env:MORPH_API_KEY}" },
-      "enabled": true
-    }
+		"morph-mcp": {
+			"type": "local",
+			"command": ["npx", "-y", "@morphllm/morphmcp"],
+			"environment": { "MORPH_API_KEY": "{env:MORPH_API_KEY}" },
+			"enabled": true
+		}
 	},
 	"lsp": {
 		"basedpyright": {
@@ -96,14 +115,25 @@
 			"extensions": [".sh", ".bash", ".zsh"]
 		},
 		"vtsls": {
-      "command": ["vtsls", "--stdio"],
-      "extensions": [".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".mts", ".cts"],
-      "initialization": { "preferences": { "importModuleSpecifierPreference": "relative" } }
+			"command": ["vtsls", "--stdio"],
+			"extensions": [
+				".js",
+				".jsx",
+				".ts",
+				".tsx",
+				".mjs",
+				".cjs",
+				".mts",
+				".cts"
+			],
+			"initialization": {
+				"preferences": { "importModuleSpecifierPreference": "relative" }
+			}
 		},
-    "rust": {
-      "command": ["rust-analyzer"],
-      "extensions": [".rs"]
-    },
+		"rust": {
+			"command": ["rust-analyzer"],
+			"extensions": [".rs"]
+		},
 		"yaml-ls": {
 			"command": ["yaml-language-server", "--stdio"],
 			"extensions": [".yaml", ".yml"]
@@ -116,21 +146,24 @@
 			"command": ["tombi", "lsp"],
 			"extensions": [".toml"]
 		},
-    "dockerfile-ls": {
-      "command": ["docker-langserver", "--stdio"],
-      "extensions": [".dockerfile"]
-    },
-    "html-ls": {
-      "command": ["vscode-html-language-server", "--stdio"],
-      "extensions": [".html", ".htm"]
-    },
-    "css-ls": {
-      "command": ["vscode-css-language-server", "--stdio"],
-      "extensions": [".css", ".scss", ".less"]
-    },
+		"dockerfile-ls": {
+			"command": ["docker-langserver", "--stdio"],
+			"extensions": [".dockerfile"]
+		},
+		"html-ls": {
+			"command": ["vscode-html-language-server", "--stdio"],
+			"extensions": [".html", ".htm"]
+		},
+		"css-ls": {
+			"command": ["vscode-css-language-server", "--stdio"],
+			"extensions": [".css", ".scss", ".less"]
+		},
 		"powershell": {
 			"command": [
-				"pwsh", "-NoLogo", "-NoProfile", "-Command",
+				"pwsh",
+				"-NoLogo",
+				"-NoProfile",
+				"-Command",
 				"$module = Get-Module -ListAvailable PowerShellEditorServices | Sort-Object Version -Descending | Select-Object -First 1; if (-not $module) { throw 'PowerShellEditorServices is not installed. Run: Install-Module -Name PowerShellEditorServices -Scope CurrentUser' }; Import-Module $module.Path; Start-EditorServices -HostName 'Claude Code' -HostProfileId 'ClaudeCode' -HostVersion '1.0.0' -Stdio -BundledModulesPath (Split-Path $module.Path) -LogPath '/dev/null' -LogLevel 'None' -EnableConsoleRepl"
 			],
 			"extensions": [".ps1", ".psm1", ".psd1"]

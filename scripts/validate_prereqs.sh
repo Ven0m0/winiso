@@ -14,17 +14,12 @@ source "$SCRIPT_DIR/utils.sh"
 ERRORS=0
 WARNINGS=0
 
-# =============================================================================
-# Check Required Tools
-# =============================================================================
 log_info "Checking required tools..."
 
-# Use centralized tool list
 if ! check_required_tools "${REQUIRED_TOOLS[@]}"; then
   ERRORS=$((ERRORS + $?))
 fi
 
-# Check for genisoimage or mkisofs
 if ! check_iso_tool; then
   log_error "Neither genisoimage nor mkisofs found. Run 'make deps' to install."
   ((ERRORS++))
@@ -32,9 +27,6 @@ fi
 
 echo ""
 
-# =============================================================================
-# Check Directory Structure
-# =============================================================================
 log_info "Checking directory structure..."
 
 if [[ -d "$PROJECT_ROOT/uup_files" ]]; then
@@ -61,9 +53,6 @@ fi
 
 echo ""
 
-# =============================================================================
-# Check UUP Files
-# =============================================================================
 log_info "Checking for UUP files..."
 
 count_cab=$(find "$PROJECT_ROOT/uup_files" -maxdepth 1 -name "*.cab" 2>/dev/null | wc -l)
@@ -85,15 +74,12 @@ fi
 
 echo ""
 
-# =============================================================================
-# Check Configuration Files
-# =============================================================================
 log_info "Checking configuration files..."
 
 if [[ -f "$PROJECT_ROOT/config/debloat_list.txt" ]]; then
   log_success "debloat_list.txt found"
-  pattern_count=$(grep -v "^#" "$PROJECT_ROOT/config/debloat_list.txt" \
-    | grep -c -v "^[[:space:]]*$")
+  pattern_count=$(grep -v "^#" "$PROJECT_ROOT/config/debloat_list.txt" |
+    grep -c -v "^[[:space:]]*$")
   log_info "  → $pattern_count debloat patterns configured"
 else
   log_warn "debloat_list.txt not found - no apps will be removed"
@@ -129,9 +115,6 @@ fi
 
 echo ""
 
-# =============================================================================
-# Check Script Files
-# =============================================================================
 log_info "Checking build scripts..."
 
 scripts=(
@@ -159,9 +142,6 @@ done
 
 echo ""
 
-# =============================================================================
-# Environment Variables
-# =============================================================================
 log_info "Environment configuration..."
 log_info "TARGET_EDITION: ${TARGET_EDITION:-ProfessionalWorkstation (default)}"
 log_info "FALLBACK_EDITION: ${FALLBACK_EDITION:-Professional (default)}"
@@ -169,9 +149,6 @@ log_info "PAUSE_FOR_WINDOWS_STAGE: ${PAUSE_FOR_WINDOWS_STAGE:-0 (disabled)}"
 
 echo ""
 
-# =============================================================================
-# Disk Space Check
-# =============================================================================
 log_info "Checking available disk space..."
 available_space=$(df --output=avail -BG "$PROJECT_ROOT" | tail -n 1 | tr -d 'G[:space:]')
 if [[ $available_space -lt 20 ]]; then
@@ -183,9 +160,6 @@ fi
 
 echo ""
 
-# =============================================================================
-# Summary
-# =============================================================================
 echo "=============================================="
 if [[ $ERRORS -eq 0 ]] && [[ $WARNINGS -eq 0 ]]; then
   log_success "All prerequisite checks passed!"

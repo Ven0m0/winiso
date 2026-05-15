@@ -136,7 +136,7 @@ Do not add new logging functions or styles — use what `utils.sh` provides.
 
 ### Rules
 
-- `set -euo pipefail` confirmed in all 5 pipeline scripts: `build.sh`, `debloat_wim.sh`, `setup_env.sh`, `validate_prereqs.sh`, `custom_convert.sh`
+- `set -euo pipefail` required in all pipeline scripts except `custom_convert.sh` (upstream-derived; uses `# shellcheck disable` instead): `build.sh`, `debloat_wim.sh`, `setup_env.sh`, `validate_prereqs.sh`
 - Derive all paths from `SCRIPT_DIR` / `PROJECT_ROOT` — no absolute paths with usernames or machine-specific prefixes
 - Never add `sudo` to `build.sh` or any Linux-pipeline script
 - ShellCheck must pass with zero warnings: `shellcheck scripts/*.sh`

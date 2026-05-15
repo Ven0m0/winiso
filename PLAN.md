@@ -3,7 +3,7 @@ _Generated: 2026-05-04T07:08:52Z · Updated: 2026-05-15_
 _Last reviewed: 51 tasks → 54 tasks (3 new items added, baselines corrected)_
 
 ## Summary
-Comprehensive implementation plan integrating technical debt from existing PLAN.md and 50 feature items from TODO.md. Categories: API/Download (6), Build System (9), Debloating (9), Post-Install (4), Monitoring (4), Platform (5), Testing (5), Architecture (5), AI/ML (3), Ecosystem (0), plus 4 technical debt items. Total effort: ~660h across 4 priority tiers.
+Comprehensive implementation plan integrating technical debt from existing PLAN.md and 50 feature items from TODO.md. Categories: API/Download (6), Build System (9), Debloating (10), Post-Install (4), Monitoring (4), Platform (4), Testing (5), Architecture (5), AI/ML (3), Ecosystem (0), plus 4 technical debt items. Total effort: ~660h across 4 priority tiers.
 
 **Stale items removed in prior updates:**
 - T001: Windows dependency installation (outdated - winget now available)
@@ -28,7 +28,7 @@ Comprehensive implementation plan integrating technical debt from existing PLAN.
 | 1 | T003 | Python type hints - download_uup.py | medium | refactor | M | — |
 | 2 | T004 | Error handling standardization | high | bug | M | — |
 | 3 | T005 | Unified logging levels | medium | refactor | M | T004 |
-| 4 | T006 | Test coverage 40%→80% | high | debt | L | — |
+| 4 | T006 | Test coverage ~60%→80% | high | debt | L | — |
 | 5 | T007 | UUP JSON API v2 client | high | feature | M | T003,T004 |
 | 6 | T008 | Delta downloads | high | feature | L | T007 |
 | 7 | T009 | Resume interrupted downloads | medium | feature | M | T007 |
@@ -76,9 +76,9 @@ Comprehensive implementation plan integrating technical debt from existing PLAN.
 | 49 | T051 | Build configuration presets | medium | feature | S | — |
 | 50 | T052 | winget integration | medium | feature | M | — |
 | 51 | T053 | Build artifact archive | medium | feature | M | — |
-| 52 | T054 | Optimize-Windows patterns integration | medium | feature | M | T020 |
+| 52 | T054 | Optimize-Windows patterns integration | medium | feature | M | — |
 | 53 | T055 | Pre-build autounattend.xml validation | low | debt | S | — |
-| 54 | T056 | aria2c stderr capture | low | debt | S | T007 |
+| 54 | T056 | aria2c stderr capture | low | debt | S | — |
 
 ## Tasks
 
@@ -102,11 +102,12 @@ Comprehensive implementation plan integrating technical debt from existing PLAN.
 **Context:** Technical debt: Error handling needs standardization
 **Intent:** Ensure all shell scripts use consistent error handling
 **Acceptance criteria:**
-- [x] All scripts use `set -euo pipefail` *(confirmed: build.sh:17, debloat_wim.sh:11, setup_env.sh:6, validate_prereqs.sh:6, custom_convert.sh:2)*
+- [x] All pipeline scripts use `set -euo pipefail` *(confirmed: build.sh:17, debloat_wim.sh:11, setup_env.sh:6, validate_prereqs.sh:6)*
+- [ ] `scripts/custom_convert.sh` — upstream-derived, no `set -euo pipefail`; track separately if/when upstreamed
 - [ ] All functions return proper exit codes
 - [ ] All error paths log meaningful messages
 - [ ] `download_uup.py` raises typed exceptions with context on all failure paths
-**Implementation:** Shell work is complete. Remaining: audit Python exception handling for context-rich errors
+**Implementation:** Pipeline shell work is largely done. Remaining: `custom_convert.sh` (upstream), Python exception context
 
 ### T005 · Unified logging levels
 **File:** `scripts/utils.sh`
@@ -793,7 +794,7 @@ Comprehensive implementation plan integrating technical debt from existing PLAN.
 - T003: Python type hints
 - T004: Error handling standardization
 - T005: Unified logging levels
-- T006: Test coverage 40%→80%
+- T006: Test coverage ~60%→80%
 
 ### Priority 2: High-Impact (30-90d) | ~200h
 - T007-T011: API features

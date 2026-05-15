@@ -1,5 +1,5 @@
 # Project TODO & Feature Roadmap
-<metadata><version>5.0</version><updated>2026-05-15T00:00:00Z</updated><items>45</items><categories>10</categories></metadata>
+<metadata><version>5.0</version><updated>2026-05-15T00:00:00Z</updated><items>50</items><categories>10</categories></metadata>
 <removed>
 - T001: Windows dependency install (outdated - winget now available)
 - T002: ShellCheck SC2034 suppression (partially done - already in utils.sh)
@@ -11,7 +11,7 @@
 - "implement https://github.com/ShivamXD6/Optimize-Windows" (informal note → promoted to DEBLOAT-010/T054)
 </removed>
 <done>
-- T004 shell criteria: all 5 scripts confirmed using set -euo pipefail (build.sh, debloat_wim.sh, setup_env.sh, validate_prereqs.sh, custom_convert.sh)
+- T004 shell criteria: 4 pipeline scripts confirmed using set -euo pipefail (build.sh, debloat_wim.sh, setup_env.sh, validate_prereqs.sh); custom_convert.sh is upstream-derived and excluded
 - T005 basic levels: log_info, log_success, log_warn, log_error already in utils.sh
 </done>
 
@@ -49,7 +49,7 @@
 - DEBLOAT-007: Sandbox toggle - enable/disable Windows Sandbox
 - DEBLOAT-008: WSL config - pre-configure Windows Subsystem for Linux
 - DEBLOAT-009: Debloat pattern validator - validate patterns before applying
-- DEBLOAT-010: Optimize-Windows patterns integration - selective merge of patterns from ShivamXD6/Optimize-Windows; blocked by DEBLOAT-009
+- DEBLOAT-010: Optimize-Windows patterns integration - selective merge of patterns from ShivamXD6/Optimize-Windows; blocked by DEBLOAT-001 (dependency checker must pass first)
 </category>
 
 ##  Post-Install
@@ -149,4 +149,4 @@ Architecture and AI/ML:
 - Failure prediction
 
 ---
-*Roadmap: 45 items | v5.0 | Updated: 2026-05-15*
+*Roadmap: 50 items | v5.0 | Updated: 2026-05-15*

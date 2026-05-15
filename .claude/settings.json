@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "deny": [
+      "Bash(sudo:*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'echo \"$CLAUDE_TOOL_INPUT\" | python3 -c \"\nimport sys, json\ntry:\n    inp = json.load(sys.stdin)\n    cmd = inp.get(\\\"command\\\", \\\"\\\")\nexcept Exception:\n    sys.exit(0)\nif \\\"sudo\\\" in cmd.split():\n    print(\\\"[BLOCKED] sudo is not allowed in the build pipeline\\\", flush=True)\n    sys.exit(2)\n\"'"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'echo \"$CLAUDE_TOOL_INPUT\" | python3 -c \"\nimport sys, json, re\ntry:\n    inp = json.load(sys.stdin)\n    path = inp.get(\\\"file_path\\\", \\\"\\\")\n    content = inp.get(\\\"new_string\\\", \\\"\\\") or inp.get(\\\"content\\\", \\\"\\\")\nexcept Exception:\n    sys.exit(0)\nkeeplist = [\\\"Store\\\", \\\"WebView\\\", \\\"VCLibs\\\", \\\"UI.Xaml\\\", \\\"Defender\\\", \\\"DesktopAppInstaller\\\"]\nif \\\"debloat_list.txt\\\" in path:\n    for kw in keeplist:\n        # Only flag unconditional removal (lines not inside a comment)\n        for line in content.splitlines():\n            stripped = line.strip()\n            if stripped.startswith(\\\"#\\\"):\n                continue\n            if kw.lower() in stripped.lower():\n                print(f\\\"[BLOCKED] debloat_list.txt: pattern matches protected AppX keep-list entry: {kw}\\\", flush=True)\n                sys.exit(2)\n\"'"
+          }
+        ]
+      }
+    ]
+  }
+}

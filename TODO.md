@@ -135,5 +135,7 @@ Architecture and AI/ML:
 - Smart recommendations
 - Failure prediction
 
+implement https://github.com/ShivamXD6/Optimize-Windows
+
 ---
 *Roadmap: 42 items | v4.0-cleaned*

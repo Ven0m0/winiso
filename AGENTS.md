@@ -248,7 +248,7 @@ System packages (install via `make deps` / `setup_env.sh`):
 ## Plan & Roadmap
 
 - `PLAN.md` — 54 tasks, 4 priority tiers, ~660h total
-- `TODO.md` — 45-item feature roadmap (v5.0, 10 categories)
+- `TODO.md` — 50-item feature roadmap (v5.0, 10 categories)
 - Priority 1 (0-30d): T003 type hints, T005 log_debug, T006 coverage to 80%
 - Priority 2 (30-90d): T007-T015 API + build features
 - Priority 3 (90-180d): T020-T041 debloat, post-install, testing

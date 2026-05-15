@@ -1,23 +1,26 @@
 # Implementation Plan
-_Generated: 2026-05-04T07:08:52Z · Updated: 2026-05-11_
-_Last reviewed: 56 tasks → 48 tasks (8 stale items removed)_
+_Generated: 2026-05-04T07:08:52Z · Updated: 2026-05-15_
+_Last reviewed: 51 tasks → 54 tasks (3 new items added, baselines corrected)_
 
 ## Summary
-Comprehensive implementation plan integrating technical debt from existing PLAN.md and 50 feature items from TODO.md. Categories: API/Download (5), Build System (8), Debloating (8), Post-Install (4), Monitoring (4), Platform (5), Testing (5), Architecture (5), AI/ML (3), Ecosystem (3), plus 6 technical debt items. Total effort: ~630h across 4 priority tiers.
+Comprehensive implementation plan integrating technical debt from existing PLAN.md and 50 feature items from TODO.md. Categories: API/Download (6), Build System (9), Debloating (9), Post-Install (4), Monitoring (4), Platform (5), Testing (5), Architecture (5), AI/ML (3), Ecosystem (0), plus 4 technical debt items. Total effort: ~660h across 4 priority tiers.
 
-**Stale items removed in this update:**
+**Stale items removed in prior updates:**
 - T001: Windows dependency installation (outdated - winget now available)
 - T002: ShellCheck SC2034 suppression (partially done - already in utils.sh)
-- T036: Docker build (no Dockerfile exists, not currently planned)
-- T037: Windows native PowerShell script (no build.ps1 exists)
-- T038: CI/CD integration (workflows already exist in .github/workflows/)
-- T054-T056: Ecosystem integrations (Packer, Ansible, Chef/Puppet - speculative, not aligned with project direction)
+- T036 (old): Docker build (no Dockerfile exists, not currently planned)
+- T037 (old): Windows native PowerShell script (no build.ps1 exists)
+- T038 (old): CI/CD integration (workflows already exist in .github/workflows/)
+- T054-T056 (old): Ecosystem integrations (Packer, Ansible, Chef/Puppet - speculative)
 
-**New items added:**
-- T057: Debloat pattern validator tool
-- T058: Build configuration presets
-- T059: Windows Package Manager (winget) integration
-- T060: Archive mechanism for build artifacts
+**Updates in this review (2026-05-15):**
+- T004: Shell scripts confirmed fully compliant (`set -euo pipefail` in all 5 scripts); criteria updated
+- T005: Basic log levels (info/success/warn/error) already in utils.sh; remaining: DEBUG + LOG_LEVEL filtering
+- T006: Corrected test coverage baseline from 40% to ~60% (actual measured state)
+- Removed stale `implement Optimize-Windows` line from TODO.md; promoted to proper task T054
+- Added T054: Optimize-Windows debloat patterns integration
+- Added T055: Pre-build autounattend.xml validation
+- Added T056: aria2c stderr capture for better download error messages
 
 ## Task Index (topological order)
 | # | ID | Title | Sev | Cat | Size | Blocks |
@@ -73,6 +76,9 @@ Comprehensive implementation plan integrating technical debt from existing PLAN.
 | 49 | T051 | Build configuration presets | medium | feature | S | — |
 | 50 | T052 | winget integration | medium | feature | M | — |
 | 51 | T053 | Build artifact archive | medium | feature | M | — |
+| 52 | T054 | Optimize-Windows patterns integration | medium | feature | M | T020 |
+| 53 | T055 | Pre-build autounattend.xml validation | low | debt | S | — |
+| 54 | T056 | aria2c stderr capture | low | debt | S | T007 |
 
 ## Tasks
 
@@ -96,10 +102,11 @@ Comprehensive implementation plan integrating technical debt from existing PLAN.
 **Context:** Technical debt: Error handling needs standardization
 **Intent:** Ensure all shell scripts use consistent error handling
 **Acceptance criteria:**
-- [ ] All scripts use `set -euo pipefail`
+- [x] All scripts use `set -euo pipefail` *(confirmed: build.sh:17, debloat_wim.sh:11, setup_env.sh:6, validate_prereqs.sh:6, custom_convert.sh:2)*
 - [ ] All functions return proper exit codes
 - [ ] All error paths log meaningful messages
-**Implementation:** Audit scripts and add missing `set -euo pipefail`, add error handling wrappers
+- [ ] `download_uup.py` raises typed exceptions with context on all failure paths
+**Implementation:** Shell work is complete. Remaining: audit Python exception handling for context-rich errors
 
 ### T005 · Unified logging levels
 **File:** `scripts/utils.sh`
@@ -108,23 +115,25 @@ Comprehensive implementation plan integrating technical debt from existing PLAN.
 **Context:** Technical debt: Logging levels need unification (DEBUG/INFO/WARN/ERROR)
 **Intent:** Standardize logging across all shell scripts
 **Acceptance criteria:**
-- [ ] Implement log_debug, log_info, log_warn, log_error functions
-- [ ] Add LOG_LEVEL env var for filtering
-- [ ] Update all scripts to use consistent logging
-**Implementation:** In utils.sh: Add LOG_LEVEL support, implement DEBUG level filtering
+- [x] `log_info`, `log_success`, `log_warn`, `log_error` implemented in utils.sh *(already present)*
+- [ ] Add `log_debug` function with `LOG_LEVEL=debug` guard
+- [ ] Add `LOG_LEVEL` env var support for runtime filtering (default: info)
+- [ ] All scripts consistently use utils.sh log functions (no raw echo for status)
+**Implementation:** In utils.sh: add `LOG_LEVEL` support and `log_debug` filtered by it; audit callers
 
-### T006 · Test coverage 40%→80%
+### T006 · Test coverage ~60%→80%
 **File:** `tests/` directory
 **Severity:** high · **Category:** debt · **Size:** L
 **Blocks:** T042  **Blocked by:** —
-**Context:** Technical debt: Test coverage needs improvement from 40% to 80%
+**Context:** Technical debt: Test coverage needs improvement from ~60% to 80% (baseline corrected from 40% — test_download_uup.py already has 40+ tests covering major paths)
 **Intent:** Increase test coverage for main modules
 **Acceptance criteria:**
-- [ ] Add unit tests for download_uup.py API functions
-- [ ] Add unit tests for utils.sh functions (mocked)
-- [ ] Add integration tests for full download flow
+- [x] Unit tests for download_uup.py API functions (fetch_url, get_latest_builds, get_build_info, select_editions, interactive_mode)
+- [ ] Add tests for `_process_selected_build()`, `_prepare_output_directory()`, `_prepare_download_list()`, `_run_aria2_download()` happy paths
+- [ ] Add unit tests for utils.sh functions (mocked via bats or pytest subprocess)
+- [ ] Add integration tests for full download flow (mocked network)
 - [ ] Run pytest with --cov and verify 80%+ coverage
-**Implementation:** Expand the existing unittest/unittest.mock suite, use mocks for external calls, add table-driven coverage with unittest subTest where helpful, and run coverage via pytest --cov
+**Implementation:** Expand the existing unittest/unittest.mock suite; focus on uncovered private helpers; use pytest --cov to track progress
 
 ### T007 · UUP JSON API v2 client
 **File:** `scripts/download_uup.py`
@@ -737,6 +746,45 @@ Comprehensive implementation plan integrating technical debt from existing PLAN.
 - [ ] Provide list/cleanup commands
 **Implementation:** Add `archive_build()` and `manage_archives()` functions
 
+### T054 · Optimize-Windows debloat patterns integration
+**File:** `config/debloat_list.txt`, `scripts/debloat_wim.sh`
+**Severity:** medium · **Category:** feature · **Size:** M
+**Blocks:** —  **Blocked by:** T020
+**Context:** TODO.md referenced https://github.com/ShivamXD6/Optimize-Windows as a source of additional debloat patterns and registry tweaks; promoted from informal note to tracked task
+**Intent:** Review and selectively merge high-quality debloat patterns and registry hardening entries from the Optimize-Windows project into the debloat pipeline
+**Acceptance criteria:**
+- [ ] Audit Optimize-Windows pattern list against current `config/debloat_list.txt`
+- [ ] Add net-new patterns that do not conflict with AppX keep-list invariants
+- [ ] Import validated registry tweaks into `scripts/debloat_wim.sh`
+- [ ] Ensure no patterns match protected AppX (`*Store* *WebView* *VCLibs* *UI.Xaml* *Defender* *DesktopAppInstaller*`)
+- [ ] Document source attribution in `debloat_list.txt`
+**Implementation:** Manual review of upstream patterns; add only patterns that pass T050 (debloat pattern validator); group under `# Optimize-Windows` comment in debloat_list.txt
+
+### T055 · Pre-build autounattend.xml validation
+**File:** `scripts/build.sh`, `Makefile`
+**Severity:** low · **Category:** debt · **Size:** S
+**Blocks:** —  **Blocked by:** —
+**Context:** `autounattend.xml` is currently validated only in CI (lint-and-format.yml via xmllint). A malformed XML discovered late in a 15-30 min build wastes significant time
+**Intent:** Validate `config/autounattend.xml` with xmllint at build start before any download or WIM work
+**Acceptance criteria:**
+- [ ] Call `xmllint --noout config/autounattend.xml` in `validate_prereqs.sh` (or build.sh pre-flight block)
+- [ ] Fail fast with a clear error message if validation fails
+- [ ] Add `make validate-xml` target to Makefile and document in `help`
+**Implementation:** One-liner addition to `validate_prereqs.sh`; add Makefile target; no new dependencies (xmllint already in CI)
+
+### T056 · aria2c stderr capture for download error messages
+**File:** `scripts/download_uup.py`
+**Severity:** low · **Category:** debt · **Size:** S
+**Blocks:** —  **Blocked by:** T007
+**Context:** `subprocess.run(cmd, check=True)` in `_run_aria2_download()` only surfaces the exit code on failure; actual aria2c error text is lost, making failed downloads hard to diagnose
+**Intent:** Capture and surface aria2c stderr/stdout on failure so users see the actual error (e.g. "404 Not Found", "disk full", "connection refused")
+**Acceptance criteria:**
+- [ ] Capture stderr (and optionally stdout) from aria2c subprocess
+- [ ] On non-zero exit, log the last N lines of aria2c output via `log_error`
+- [ ] On success, suppress verbose aria2c output unless `--verbose` flag is set
+- [ ] Add a test for the failure-path error message
+**Implementation:** Change `subprocess.run(cmd, check=True)` to capture output; wrap in try/except `subprocess.CalledProcessError`; log `e.stderr`
+
 ---
 
 ## Priority Tiers
@@ -758,10 +806,13 @@ Comprehensive implementation plan integrating technical debt from existing PLAN.
 - T032-T035: Monitoring
 - T036-T041: Testing
 
-### Priority 4: Future (180+d) | ~200h
+### Priority 4: Future (180+d) | ~230h
 - T042-T046: Architecture
 - T047-T049: AI/ML
 - T050-T053: New features (debloat validator, presets, winget, archive)
+- T054: Optimize-Windows patterns integration
+- T055: Pre-build XML validation *(quick win, consider pulling to Priority 1)*
+- T056: aria2c stderr capture *(quick win, consider pulling to Priority 1)*
 
 ---
 
@@ -775,6 +826,7 @@ Comprehensive implementation plan integrating technical debt from existing PLAN.
 
 ---
 
-*Updated: 2026-05-11*
-*Stale items removed: T001, T002 (partial), T036, T037, T038, T054-T056*
-*New items added: T050, T051, T052, T053*
+*Updated: 2026-05-15*
+*Stale items removed (prior): T001, T002, T036 (old), T037 (old), T038 (old), T054-T056 (old ecosystem)*
+*New items added (prior): T050, T051, T052, T053*
+*Updated (2026-05-15): T004 shell criteria marked done; T005 basic levels marked done; T006 baseline corrected to ~60%; added T054, T055, T056*

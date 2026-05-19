@@ -408,5 +408,69 @@ class TestInteractiveMode(unittest.TestCase):
         mock_log_info.assert_called_once_with("Cancelled by user")
 
 
+class TestGetAvailableLanguages(unittest.TestCase):
+    @patch("download_uup.fetch_url")
+    def test_get_available_languages_no_build_id_success(self, mock_fetch_url):
+        import json
+
+        mock_data = {"response": {"languages": {"en-us": "English (United States)"}}}
+        mock_fetch_url.return_value = json.dumps(mock_data)
+
+        result = download_uup.get_available_languages()
+
+        self.assertEqual(result, mock_data["response"])
+        mock_fetch_url.assert_called_once_with("https://api.uupdump.net/listlangs.php")
+
+    @patch("download_uup.fetch_url")
+    def test_get_available_languages_with_build_id_success(self, mock_fetch_url):
+        import json
+
+        mock_data = {"response": {"languages": {"en-us": "English (United States)"}}}
+        mock_fetch_url.return_value = json.dumps(mock_data)
+
+        result = download_uup.get_available_languages("build123")
+
+        self.assertEqual(result, mock_data["response"])
+        mock_fetch_url.assert_called_once_with(
+            "https://api.uupdump.net/listlangs.php?id=build123"
+        )
+
+    @patch("download_uup.fetch_url")
+    def test_get_available_languages_no_response(self, mock_fetch_url):
+        mock_fetch_url.return_value = None
+
+        result = download_uup.get_available_languages()
+
+        self.assertIsNone(result)
+
+    @patch("download_uup.fetch_url")
+    @patch("download_uup.log_error")
+    def test_get_available_languages_api_error(self, mock_log_error, mock_fetch_url):
+        import json
+
+        mock_data = {"response": {"error": "Invalid build ID"}}
+        mock_fetch_url.return_value = json.dumps(mock_data)
+
+        result = download_uup.get_available_languages("invalid_id")
+
+        self.assertIsNone(result)
+        mock_log_error.assert_called_with("API Error: Invalid build ID")
+
+    @patch("download_uup.fetch_url")
+    @patch("download_uup.log_error")
+    def test_get_available_languages_json_decode_error(
+        self, mock_log_error, mock_fetch_url
+    ):
+        mock_fetch_url.return_value = "not json"
+
+        result = download_uup.get_available_languages()
+
+        self.assertIsNone(result)
+        mock_log_error.assert_called_once()
+        self.assertTrue(
+            mock_log_error.call_args[0][0].startswith("Failed to parse JSON response:")
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

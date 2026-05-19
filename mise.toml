@@ -51,9 +51,9 @@ _.python.venv = { path = ".venv", create = true, uv_create_args = ["--seed", "--
 # Install system dependencies
 install-deps = [
   """@if linux: if command -v pacman >/dev/null 2>&1; then
-    sudo pacman -S --needed aria2 cabextract wimlib chntpw cdrtools
+    pacman -S --needed aria2 cabextract wimlib chntpw cdrtools
   elif command -v apt-get >/dev/null 2>&1; then
-    sudo apt update -qq && sudo apt install -yq aria2 cabextract wimtools chntpw genisoimage
+    apt update -qq && apt install -yq aria2 cabextract wimtools chntpw genisoimage
   else
     echo 'Unsupported Linux distribution: no supported package manager found (pacman, apt-get, or dnf).' >&2
     exit 1
@@ -129,7 +129,7 @@ file = '.mise/tasks/install'
 [tasks.linux]
 description = "Install build dependencies on Linux"
 run = [
-  "sudo pacman -Sq --needed aria2 cabextract wimlib chntpw cdrtools libxml2 2>/dev/null || (sudo apt update && sudo apt install -y aria2 cabextract wimtools chntpw genisoimage libxml2-utils) 2>/dev/null || (sudo dnf install -y aria2 cabextract wimlib-utils chntpw genisoimage libxml2)"
+  "pacman -Sq --needed aria2 cabextract wimlib chntpw cdrtools libxml2 2>/dev/null || (apt update && apt install -y aria2 cabextract wimtools chntpw genisoimage libxml2-utils) 2>/dev/null || (dnf install -y aria2 cabextract wimlib-utils chntpw genisoimage libxml2)"
 ]
 
 [tasks.windows]
@@ -142,11 +142,11 @@ run = [
 # Aliases for platform-specific installs
 [tasks.arch]
 description = "Install deps (Arch Linux)"
-run = ["sudo pacman -Sq --needed aria2 cabextract wimlib chntpw cdrtools"]
+run = ["pacman -Sq --needed aria2 cabextract wimlib chntpw cdrtools"]
 
 [tasks.debian]
 description = "Install deps (Debian/Ubuntu)"
-run = ["sudo apt-get update -qq && sudo DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes apt-get install -yqq --no-install-recommends aria2 cabextract wimtools chntpw genisoimage libxml2-utils libfuse2"]
+run = ["apt-get update -qq && apt-get install -yqq --no-install-recommends aria2 cabextract wimtools chntpw genisoimage libxml2-utils libfuse2"]
 
 [tasks.test]
 description = "Run tests"

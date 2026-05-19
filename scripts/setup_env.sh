@@ -13,14 +13,14 @@ log_info "Checking and installing dependencies..."
 
 if command -v pacman &>/dev/null; then
   log_info "Detected Arch Linux (pacman)"
-  sudo pacman -S --needed aria2 cabextract wimlib chntpw cdrtools
+  pacman -S --needed aria2 cabextract wimlib chntpw cdrtools
 elif command -v apt &>/dev/null; then
   log_info "Detected Debian/Ubuntu (apt)"
-  sudo apt update
-  sudo apt install -y aria2 cabextract wimtools chntpw genisoimage
+  apt update
+  apt install -y aria2 cabextract wimtools chntpw genisoimage
 elif command -v dnf &>/dev/null; then
   log_info "Detected Fedora (dnf)"
-  sudo dnf install -y aria2 cabextract wimlib-utils chntpw genisoimage
+  dnf install -y aria2 cabextract wimlib-utils chntpw genisoimage
 else
   log_error "Unsupported package manager. Please install manually:"
   echo "  - aria2 (download acceleration)"

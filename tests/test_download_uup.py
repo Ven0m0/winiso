@@ -186,6 +186,92 @@ class TestGetLatestBuilds(unittest.TestCase):
         self.assertEqual(result[1]["title"], "Windows 11 Build 3")
 
 
+class TestDisplayBuilds(unittest.TestCase):
+    @patch("builtins.print")
+    def test_empty_list(self, mock_print):
+        download_uup.display_builds([])
+        # Expect only the header print
+        self.assertEqual(mock_print.call_count, 1)
+        mock_print.assert_called_with(
+            f"\n{download_uup.Colors.BOLD}Available Windows 11 Builds:{download_uup.Colors.RESET}\n"
+        )
+
+    @patch("builtins.print")
+    def test_valid_builds(self, mock_print):
+        builds = [
+            {
+                "title": "Windows 11 Insider Preview 25309",
+                "build": "25309.1000",
+                "arch": "amd64",
+                "created": "1677686400",
+            },
+            {
+                "title": "Windows 11 Insider Preview 25300",
+                "build": "25300.1000",
+                "arch": "arm64",
+                "created": "1676476800",
+            },
+        ]
+
+        download_uup.display_builds(builds)
+
+        # Expected calls:
+        # 1. Header
+        # For each build (2 builds):
+        # 2. Title with index
+        # 3. Details line
+        # 4. Empty line
+        # Total calls: 1 + (3 * 2) = 7
+        self.assertEqual(mock_print.call_count, 7)
+
+        calls = mock_print.call_args_list
+        # Filter parameterless print() calls for empty lines to avoid IndexError if using call[0][0]
+        non_empty_calls = [c[0][0] for c in calls if c[0]]
+
+        self.assertEqual(
+            non_empty_calls[0],
+            f"\n{download_uup.Colors.BOLD}Available Windows 11 Builds:{download_uup.Colors.RESET}\n",
+        )
+
+        self.assertEqual(
+            non_empty_calls[1],
+            f"{download_uup.Colors.CYAN}[1]{download_uup.Colors.RESET} Windows 11 Insider Preview 25309",
+        )
+        self.assertEqual(
+            non_empty_calls[2],
+            "    Build: 25309.1000 | Arch: amd64 | Created: 1677686400",
+        )
+
+        self.assertEqual(
+            non_empty_calls[3],
+            f"{download_uup.Colors.CYAN}[2]{download_uup.Colors.RESET} Windows 11 Insider Preview 25300",
+        )
+        self.assertEqual(
+            non_empty_calls[4],
+            "    Build: 25300.1000 | Arch: arm64 | Created: 1676476800",
+        )
+
+    @patch("builtins.print")
+    def test_missing_keys(self, mock_print):
+        builds = [{}]  # Empty dict to test defaults
+
+        download_uup.display_builds(builds)
+
+        # Total calls: 1 (header) + 3 (for 1 build) = 4
+        self.assertEqual(mock_print.call_count, 4)
+
+        calls = mock_print.call_args_list
+        non_empty_calls = [c[0][0] for c in calls if c[0]]
+
+        self.assertEqual(
+            non_empty_calls[1],
+            f"{download_uup.Colors.CYAN}[1]{download_uup.Colors.RESET} Unknown",
+        )
+        self.assertEqual(
+            non_empty_calls[2], "    Build: N/A | Arch: N/A | Created: N/A"
+        )
+
+
 class TestFetchLatestFromWU(unittest.TestCase):
     @patch("download_uup.fetch_url")
     @patch("download_uup.log_error")

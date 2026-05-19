@@ -122,9 +122,13 @@ function Remove-Packages {
         "Microsoft-Windows-TabletPCMath-Package*",
         "Microsoft-Windows-Wallpaper-Content-Extended-FoD-Package*"
     )
-    foreach ($p in $packages) {
-        Get-WindowsPackage -Path $MountDir | Where-Object { $_.PackageName -like $p -and $_.State -eq 'Installed' } | ForEach-Object {
-            Remove-WindowsPackage -Path $MountDir -PackageName $_.PackageName -NoRestart
+    $installedPackages = Get-WindowsPackage -Path $MountDir | Where-Object { $_.State -eq 'Installed' }
+    foreach ($pkg in $installedPackages) {
+        foreach ($p in $packages) {
+            if ($pkg.PackageName -like $p) {
+                Remove-WindowsPackage -Path $MountDir -PackageName $pkg.PackageName -NoRestart
+                break
+            }
         }
     }
 }
@@ -192,9 +196,13 @@ function Remove-AppxPackages {
         "MicrosoftCorporationII.QuickAssist*",
         "MicrosoftWindows.Client.WebExperience*"
     )
-    foreach ($p in $appx) {
-        Get-AppxProvisionedAppxPackage -Path $MountDir | Where-Object { $_.DisplayName -like $p } | ForEach-Object {
-            try { Remove-AppxProvisionedAppxPackage -Path $MountDir -PackageName $_.PackageName -ErrorAction Stop } catch { }
+    $installedAppx = Get-AppxProvisionedAppxPackage -Path $MountDir
+    foreach ($pkg in $installedAppx) {
+        foreach ($p in $appx) {
+            if ($pkg.DisplayName -like $p) {
+                try { Remove-AppxProvisionedAppxPackage -Path $MountDir -PackageName $pkg.PackageName -ErrorAction Stop } catch { }
+                break
+            }
         }
     }
 }
@@ -214,9 +222,13 @@ function Remove-Capabilities {
         "Microsoft.Windows.Wifi.Client*",
         "OneCoreUAP.OneSync*"
     )
-    foreach ($c in $capability) {
-        Get-WindowsCapability -Path $MountDir | Where-Object { $_.Name -like $c } | ForEach-Object {
-            try { Remove-WindowsCapability -Path $MountDir -Name $_.Name -ErrorAction Stop } catch { }
+    $installedCaps = Get-WindowsCapability -Path $MountDir
+    foreach ($cap in $installedCaps) {
+        foreach ($c in $capability) {
+            if ($cap.Name -like $c) {
+                try { Remove-WindowsCapability -Path $MountDir -Name $cap.Name -ErrorAction Stop } catch { }
+                break
+            }
         }
     }
 }

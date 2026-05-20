@@ -223,12 +223,18 @@ def fetch_latest_from_wu(arch="amd64", ring="Retail"):
 def get_api_version():
     """Get the current UUP dump API version"""
     api_url = "https://api.uupdump.net/"
-    data = fetch_url(api_url, return_json=True)
+    response = fetch_url(api_url)
 
-    if not data:
+    if not response:
         return None
 
-    return data.get("response", {})
+    try:
+        data = json.loads(response)
+        return data.get("response", {})
+    except json.JSONDecodeError as e:
+        log_error(f"Failed to parse JSON response: {e}")
+        return None
+
 
 
 def select_editions(build_info):

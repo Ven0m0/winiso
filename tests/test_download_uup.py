@@ -642,6 +642,6 @@ class TestGetApiVersion(unittest.TestCase):
         result = download_uup.get_api_version()
         self.assertEqual(result, {})
 
-if __name__ == "__main__":
 
+if __name__ == "__main__":
     unittest.main()

@@ -236,7 +236,6 @@ def get_api_version():
         return None
 
 
-
 def select_editions(build_info):
     """Allow user to select which editions to download"""
     files = build_info.get("files", {})

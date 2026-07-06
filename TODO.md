@@ -15,7 +15,8 @@
 - T005 basic levels: log_info, log_success, log_warn, log_error already in utils.sh
 </done>
 
-- implement features of [zISOTweaker](https://github.com/zoicware/zISOTweaker)
+
+- implement features of [zISOTweaker](https://github.com/zoicware/zISOTweaker) and [Optimize-Windows](https://github.com/ShivamXD6/Optimize-Windows)
 
 ##  API & Download
 <category name="api" items="6" priority="high">

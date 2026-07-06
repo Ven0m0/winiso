@@ -15,6 +15,8 @@
 - T005 basic levels: log_info, log_success, log_warn, log_error already in utils.sh
 </done>
 
+- implement features of [zISOTweaker](https://github.com/zoicware/zISOTweaker)
+
 ##  API & Download
 <category name="api" items="6" priority="high">
 - API-001: UUP JSON API v2 client - match api.uupdump.net schema

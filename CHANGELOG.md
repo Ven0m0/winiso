@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Added unit tests for `get_available_languages` in `tests/test_download_uup.py` to improve coverage of API functions.
 - Added a dedicated `test-matrix.yml` workflow for Python tests on uv-managed Python runtimes.
 - Added `.github/instructions/windows-servicing.instructions.md` to keep Windows-only servicing changes separate from the default Linux build path.
 - Added matching `.claude/rules/` and `.kilo/rules/` guidance so Claude and Kilo can reuse the same repo-specific rule set.

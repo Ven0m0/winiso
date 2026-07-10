@@ -92,8 +92,11 @@ def fetch_url(url, headers=None, data=None, return_json=False):
     except URLError as e:
         log_error(f"URL Error: {e.reason}")
         return None
+    except OSError as e:
+        log_error(f"Network error fetching URL: {e}")
+        return None
     except Exception as e:
-        log_error(f"Error fetching URL: {e}")
+        log_error(f"Unexpected error fetching URL: {e}")
         return None
 
 
@@ -130,6 +133,10 @@ def get_latest_builds(max_results=10):
 
 def display_builds(builds):
     """Display builds in a user-friendly format"""
+    if not builds:
+        log_warn("No builds available.")
+        return
+
     print(f"\n{Colors.BOLD}Available Windows 11 Builds:{Colors.RESET}\n")
 
     for i, build in enumerate(builds, 1):
@@ -223,9 +230,18 @@ def fetch_latest_from_wu(arch="amd64", ring="Retail"):
 def get_api_version():
     """Get the current UUP dump API version"""
     api_url = "https://api.uupdump.net/"
-    data = fetch_url(api_url, return_json=True)
+    response = fetch_url(api_url)
 
-    if not data:
+    if not response:
+        return None
+
+    try:
+        data = json.loads(response)
+    except json.JSONDecodeError as e:
+        log_error(f"Failed to parse JSON response: {e}")
+        return None
+
+    if not isinstance(data, dict):
         return None
 
     return data.get("response", {})
@@ -355,14 +371,17 @@ def _run_aria2_download(output_path, aria2_input, download_list):
     except KeyboardInterrupt:
         log_warn("\nDownload cancelled by user")
         return False
+    except OSError as e:
+        log_error(f"System error during download: {e}")
+        return False
     except Exception as e:
-        log_error(f"An unexpected error occurred: {e}")
+        log_error(f"An unexpected error occurred during download: {e}")
         return False
     finally:
         for f in output_path.glob("aria2_input*"):
             try:
                 f.unlink()
-            except Exception:
+            except OSError:
                 pass
 
 

@@ -14,6 +14,35 @@ from urllib.request import urlopen, Request
 from urllib.error import URLError, HTTPError
 from urllib.parse import urlencode
 
+# Profile definitions for different use cases
+PROFILES: Dict[str, Dict[str, Any]] = {
+    "minimal": {
+        "description": "Stripped-down Windows 11 with maximum debloating",
+        "edition": "Core",
+        "language": "en-us",
+    },
+    "standard": {
+        "description": "Default debloated Windows 11 (Professional)",
+        "edition": "Professional",
+        "language": "en-us",
+    },
+    "gaming": {
+        "description": "Gaming-optimized Windows 11 with Game Mode enabled",
+        "edition": "Professional",
+        "language": "en-us",
+    },
+    "enterprise": {
+        "description": "Enterprise-ready Windows 11 with domain features",
+        "edition": "Enterprise",
+        "language": "en-us",
+    },
+    "dev": {
+        "description": "Developer configuration with WSL and tools",
+        "edition": "Professional",
+        "language": "en-us",
+    },
+}
+
 
 class Colors:
     CYAN = "\033[0;36m"
@@ -528,6 +557,89 @@ def interactive_mode(output_dir: Union[str, Path], verbose: bool = False) -> boo
             return False
 
 
+def get_profiles() -> Dict[str, Dict[str, Any]]:
+    """Load build profiles from config file or return built-in defaults."""
+    script_dir = Path(__file__).parent
+    profiles_path = script_dir.parent / "config" / "profiles.json"
+
+    if profiles_path.exists():
+        try:
+            with open(profiles_path, "r") as f:
+                data = json.load(f)
+                return data.get("profiles", PROFILES)
+        except (json.JSONDecodeError, OSError):
+            log_warn("Failed to load profiles.json, using built-in profiles")
+
+    return PROFILES
+
+
+def get_pinned_build() -> Optional[Dict[str, Any]]:
+    """Load pinned build configuration from .uup-pin.json in the project root."""
+    script_dir = Path(__file__).parent
+    project_root = script_dir.parent
+    pin_path = project_root / ".uup-pin.json"
+
+    if not pin_path.exists():
+        return None
+
+    try:
+        with open(pin_path, "r") as f:
+            data = json.load(f)
+            if isinstance(data, dict) and "build_id" in data:
+                return data
+            log_warn("Invalid pin file: missing 'build_id'")
+            return None
+    except (json.JSONDecodeError, OSError) as e:
+        log_warn(f"Failed to read pin file: {e}")
+        return None
+
+
+def save_pinned_build(
+    build_id: str,
+    title: Optional[str] = None,
+    edition: Optional[str] = None,
+) -> bool:
+    """Save a build as the pinned version for reproducibility."""
+    script_dir = Path(__file__).parent
+    project_root = script_dir.parent
+    pin_path = project_root / ".uup-pin.json"
+
+    data: Dict[str, Any] = {"build_id": build_id}
+    if title:
+        data["title"] = title
+    if edition:
+        data["edition"] = edition
+
+    try:
+        with open(pin_path, "w") as f:
+            json.dump(data, f, indent=2)
+        log_success(f"Pinned build {build_id} to {pin_path}")
+        return True
+    except OSError as e:
+        log_error(f"Failed to write pin file: {e}")
+        return False
+
+
+def display_profiles() -> None:
+    """Display available build profiles in a user-friendly format."""
+    profiles = get_profiles()
+
+    print(f"\n{Colors.BOLD}Available Build Profiles:{Colors.RESET}\n")
+
+    for name, profile in profiles.items():
+        description = profile.get("description", "No description")
+        edition = profile.get("edition", "N/A")
+        print(f"{Colors.CYAN}[{name}]{Colors.RESET} {description}")
+        print(f"    Edition: {edition}")
+        print()
+
+
+def get_profile(name: str) -> Optional[Dict[str, Any]]:
+    """Get a specific build profile by name."""
+    profiles = get_profiles()
+    return profiles.get(name)
+
+
 def parse_args(args: Optional[List[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Download UUP files from uupdump.net for Windows 11 ISO building",
@@ -541,6 +653,7 @@ Examples:
   %(prog)s --editions UUID          # List available editions for a build
   %(prog)s --languages UUID        # List available languages for a build
   %(prog)s --latest                # Fetch latest build from Windows Update
+  %(prog)s --preset gaming         # Use a predefined profile
 
 For more information, visit: https://uupdump.net
         """,
@@ -601,6 +714,37 @@ For more information, visit: https://uupdump.net
 
     parser.add_argument(
         "--verbose", action="store_true", help="Show verbose output including aria2c stderr/stdout"
+    )
+
+    parser.add_argument(
+        "-p",
+        "--preset",
+        dest="preset",
+        help="Use a predefined build profile (minimal, standard, gaming, enterprise, dev)",
+    )
+
+    parser.add_argument(
+        "--list-presets",
+        action="store_true",
+        help="List available build profiles and exit",
+    )
+
+    parser.add_argument(
+        "--pin-build",
+        action="store_true",
+        help="Pin the current --build-id to .uup-pin.json for reproducible builds",
+    )
+
+    parser.add_argument(
+        "--use-pin",
+        action="store_true",
+        help="Use the build ID from .uup-pin.json instead of fetching latest",
+    )
+
+    parser.add_argument(
+        "--show-pin",
+        action="store_true",
+        help="Show the currently pinned build and exit",
     )
 
     return parser.parse_args(args)
@@ -682,6 +826,54 @@ def _resolve_output_dir(output_arg: str) -> Optional[Path]:
 def main() -> int:
     args = parse_args()
 
+    # Handle list-presets mode
+    if args.list_presets:
+        display_profiles()
+        return 0
+
+    # Handle show-pin mode
+    if args.show_pin:
+        pin = get_pinned_build()
+        if pin:
+            print(f"Pinned build: {pin.get('build_id')}")
+            if "title" in pin:
+                print(f"  Title: {pin['title']}")
+            if "edition" in pin:
+                print(f"  Edition: {pin['edition']}")
+            return 0
+        log_info("No build currently pinned (no .uup-pin.json found)")
+        return 1
+
+    # Handle --use-pin: replace build_id with pinned value
+    if args.use_pin:
+        pin = get_pinned_build()
+        if not pin:
+            log_error("No pinned build found. Use --pin-build with --build-id to create one.")
+            return 1
+        log_info(f"Using pinned build: {pin['build_id']}")
+        args.build_id = pin["build_id"]
+
+    # Handle --pin-build: save the specified build for future reproducibility
+    if args.pin_build:
+        if not args.build_id:
+            log_error("--pin-build requires --build-id to be specified")
+            return 1
+        if not save_pinned_build(args.build_id):
+            return 1
+        # Fall through to download if --build-id is also set
+
+    # Handle preset mode (non-interactive profile selection)
+    preset_mode = False
+    if args.preset:
+        preset_mode = True
+        profile = get_profile(args.preset)
+        if not profile:
+            log_error(f"Unknown profile: {args.preset}")
+            log_info(f"Available profiles: {', '.join(get_profiles().keys())}")
+            return 1
+        log_info(f"Using profile: {args.preset}")
+        print(f"  {profile.get('description', '')}")
+
     # Check dependencies (skip for info-only commands)
     info_only = (
         args.list
@@ -724,6 +916,16 @@ def main() -> int:
         log_info(f"Downloading build ID: {args.build_id}")
         success = download_build(args.build_id, output_dir, verbose=args.verbose)
         return 0 if success else 1
+
+    # Preset mode: fetch latest builds and auto-select
+    if preset_mode:
+        log_info(f"Fetching latest builds for profile '{args.preset}'...")
+        builds = get_latest_builds(args.max_results)
+        if builds:
+            # For preset mode, just list builds and let user select
+            display_builds(builds)
+            return 0
+        return 1
 
     # Interactive mode
     success = interactive_mode(output_dir, verbose=args.verbose)

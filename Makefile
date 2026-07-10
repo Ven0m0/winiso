@@ -11,7 +11,7 @@
 #   make help           - Show this help
 # =============================================================================
 
-.PHONY: all deps build build-pro build-nano build-pause clean help validate download validate-xml
+.PHONY: all deps build build-pro build-nano build-pause clean help validate download validate-xml sign
 
 # Default target
 all: build
@@ -70,6 +70,20 @@ build-pause:
 	chmod +x scripts/*.sh
 	PAUSE_FOR_WINDOWS_STAGE=1 ./scripts/build.sh
 
+# Sign an ISO with SHA256/SHA512 checksums (and optionally GPG)
+# Usage: make sign ISO=output/Win11.iso [GPG=1 KEY=maintainer@example.com]
+sign:
+	@if [[ -z "$(ISO)" ]]; then \
+		echo "Usage: make sign ISO=path/to/file.iso [GPG=1 KEY=gpg-key-id]"; \
+		exit 1; \
+	fi
+	chmod +x scripts/sign_iso.sh
+	@if [[ "$(GPG)" == "1" ]]; then \
+		./scripts/sign_iso.sh --gpg --key "$(KEY)" "$(ISO)"; \
+	else \
+		./scripts/sign_iso.sh "$(ISO)"; \
+	fi
+
 # Clean build artifacts
 clean:
 	@echo "Cleaning build artifacts..."
@@ -90,6 +104,7 @@ help:
 	@echo "  make build-pro   - Build with Windows 11 Pro only"
 	@echo "  make build-nano  - Build with extreme debloating (NANO mode)"
 	@echo "  make build-pause - Pause for Windows servicing stage"
+	@echo "  make sign        - Sign an ISO with checksums (GPG optional)"
 	@echo "  make clean       - Remove all build artifacts"
 	@echo ""
 	@echo "Prerequisites:"

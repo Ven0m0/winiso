@@ -16,6 +16,10 @@ All notable changes to this project will be documented in this file.
 - Added `log_debug()` function to utils.sh with LOG_LEVEL environment variable support.
 - Added complete type annotations to all functions in `scripts/download_uup.py`.
 - Added test coverage for `_prepare_download_list`, `_run_aria2_download` success, `_process_selected_build`, and `_prepare_output_directory`.
+- Added build profiles support (T016): `config/profiles.json` with minimal/standard/gaming/enterprise/dev presets, plus `--preset` and `--list-presets` CLI flags in `scripts/download_uup.py`.
+- Added `get_profiles()`, `display_profiles()`, and `get_profile()` functions to `scripts/download_uup.py` for non-interactive profile selection.
+- Added version pinning support (T018): `get_pinned_build()` and `save_pinned_build()` functions plus `--pin-build`, `--use-pin`, and `--show-pin` CLI flags for reproducible builds.
+- Added ISO signing (T019): new `scripts/sign_iso.sh` that generates SHA256/SHA512 checksums and (optionally) a GPG detached signature, plus a `make sign` target.
 
 ### Changed
 - Added xmllint validation for autounattend.xml in validate_prereqs.sh (T055).

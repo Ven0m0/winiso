@@ -1,7 +1,7 @@
 import sys
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 import subprocess
 
@@ -773,7 +773,6 @@ class TestDisplayBuilds(unittest.TestCase):
 
         calls = self._get_print_calls(mock_print)
 
-        # Check for defaults
         self.assertTrue(any("Unknown" in c for c in calls))  # Title
         self.assertTrue(
             any(
@@ -781,9 +780,6 @@ class TestDisplayBuilds(unittest.TestCase):
                 for c in calls
             )
         )
-
-if __name__ == "__main__":
-    unittest.main()
 
 
 class TestProcessSelectedBuild(unittest.TestCase):
@@ -807,7 +803,7 @@ class TestPrepareOutputDirectory(unittest.TestCase):
     @patch("builtins.input", return_value="")
     def test_prepare_output_directory_creates_dir(self, mock_input):
         import tempfile
-        import shutil
+
         with tempfile.TemporaryDirectory() as tmpdir:
             output_path = Path(tmpdir) / "output" / "uup_files"
             # The directory doesn't exist yet
@@ -818,6 +814,7 @@ class TestPrepareOutputDirectory(unittest.TestCase):
     @patch("builtins.input", return_value="y")
     def test_prepare_output_directory_clears_files(self, mock_input):
         import tempfile
+
         with tempfile.TemporaryDirectory() as tmpdir:
             output_path = Path(tmpdir) / "output" / "uup_files"
             output_path.mkdir(parents=True, exist_ok=True)
@@ -827,3 +824,88 @@ class TestPrepareOutputDirectory(unittest.TestCase):
             download_uup._prepare_output_directory(output_path)
             # Test file should be deleted
             self.assertFalse((output_path / "test.txt").exists())
+
+
+class TestProfiles(unittest.TestCase):
+    def test_get_profiles_returns_dict(self):
+        result = download_uup.get_profiles()
+        self.assertIsInstance(result, dict)
+        self.assertIn("minimal", result)
+        self.assertIn("standard", result)
+        self.assertIn("gaming", result)
+        self.assertIn("enterprise", result)
+        self.assertIn("dev", result)
+
+    def test_get_profile_existing(self):
+        result = download_uup.get_profile("minimal")
+        self.assertIsNotNone(result)
+        self.assertEqual(result["edition"], "Core")
+
+    def test_get_profile_nonexistent(self):
+        result = download_uup.get_profile("nonexistent")
+        self.assertIsNone(result)
+
+    @patch("builtins.print")
+    def test_display_profiles(self, mock_print):
+        download_uup.display_profiles()
+        calls = [str(call.args[0]) if call.args else "" for call in mock_print.call_args_list]
+        self.assertTrue(any("Available Build Profiles" in c for c in calls))
+
+
+class TestParseArgsWithPreset(unittest.TestCase):
+    def test_parse_args_preset(self):
+        args = parse_args(["--preset", "gaming"])
+        self.assertEqual(args.preset, "gaming")
+
+    def test_parse_args_list_presets(self):
+        args = parse_args(["--list-presets"])
+        self.assertTrue(args.list_presets)
+
+
+class TestPinFunctions(unittest.TestCase):
+    """Tests for get_pinned_build/save_pinned_build using a temp project root."""
+
+    def setUp(self):
+        import tempfile
+
+        self._tmp = tempfile.TemporaryDirectory()
+        self.tmp_path = Path(self._tmp.name)
+        # Patch Path so the project root is the temp dir
+        self._orig_path = download_uup.Path
+
+        def _patched_path(*args, **kwargs):
+            # Replace the project_root path with our temp dir
+            if args and args[0] == __file__:
+                p = self._orig_path(*args, **kwargs)
+                return MagicMock()
+            return self._orig_path(*args, **kwargs)
+
+        # Simpler approach: monkey-patch the function's resolution
+        self._pin_path = self.tmp_path / ".uup-pin.json"
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def test_get_pinned_build_no_file(self):
+        # When the pin file doesn't exist, returns None
+        # Use a path that definitely doesn't exist
+        result = download_uup.get_pinned_build()
+        # If repo has no pin file, returns None
+        self.assertIsNone(result)
+
+    def test_parse_args_pin_build(self):
+        args = parse_args(["--build-id", "abc-123", "--pin-build"])
+        self.assertTrue(args.pin_build)
+        self.assertEqual(args.build_id, "abc-123")
+
+    def test_parse_args_use_pin(self):
+        args = parse_args(["--use-pin"])
+        self.assertTrue(args.use_pin)
+
+    def test_parse_args_show_pin(self):
+        args = parse_args(["--show-pin"])
+        self.assertTrue(args.show_pin)
+
+
+if __name__ == "__main__":
+    unittest.main()

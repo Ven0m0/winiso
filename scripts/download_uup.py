@@ -92,8 +92,11 @@ def fetch_url(url, headers=None, data=None, return_json=False):
     except URLError as e:
         log_error(f"URL Error: {e.reason}")
         return None
+    except OSError as e:
+        log_error(f"Network error fetching URL: {e}")
+        return None
     except Exception as e:
-        log_error(f"Error fetching URL: {e}")
+        log_error(f"Unexpected error fetching URL: {e}")
         return None
 
 
@@ -355,14 +358,17 @@ def _run_aria2_download(output_path, aria2_input, download_list):
     except KeyboardInterrupt:
         log_warn("\nDownload cancelled by user")
         return False
+    except OSError as e:
+        log_error(f"System error during download: {e}")
+        return False
     except Exception as e:
-        log_error(f"An unexpected error occurred: {e}")
+        log_error(f"An unexpected error occurred during download: {e}")
         return False
     finally:
         for f in output_path.glob("aria2_input*"):
             try:
                 f.unlink()
-            except Exception:
+            except OSError:
                 pass
 
 

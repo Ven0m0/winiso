@@ -361,7 +361,7 @@ class TestFetchUrl(unittest.TestCase):
 
         self.assertIsNone(result)
         mock_log_error.assert_called_once()
-        self.assertIn("Error fetching URL", mock_log_error.call_args[0][0])
+        self.assertIn("Unexpected error fetching URL", mock_log_error.call_args[0][0])
 
     @patch("download_uup.urlopen")
     @patch("download_uup.log_error")
@@ -374,7 +374,7 @@ class TestFetchUrl(unittest.TestCase):
 
         self.assertIsNone(result)
         mock_log_error.assert_called_once()
-        self.assertIn("Error fetching URL", mock_log_error.call_args[0][0])
+        self.assertIn("Network error fetching URL", mock_log_error.call_args[0][0])
 
     @patch("download_uup.urlopen")
     @patch("download_uup.log_error")
@@ -385,7 +385,7 @@ class TestFetchUrl(unittest.TestCase):
 
         self.assertIsNone(result)
         mock_log_error.assert_called_once()
-        self.assertIn("Error fetching URL", mock_log_error.call_args[0][0])
+        self.assertIn("Network error fetching URL", mock_log_error.call_args[0][0])
 
     @patch("download_uup.urlopen")
     @patch("download_uup.log_error")
@@ -396,7 +396,7 @@ class TestFetchUrl(unittest.TestCase):
 
         self.assertIsNone(result)
         mock_log_error.assert_called_once()
-        self.assertIn("Error fetching URL", mock_log_error.call_args[0][0])
+        self.assertIn("Network error fetching URL", mock_log_error.call_args[0][0])
 
 
 class TestRunAria2Download(unittest.TestCase):
@@ -443,7 +443,7 @@ class TestRunAria2Download(unittest.TestCase):
 
         self.assertFalse(result)
         mock_log_error.assert_called_with(
-            "An unexpected error occurred: Unexpected error"
+            "An unexpected error occurred during download: Unexpected error"
         )
 
 

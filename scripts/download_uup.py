@@ -321,15 +321,22 @@ def cache_get(key: str, ttl_seconds: int = DEFAULT_CACHE_TTL_SECONDS) -> Optiona
         return None
 
     try:
-        with open(cache_file, "r") as f:
+        with open(cache_file, "r", encoding="utf-8") as f:
             entry = json.load(f)
     except (json.JSONDecodeError, OSError) as e:
         log_warn(f"Cache read failed for {key}: {e}")
+        try:
+            cache_file.unlink(missing_ok=True)
+        except OSError:
+            pass
         return None
 
     if not isinstance(entry, dict) or "timestamp" not in entry or "data" not in entry:
+        try:
+            cache_file.unlink(missing_ok=True)
+        except OSError:
+            pass
         return None
-
     age = time.time() - float(entry["timestamp"])
     if age > ttl_seconds:
         return None

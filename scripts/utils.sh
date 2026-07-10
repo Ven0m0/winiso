@@ -15,6 +15,13 @@ log_success() { echo -e "${GREEN}[OK]${NC} $1"; }
 log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
+# log_debug: Only outputs when LOG_LEVEL is DEBUG or debug
+log_debug() {
+  if [[ "${LOG_LEVEL:-}" == "DEBUG" ]] || [[ "${LOG_LEVEL:-}" == "debug" ]]; then
+    echo -e "${CYAN}[DEBUG]${NC} $1"
+  fi
+}
+
 # =============================================================================
 # Tool check function
 # Returns 0 if found, 1 if not found. Outputs appropriate log message.
@@ -31,7 +38,7 @@ check_tool() {
 
 # Required tools for the build process
 # shellcheck disable=SC2034
-REQUIRED_TOOLS=("aria2c" "cabextract" "wimlib-imagex" "chntpw")
+REQUIRED_TOOLS=("aria2c" "cabextract" "wimlib-imagex" "chntpw" "xmllint")
 
 # =============================================================================
 # ISO creation tool check

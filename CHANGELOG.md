@@ -12,8 +12,23 @@ All notable changes to this project will be documented in this file.
 - Added `xmllint` documentation to `mise.toml` (system package via libxml2-utils on Debian/Ubuntu, libxml2 on Arch/Fedora).
 - Added `biome` to `mise.toml` for JS/TS/JSON/HTML/CSS linting and formatting (via bun x @biomejs/biome).
 - Added `mise run lint-xml` and `mise run lint-biome` tasks for linting workflows.
+- Added `--verbose` CLI option to download_uup.py for capturing aria2c stderr/stdout on failure.
+- Added `log_debug()` function to utils.sh with LOG_LEVEL environment variable support.
+- Added complete type annotations to all functions in `scripts/download_uup.py`.
+- Added test coverage for `_prepare_download_list`, `_run_aria2_download` success, `_process_selected_build`, and `_prepare_output_directory`.
+- Added build profiles support (T016): `config/profiles.json` with minimal/standard/gaming/enterprise/dev presets, plus `--preset` and `--list-presets` CLI flags in `scripts/download_uup.py`.
+- Added `get_profiles()`, `display_profiles()`, and `get_profile()` functions to `scripts/download_uup.py` for non-interactive profile selection.
+- Added version pinning support (T018): `get_pinned_build()` and `save_pinned_build()` functions plus `--pin-build`, `--use-pin`, and `--show-pin` CLI flags for reproducible builds.
+- Added ISO signing (T019): new `scripts/sign_iso.sh` that generates SHA256/SHA512 checksums and (optionally) a GPG detached signature, plus a `make sign` target.
+- Added build history cache (T011): TTL-based local cache for build list and build info, with `cache_get`, `cache_set`, `cache_clear`, `get_latest_builds_cached`, and `get_build_info_cached` helpers, plus `--no-cache`, `--clear-cache`, and `--cache-ttl` CLI flags.
+- Added custom edition selection (T012): `--edition` CLI flag for non-interactive edition filtering, plus `list_edition_files()` and `resolve_edition_filter()` helpers.
+- Added component groups (T017): `config/component_groups.json` with 8 toggleable groups (gaming, productivity, social, telemetry, media, system, news, oem), `load_component_groups()`, `list_component_groups()`, `get_component_group()`, `validate_component_groups()`, `collect_component_patterns()`, `write_component_groups_for_build()`, and `display_component_groups()` helpers, plus `--groups`, `--list-groups`, and `--write-groups` CLI flags. Profiles now declare a `component_groups` list that is auto-persisted to `.uup-groups` for the build pipeline.
 
 ### Changed
+- Added xmllint validation for autounattend.xml in validate_prereqs.sh (T055).
+- Added `validate-xml` Makefile target for standalone XML validation.
+- Added xmllint to required tools in utils.sh.
+- Captured subprocess stderr/stdout in `_run_aria2_download` for better error diagnostics (T056).
 - Refactored shell scripts (utils.sh, debloat_wim.sh, setup_env.sh, validate_prereqs.sh) to use consistent 2-space indentation.
 - Inlined `generate_commands()` function in debloat_wim.sh (single-use function).
 - Removed redundant section comments from shell scripts.

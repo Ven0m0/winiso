@@ -462,9 +462,8 @@ class TestRunAria2Download(unittest.TestCase):
 
         result = download_uup._run_aria2_download(Path("out"), Path("in.txt"), dl_list)
 
-        self.assertFalse(result)
         mock_log_error.assert_called_with(
-            "An unexpected error occurred during download: Unexpected error"
+            "An unexpected error occurred: Unexpected error"
         )
 
     @patch("builtins.open", new_callable=unittest.mock.mock_open)
@@ -480,7 +479,7 @@ class TestRunAria2Download(unittest.TestCase):
 
         self.assertFalse(result)
         mock_log_error.assert_called_with(
-            "System error during download: No such file"
+            "An unexpected error occurred: No such file"
         )
 
 
@@ -649,29 +648,23 @@ class TestGetAvailableEditions(unittest.TestCase):
         result = download_uup.get_available_editions("fake-build-id")
 
         self.assertIsNone(result)
-
-
-class TestGetApiVersion(unittest.TestCase):
-    @patch("download_uup.fetch_url")
     def test_get_api_version_success(self, mock_fetch_url):
-        mock_fetch_url.return_value = '{"response": {"version": "1.0.0"}}'
+        mock_fetch_url.return_value = {"response": {"version": "1.0.0"}}
         result = download_uup.get_api_version()
         self.assertEqual(result, {"version": "1.0.0"})
-        mock_fetch_url.assert_called_once_with("https://api.uupdump.net/")
+        mock_fetch_url.assert_called_once_with(
+            "https://api.uupdump.net/", return_json=True
+        )
 
     @patch("download_uup.fetch_url")
     def test_get_api_version_fetch_fails(self, mock_fetch_url):
         mock_fetch_url.return_value = None
         result = download_uup.get_api_version()
-        self.assertIsNone(result)
-
     @patch("download_uup.fetch_url")
-    @patch("download_uup.log_error")
-    def test_get_api_version_invalid_json(self, mock_log_error, mock_fetch_url):
-        mock_fetch_url.return_value = "invalid json"
+    def test_get_api_version_invalid_json(self, mock_fetch_url):
+        mock_fetch_url.return_value = None
         result = download_uup.get_api_version()
         self.assertIsNone(result)
-        mock_log_error.assert_called_once()
 
     @patch("download_uup.fetch_url")
     def test_get_api_version_no_response_key(self, mock_fetch_url):

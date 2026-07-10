@@ -560,7 +560,7 @@ class TestRunAria2Download(unittest.TestCase):
 
     @patch("download_uup.log_error")
     def test_run_aria2_download_invalid_filename(self, mock_log_error):
-        dl_list = [{"url": "http://test", "name": "escape..esd"}]
+        dl_list = [{"url": "http://test", "name": "../escape.esd"}]
 
         result = download_uup._run_aria2_download(
             Path("out"), Path("in.txt"), dl_list
@@ -568,7 +568,7 @@ class TestRunAria2Download(unittest.TestCase):
 
         self.assertFalse(result)
         mock_log_error.assert_called_with(
-            "Invalid filename detected: escape..esd"
+            "Invalid filename detected: ../escape.esd"
         )
 
 

@@ -349,7 +349,7 @@ def cache_set(key: str, data: Any) -> bool:
     cache_file = get_cache_dir() / _safe_cache_name(key)
     entry = {"timestamp": time.time(), "data": data}
     try:
-        with open(cache_file, "w") as f:
+        with open(cache_file, "w", encoding="utf-8") as f:
             json.dump(entry, f)
         return True
     except (OSError, TypeError) as e:

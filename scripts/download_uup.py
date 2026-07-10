@@ -237,10 +237,14 @@ def get_api_version():
 
     try:
         data = json.loads(response)
-        return data.get("response", {})
     except json.JSONDecodeError as e:
         log_error(f"Failed to parse JSON response: {e}")
         return None
+
+    if not isinstance(data, dict):
+        return None
+
+    return data.get("response", {})
 
 
 def select_editions(build_info):

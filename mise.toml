@@ -146,7 +146,7 @@ run = ["pacman -Sq --needed aria2 cabextract wimlib chntpw cdrtools"]
 
 [tasks.debian]
 description = "Install deps (Debian/Ubuntu)"
-run = ["apt-get update -qq && apt-get install -yqq --no-install-recommends aria2 cabextract wimtools chntpw genisoimage libxml2-utils libfuse2"]
+run = ["export DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes; apt-get update -qq && apt-get install -yqq --no-install-recommends aria2 cabextract wimtools chntpw genisoimage libxml2-utils libfuse2"]
 
 [tasks.test]
 description = "Run tests"

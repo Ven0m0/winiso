@@ -632,7 +632,7 @@ declare -a cachedInfoVals=()
 get_wim_info() {
   local metadata="$1"
   local i
-  for ((i = 0; i < ${#cachedInfoKeys[@]}; i++)); do
+  for i in "${!cachedInfoKeys[@]}"; do
     if [[ "${cachedInfoKeys[$i]}" == "$metadata" ]]; then
       currentInfo="${cachedInfoVals[$i]}"
       return 0

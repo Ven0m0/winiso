@@ -11,6 +11,11 @@ source "$SCRIPT_DIR/utils.sh"
 
 log_info "Checking and installing dependencies..."
 
+if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then
+  log_error "This script must run as root to install system packages. Re-run as root or via your orchestrator with elevated privileges."
+  exit 1
+fi
+
 # Detect package manager
 if command -v pacman &>/dev/null; then
   log_info "Detected Arch Linux (pacman)"

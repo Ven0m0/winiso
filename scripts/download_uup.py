@@ -6,7 +6,7 @@ Automates the download of UUP files from uupdump.net
 import sys
 import os
 import time
-from typing import Optional, Dict, List, Any, Union
+from typing import Optional, Dict, List, Any, Union, Set, Literal, cast, overload
 import json
 import argparse
 import shutil
@@ -106,6 +106,24 @@ def check_dependencies() -> bool:
     return True
 
 
+@overload
+def fetch_url(
+    url: str,
+    headers: Optional[Dict[str, str]] = None,
+    data: Optional[Dict[str, Any]] = None,
+    return_json: Literal[False] = False,
+) -> Optional[str]: ...
+
+
+@overload
+def fetch_url(
+    url: str,
+    headers: Optional[Dict[str, str]] = None,
+    data: Optional[Dict[str, Any]] = None,
+    return_json: Literal[True] = True,
+) -> Optional[Dict[str, Any]]: ...
+
+
 def fetch_url(
     url: str,
     headers: Optional[Dict[str, str]] = None,
@@ -121,20 +139,26 @@ def fetch_url(
         return _url_cache[cache_key]
 
     try:
+        payload: Optional[bytes] = None
         if data:
-            data = urlencode(data).encode("utf-8")
-        req = Request(url, headers=headers, data=data)
+            payload = urlencode(data).encode("utf-8")
+        req = Request(url, headers=headers, data=payload)
         with urlopen(req, timeout=30) as response:
-            result = response.read().decode("utf-8")
+            text = response.read().decode("utf-8")
+            result: Optional[Union[str, Dict[str, Any]]] = text
 
             if return_json:
                 try:
-                    result = json.loads(result)
+                    parsed = json.loads(text)
                 except json.JSONDecodeError as e:
                     log_error(f"Failed to parse JSON response: {e}")
                     return None
+                if not isinstance(parsed, dict):
+                    log_error("JSON response is not an object")
+                    return None
+                result = parsed
 
-            if cache_key:
+            if cache_key and result is not None:
                 _url_cache[cache_key] = result
 
             return result
@@ -150,6 +174,22 @@ def fetch_url(
     except Exception as e:
         log_error(f"Unexpected error fetching URL: {e}")
         return None
+
+
+@overload
+def _get_response_dict(data: Dict[str, Any]) -> Optional[Dict[str, Any]]: ...
+
+
+@overload
+def _get_response_dict(data: Dict[str, Any], default: Dict[str, Any]) -> Dict[str, Any]: ...
+
+
+def _get_response_dict(data: Dict[str, Any], default: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
+    """Extract the 'response' field from API data with proper typing."""
+    response = data.get("response")
+    if isinstance(response, dict):
+        return cast(Dict[str, Any], response)
+    return default
 
 
 def get_latest_builds(max_results: int = 10) -> Optional[List[Dict[str, Any]]]:
@@ -216,7 +256,7 @@ def get_build_info(build_id: str) -> Optional[Dict[str, Any]]:
         log_error(f"API Error: {data['response']['error']}")
         return None
 
-    return data.get("response")
+    return _get_response_dict(data)
 
 
 def get_available_editions(build_id: str) -> Optional[Dict[str, Any]]:
@@ -230,7 +270,7 @@ def get_available_editions(build_id: str) -> Optional[Dict[str, Any]]:
     if not data:
         return None
 
-    response_data = data.get("response") or {}
+    response_data = _get_response_dict(data, {})
     if response_data.get("error"):
         log_error(f"API Error: {response_data['error']}")
         return None
@@ -257,7 +297,7 @@ def get_available_languages(build_id: Optional[str] = None) -> Optional[Dict[str
         log_error(f"API Error: {data['response']['error']}")
         return None
 
-    return data.get("response", {})
+    return _get_response_dict(data, {})
 
 
 def fetch_latest_from_wu(arch: str = "amd64", ring: str = "Retail") -> Optional[Dict[str, Any]]:
@@ -276,7 +316,7 @@ def fetch_latest_from_wu(arch: str = "amd64", ring: str = "Retail") -> Optional[
         log_error(f"API Error: {data['response']['error']}")
         return None
 
-    return data.get("response", {})
+    return _get_response_dict(data, {})
 
 
 def get_api_version() -> Optional[Dict[str, Any]]:
@@ -296,7 +336,7 @@ def get_api_version() -> Optional[Dict[str, Any]]:
     if not isinstance(data, dict):
         return None
 
-    return data.get("response", {})
+    return _get_response_dict(data, {})
 
 
 def get_cache_dir() -> Path:
@@ -392,7 +432,7 @@ def get_latest_builds_cached(
     if not force_refresh:
         cached = cache_get(cache_key, ttl_seconds=ttl_seconds)
         if cached is not None:
-            return cached
+            return cast(List[Dict[str, Any]], cached)
 
     builds = get_latest_builds(max_results)
     if builds is not None:
@@ -411,7 +451,7 @@ def get_build_info_cached(
     if not force_refresh:
         cached = cache_get(cache_key, ttl_seconds=ttl_seconds)
         if cached is not None:
-            return cached
+            return cast(Dict[str, Any], cached)
 
     info = get_build_info(build_id)
     if info is not None:
@@ -573,8 +613,8 @@ def _run_aria2_download(
                 name = name.replace("\n", "").replace("\r", "")
             lines.append(f"{url}\n  out={name}")
 
-        with open(aria2_input, "w") as f:
-            f.write("\n".join(lines))
+        with open(aria2_input, "w") as fh:
+            fh.write("\n".join(lines))
 
         cmd = [
             "aria2c",
@@ -800,7 +840,10 @@ def get_profiles() -> Dict[str, Dict[str, Any]]:
         try:
             with open(profiles_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                return data.get("profiles", PROFILES)
+            if isinstance(data, dict):
+                profiles = data.get("profiles", PROFILES)
+                if isinstance(profiles, dict):
+                    return profiles
         except (json.JSONDecodeError, OSError):
             log_warn("Failed to load profiles.json, using built-in profiles")
 
@@ -944,7 +987,7 @@ def collect_component_patterns(
 
     Order is preserved (group order, then pattern order within each group).
     """
-    seen: set = set()
+    seen: Set[str] = set()
     combined: List[str] = []
     for group_name in group_names:
         group = get_component_group(group_name, path)
@@ -1152,17 +1195,6 @@ For more information, visit: https://uupdump.net
 
 def _handle_info_mode(args: argparse.Namespace) -> Optional[int]:
     """Handles info-only modes and returns the appropriate exit code. Returns None if not handled."""
-    if args.version:
-        version_info = get_api_version()
-        if version_info:
-            log_success("UUP dump API is online")
-            print(f"  API Version: {version_info.get('apiVersion', 'unknown')}")
-            print(
-                f"  JSON API Version: {version_info.get('jsonApiVersion', 'unknown')}"
-            )
-            return 0
-        return 1
-
     # List editions mode
     if args.editions:
         editions_info = get_available_editions(args.editions)
@@ -1320,18 +1352,9 @@ def main() -> int:
                     f"Component groups (from --groups): {', '.join(valid_cli_groups)}"
                 )
 
-    # Check dependencies (skip for info-only commands)
-    info_only = (
-        args.list
-        or args.editions
-        or args.languages is not None
-        or args.latest
-        or args.version
-        or args.verbose
-    )
     # Note: verbose is not info_only - it affects download behavior
     info_only_mode = (
-        args.version or args.editions or args.languages is not None or args.latest
+        args.editions or args.languages is not None or args.latest
     )
 
     if not info_only_mode and not check_dependencies():

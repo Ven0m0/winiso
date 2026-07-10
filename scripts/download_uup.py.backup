@@ -4,8 +4,11 @@ Automates the download of UUP files from uupdump.net
 """
 
 import sys
-import os
+<<<<<<< HEAD
 from typing import Optional
+=======
+import os
+>>>>>>> pr-126
 import json
 import argparse
 import shutil
@@ -56,47 +59,24 @@ def check_dependencies():
     return True
 
 
-_url_cache = {}
-
-
-def fetch_url(url, headers=None, data=None, return_json=False):
-    """Fetch URL with error handling and optional caching"""
+def fetch_url(url, headers=None, data=None):
+    """Fetch URL with error handling"""
     if headers is None:
         headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"}
-
-    cache_key = f"{url}:{return_json}" if not data else None
-    if cache_key and cache_key in _url_cache:
-        return _url_cache[cache_key]
-
     try:
         if data:
             data = urlencode(data).encode("utf-8")
         req = Request(url, headers=headers, data=data)
         with urlopen(req, timeout=30) as response:
-            result = response.read().decode("utf-8")
-
-            if return_json:
-                try:
-                    result = json.loads(result)
-                except json.JSONDecodeError as e:
-                    log_error(f"Failed to parse JSON response: {e}")
-                    return None
-
-            if cache_key:
-                _url_cache[cache_key] = result
-
-            return result
+            return response.read().decode("utf-8")
     except HTTPError as e:
         log_error(f"HTTP Error {e.code}: {e.reason}")
         return None
     except URLError as e:
         log_error(f"URL Error: {e.reason}")
         return None
-    except OSError as e:
-        log_error(f"Network error fetching URL: {e}")
-        return None
     except Exception as e:
-        log_error(f"Unexpected error fetching URL: {e}")
+        log_error(f"Error fetching URL: {e}")
         return None
 
 
@@ -104,39 +84,48 @@ def get_latest_builds(max_results=10):
     """Fetch latest Windows 11 builds from uupdump.net API"""
     log_info("Fetching latest Windows 11 builds from uupdump.net...")
 
+    # UUPDump API endpoint for listing builds
     api_url = "https://api.uupdump.net/listid.php"
-    params = {"search": "windows 11", "sortByDate": "1"}
-    url = f"{api_url}?{urlencode(params)}"
-    data = fetch_url(url, return_json=True)
 
-    if not data:
+    # Search for Windows 11 builds
+    params = {"search": "windows 11", "sortByDate": "1"}
+
+    url = f"{api_url}?{urlencode(params)}"
+    response = fetch_url(url)
+
+    if not response:
         log_error("Failed to fetch builds from uupdump.net")
         return None
 
-    if data.get("response", {}).get("error"):
-        log_error(f"API Error: {data['response']['error']}")
+    try:
+        data = json.loads(response)
+        if data.get("response", {}).get("error"):
+            log_error(f"API Error: {data['response']['error']}")
+            return None
+
+        builds = data.get("response", {}).get("builds", {})
+        if not builds:
+            log_warn("No builds found in API response")
+            return []
+
+        # Convert to list and sort by date
+        build_list = []
+        for build_id, build_info in builds.items():
+            build_info["id"] = build_id
+            build_list.append(build_info)
+
+        # Sort by created timestamp (newest first)
+        build_list.sort(key=lambda x: int(x.get("created") or 0), reverse=True)
+
+        return build_list[:max_results]
+
+    except json.JSONDecodeError as e:
+        log_error(f"Failed to parse JSON response: {e}")
         return None
-
-    builds = data.get("response", {}).get("builds", {})
-    if not builds:
-        log_warn("No builds found in API response")
-        return []
-
-    build_list = []
-    for build_id, build_info in builds.items():
-        build_info["id"] = build_id
-        build_list.append(build_info)
-
-    build_list.sort(key=lambda x: int(x.get("created") or 0), reverse=True)
-    return build_list[:max_results]
 
 
 def display_builds(builds):
     """Display builds in a user-friendly format"""
-    if not builds:
-        log_warn("No builds available.")
-        return
-
     print(f"\n{Colors.BOLD}Available Windows 11 Builds:{Colors.RESET}\n")
 
     for i, build in enumerate(builds, 1):
@@ -155,16 +144,21 @@ def get_build_info(build_id):
     log_info(f"Fetching build information for ID: {build_id}")
 
     api_url = f"https://api.uupdump.net/get.php?id={build_id}"
-    data = fetch_url(api_url, return_json=True)
+    response = fetch_url(api_url)
 
-    if not data:
+    if not response:
         return None
 
-    if data.get("response", {}).get("error"):
-        log_error(f"API Error: {data['response']['error']}")
-        return None
+    try:
+        data = json.loads(response)
+        if data.get("response", {}).get("error"):
+            log_error(f"API Error: {data['response']['error']}")
+            return None
 
-    return data.get("response")
+        return data.get("response")
+    except json.JSONDecodeError as e:
+        log_error(f"Failed to parse JSON response: {e}")
+        return None
 
 
 def get_available_editions(build_id):
@@ -173,17 +167,22 @@ def get_available_editions(build_id):
 
     params = {"id": build_id, "lang": "en-us"}
     api_url = f"https://api.uupdump.net/listeditions.php?{urlencode(params)}"
-    data = fetch_url(api_url, return_json=True)
+    response = fetch_url(api_url)
 
-    if not data:
+    if not response:
         return None
 
-    response_data = data.get("response") or {}
-    if response_data.get("error"):
-        log_error(f"API Error: {response_data['error']}")
-        return None
+    try:
+        data = json.loads(response)
+        response_data = data.get("response") or {}
+        if response_data.get("error"):
+            log_error(f"API Error: {response_data['error']}")
+            return None
 
-    return response_data
+        return response_data
+    except json.JSONDecodeError as e:
+        log_error(f"Failed to parse JSON response: {e}")
+        return None
 
 
 def get_available_languages(build_id=None):
@@ -196,16 +195,21 @@ def get_available_languages(build_id=None):
         log_info("Fetching all available languages")
         api_url = "https://api.uupdump.net/listlangs.php"
 
-    data = fetch_url(api_url, return_json=True)
+    response = fetch_url(api_url)
 
-    if not data:
+    if not response:
         return None
 
-    if data.get("response", {}).get("error"):
-        log_error(f"API Error: {data['response']['error']}")
-        return None
+    try:
+        data = json.loads(response)
+        if data.get("response", {}).get("error"):
+            log_error(f"API Error: {data['response']['error']}")
+            return None
 
-    return data.get("response", {})
+        return data.get("response", {})
+    except json.JSONDecodeError as e:
+        log_error(f"Failed to parse JSON response: {e}")
+        return None
 
 
 def fetch_latest_from_wu(arch="amd64", ring="Retail"):
@@ -214,17 +218,22 @@ def fetch_latest_from_wu(arch="amd64", ring="Retail"):
 
     params = {"arch": arch, "ring": ring}
     api_url = f"https://api.uupdump.net/fetchupd.php?{urlencode(params)}"
-    data = fetch_url(api_url, return_json=True)
+    response = fetch_url(api_url)
 
-    if not data:
+    if not response:
         log_warn("Failed to fetch from Windows Update, falling back to cached builds")
         return None
 
-    if data.get("response", {}).get("error"):
-        log_error(f"API Error: {data['response']['error']}")
-        return None
+    try:
+        data = json.loads(response)
+        if data.get("response", {}).get("error"):
+            log_error(f"API Error: {data['response']['error']}")
+            return None
 
-    return data.get("response", {})
+        return data.get("response", {})
+    except json.JSONDecodeError as e:
+        log_error(f"Failed to parse JSON response: {e}")
+        return None
 
 
 def get_api_version():
@@ -237,14 +246,10 @@ def get_api_version():
 
     try:
         data = json.loads(response)
+        return data.get("response", {})
     except json.JSONDecodeError as e:
         log_error(f"Failed to parse JSON response: {e}")
         return None
-
-    if not isinstance(data, dict):
-        return None
-
-    return data.get("response", {})
 
 
 def select_editions(build_info):
@@ -371,17 +376,14 @@ def _run_aria2_download(output_path, aria2_input, download_list):
     except KeyboardInterrupt:
         log_warn("\nDownload cancelled by user")
         return False
-    except OSError as e:
-        log_error(f"System error during download: {e}")
-        return False
     except Exception as e:
-        log_error(f"An unexpected error occurred during download: {e}")
+        log_error(f"An unexpected error occurred: {e}")
         return False
     finally:
         for f in output_path.glob("aria2_input*"):
             try:
                 f.unlink()
-            except OSError:
+            except Exception:
                 pass
 
 
@@ -671,8 +673,63 @@ def main():
         if result is not None:
             return result
 
+<<<<<<< HEAD
     output_dir = _resolve_output_dir(args.output)
     if not output_dir:
+=======
+        # List editions mode
+        if args.editions:
+            editions_info = get_available_editions(args.editions)
+            if editions_info:
+                print(f"\n{Colors.BOLD}Available Editions for Build:{Colors.RESET}\n")
+                edition_list = editions_info.get("editionList", [])
+                fancy_names = editions_info.get("editionFancyNames", {})
+                for edition in edition_list:
+                    fancy_name = fancy_names.get(edition, edition)
+                    print(f"  {Colors.CYAN}{edition}{Colors.RESET} - {fancy_name}")
+                return 0
+            return 1
+
+        # List languages mode
+        if args.languages is not None:
+            langs_info = get_available_languages(args.languages or None)
+            if langs_info:
+                print(f"\n{Colors.BOLD}Available Languages:{Colors.RESET}\n")
+                lang_list = langs_info.get("langList", [])
+                fancy_names = langs_info.get("langFancyNames", {})
+                for lang in lang_list:
+                    fancy_name = fancy_names.get(lang, lang)
+                    print(f"  {Colors.CYAN}{lang}{Colors.RESET} - {fancy_name}")
+                return 0
+            return 1
+
+        # Fetch latest from Windows Update
+        if args.latest:
+            latest_info = fetch_latest_from_wu(args.arch, args.ring)
+            if latest_info:
+                print(
+                    f"\n{Colors.BOLD}Latest Build from Windows Update:{Colors.RESET}\n"
+                )
+                print(f"  Update ID: {latest_info.get('updateId', 'N/A')}")
+                print(f"  Title: {latest_info.get('updateTitle', 'N/A')}")
+                print(f"  Build: {latest_info.get('foundBuild', 'N/A')}")
+                print(f"  Arch: {latest_info.get('arch', 'N/A')}")
+                return 0
+            return 1
+    # Resolve output directory
+    script_dir = Path(__file__).parent
+    project_root = script_dir.parent
+
+    # Security: Resolve and validate output path to prevent traversal
+    output_dir = Path(args.output)
+    if not output_dir.is_absolute():
+        output_dir = project_root.joinpath(output_dir)
+
+    resolved_output = output_dir.resolve()
+    resolved_root = project_root.resolve()
+    if os.path.commonpath([resolved_output, resolved_root]) != str(resolved_root):
+        log_error(f"Path traversal attempt detected for output: {args.output}")
+>>>>>>> pr-126
         return 1
 
     # List mode

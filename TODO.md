@@ -1,26 +1,35 @@
 # Project TODO & Feature Roadmap
-<metadata><version>4.0-cleaned</version><updated>2026-05-11T21:16:00Z</updated><items>42</items><categories>10</categories></metadata>
+<metadata><version>5.0</version><updated>2026-05-15T00:00:00Z</updated><items>50</items><categories>10</categories></metadata>
 <removed>
 - T001: Windows dependency install (outdated - winget now available)
 - T002: ShellCheck SC2034 suppression (partially done - already in utils.sh)
 - T036: Docker build (no Dockerfile exists)
 - T037: Windows PowerShell script (no build.ps1 exists)
 - T038: CI/CD integration (workflows already exist)
-- T054-T056: Packer/Ansible/Chef (speculative, not aligned with project)
+- T054-T056 (old): Packer/Ansible/Chef (speculative, not aligned with project)
 - Stale PR references and Win11Debloat mentions
+- "implement https://github.com/ShivamXD6/Optimize-Windows" (informal note → promoted to DEBLOAT-010/T054)
 </removed>
+<done>
+- T004 shell criteria: 4 pipeline scripts confirmed using set -euo pipefail (build.sh, debloat_wim.sh, setup_env.sh, validate_prereqs.sh); custom_convert.sh is upstream-derived and excluded
+- T005 basic levels: log_info, log_success, log_warn, log_error already in utils.sh
+</done>
+
+
+- implement features of [zISOTweaker](https://github.com/zoicware/zISOTweaker) and [Optimize-Windows](https://github.com/ShivamXD6/Optimize-Windows)
 
 ##  API & Download
-<category name="api" items="5" priority="high">
+<category name="api" items="6" priority="high">
 - API-001: UUP JSON API v2 client - match api.uupdump.net schema
 - API-002: Delta downloads - only changed packages between builds
 - API-003: Resume interrupted downloads - aria2c state persistence
 - API-004: Mirror sources - redundant download endpoints
 - API-005: Build history cache - local cache with TTL refresh
+- API-006: aria2c stderr capture - surface actual download errors on failure
 </category>
 
 ##  Build System
-<category name="build" items="8" priority="high">
+<category name="build" items="9" priority="high">
 - BUILD-001: Custom edition selection - any edition ID from metadata
 - BUILD-002: Multi-edition ISO - single ISO, boot menu selection
 - BUILD-003: Language packs - multi-language support
@@ -29,10 +38,11 @@
 - BUILD-006: Component groups - toggle gaming/productivity/social/telemetry
 - BUILD-007: Version pinning - lock specific builds
 - BUILD-008: ISO signing - GPG + SHA256 checksums
+- BUILD-009: Pre-build autounattend.xml validation - fail-fast xmllint check before download starts
 </category>
 
 ##  Debloating
-<category name="debloat" items="9" priority="medium">
+<category name="debloat" items="10" priority="medium">
 - DEBLOAT-001: Smart dependency checker - detect dependency conflicts
 - DEBLOAT-002: Telemetry scoring - rate reduction percentage
 - DEBLOAT-003: Privacy dashboard - verify privacy settings
@@ -42,6 +52,7 @@
 - DEBLOAT-007: Sandbox toggle - enable/disable Windows Sandbox
 - DEBLOAT-008: WSL config - pre-configure Windows Subsystem for Linux
 - DEBLOAT-009: Debloat pattern validator - validate patterns before applying
+- DEBLOAT-010: Optimize-Windows patterns integration - selective merge of patterns from ShivamXD6/Optimize-Windows; blocked by DEBLOAT-001 (dependency checker must pass first)
 </category>
 
 ##  Post-Install
@@ -103,7 +114,12 @@
 </category>
 
 ## Technical Debt
-<debt><item sev="medium">Python type hints - download_uup.py</item><item sev="high">Error handling - standardize across shell scripts</item><item sev="medium">Logging - unify levels</item><item sev="high">Test coverage - 40%→80%</item></debt>
+<debt>
+  <item sev="medium">Python type hints - download_uup.py (only 1 of 24+ functions annotated)</item>
+  <item sev="high" progress="shell-done">Error handling - shell scripts complete (set -euo pipefail confirmed); Python exception context remaining</item>
+  <item sev="medium" progress="partial">Logging - info/success/warn/error done in utils.sh; DEBUG level + LOG_LEVEL env var remaining</item>
+  <item sev="high" progress="partial">Test coverage - baseline ~60% (not 40%); target 80%; missing: private helpers, shell script tests</item>
+</debt>
 
 ## Implementation Notes
 
@@ -136,4 +152,4 @@ Architecture and AI/ML:
 - Failure prediction
 
 ---
-*Roadmap: 42 items | v4.0-cleaned*
+*Roadmap: 50 items | v5.0 | Updated: 2026-05-15*

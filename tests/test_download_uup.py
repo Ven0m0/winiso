@@ -43,8 +43,54 @@ class TestCheckDependencies(unittest.TestCase):
     def test_check_dependencies_all_present(
         self, mock_log_info, mock_log_error, mock_which
     ):
-        # Mock shutil.which to return a path for aria2c
-        mock_which.return_value = "/usr/bin/aria2c"
+        # Mock shutil.which to return a path for aria2c, wimlib-imagex, cabextract
+        mock_which.return_value = "/usr/bin/tool"
+
+        result = download_uup.check_dependencies()
+
+        self.assertTrue(result)
+        mock_log_error.assert_not_called()
+        mock_log_info.assert_not_called()
+        self.assertEqual(mock_which.call_count, 3)
+
+    @patch("shutil.which")
+    @patch("download_uup.log_error")
+    @patch("download_uup.log_info")
+    def test_check_dependencies_missing_tools(
+        self, mock_log_info, mock_log_error, mock_which
+    ):
+        mock_which.return_value = None
+
+        result = download_uup.check_dependencies()
+
+        self.assertFalse(result)
+        mock_log_error.assert_called_once_with(
+            "Missing required tools: aria2c, wimlib-imagex, cabextract"
+        )
+        mock_log_info.assert_called_once_with("Run 'make deps' to install dependencies")
+        self.assertEqual(mock_which.call_count, 3)
+
+    @patch("shutil.which")
+    @patch("download_uup.log_error")
+    @patch("download_uup.log_info")
+    def test_check_dependencies_some_missing(
+        self, mock_log_info, mock_log_error, mock_which
+    ):
+        def side_effect(tool):
+            if tool == "aria2c":
+                return "/usr/bin/aria2c"
+            return None
+
+        mock_which.side_effect = side_effect
+
+        result = download_uup.check_dependencies()
+
+        self.assertFalse(result)
+        mock_log_error.assert_called_once_with(
+            "Missing required tools: wimlib-imagex, cabextract"
+        )
+        mock_log_info.assert_called_once_with("Run 'make deps' to install dependencies")
+        self.assertEqual(mock_which.call_count, 3)
 
 
 class TestDownloadUUP(unittest.TestCase):
@@ -78,8 +124,8 @@ class TestGetLatestBuilds(unittest.TestCase):
     @patch("download_uup.fetch_url")
     @patch("download_uup.log_error")
     def test_get_latest_builds_api_error(self, mock_log_error, mock_fetch_url):
-        # Simulate API returning a JSON string with an error field
-        mock_fetch_url.return_value = '{"response": {"error": "Invalid request"}}'
+        # Simulate API returning a dict with an error field
+        mock_fetch_url.return_value = {"response": {"error": "Invalid request"}}
 
         result = download_uup.get_latest_builds()
 
@@ -100,42 +146,34 @@ class TestGetLatestBuilds(unittest.TestCase):
     @patch("download_uup.fetch_url")
     @patch("download_uup.log_error")
     def test_get_latest_builds_json_decode_error(self, mock_log_error, mock_fetch_url):
-        # Simulate an invalid JSON string
-        mock_fetch_url.return_value = "Not a JSON string"
+        # fetch_url returns None when JSON parsing fails
+        mock_fetch_url.return_value = None
 
         result = download_uup.get_latest_builds()
 
         self.assertIsNone(result)
-        # Since the error message includes the exception string, we just check that it starts correctly
-        mock_log_error.assert_called_once()
-        self.assertTrue(
-            mock_log_error.call_args[0][0].startswith("Failed to parse JSON response:")
-        )
+        mock_log_error.assert_called_with("Failed to fetch builds from uupdump.net")
 
     @patch("download_uup.fetch_url")
     def test_get_latest_builds_success(self, mock_fetch_url):
-        import json
-
-        mock_fetch_url.return_value = json.dumps(
-            {
-                "response": {
-                    "builds": {
-                        "build-1": {
-                            "title": "Windows 11 Build 1",
-                            "created": "1600000000",
-                        },
-                        "build-2": {
-                            "title": "Windows 11 Build 2",
-                            "created": "1620000000",
-                        },
-                        "build-3": {
-                            "title": "Windows 11 Build 3",
-                            "created": "1610000000",
-                        },
-                    }
+        mock_fetch_url.return_value = {
+            "response": {
+                "builds": {
+                    "build-1": {
+                        "title": "Windows 11 Build 1",
+                        "created": "1600000000",
+                    },
+                    "build-2": {
+                        "title": "Windows 11 Build 2",
+                        "created": "1620000000",
+                    },
+                    "build-3": {
+                        "title": "Windows 11 Build 3",
+                        "created": "1610000000",
+                    },
                 }
             }
-        )
+        }
 
         result = download_uup.get_latest_builds(max_results=2)
 
@@ -148,24 +186,136 @@ class TestGetLatestBuilds(unittest.TestCase):
         self.assertEqual(result[1]["title"], "Windows 11 Build 3")
 
 
+
+class TestFetchLatestFromWU(unittest.TestCase):
+    @patch("download_uup.fetch_url")
+    @patch("download_uup.log_error")
+    def test_fetch_latest_from_wu_api_error(self, mock_log_error, mock_fetch_url):
+        mock_fetch_url.return_value = {"response": {"error": "Invalid ring"}}
+        result = download_uup.fetch_latest_from_wu()
+        self.assertIsNone(result)
+        mock_log_error.assert_called_with("API Error: Invalid ring")
+
+    @patch("download_uup.fetch_url")
+    @patch("download_uup.log_warn")
+    def test_fetch_latest_from_wu_no_response(self, mock_log_warn, mock_fetch_url):
+        mock_fetch_url.return_value = None
+        result = download_uup.fetch_latest_from_wu()
+        self.assertIsNone(result)
+        mock_log_warn.assert_called_with(
+            "Failed to fetch from Windows Update, falling back to cached builds"
+        )
+
+    @patch("download_uup.fetch_url")
+    @patch("download_uup.log_warn")
+    def test_fetch_latest_from_wu_json_decode_error(
+        self, mock_log_warn, mock_fetch_url
+    ):
+        mock_fetch_url.return_value = None
+        result = download_uup.fetch_latest_from_wu()
+        self.assertIsNone(result)
+        mock_log_warn.assert_called_with(
+            "Failed to fetch from Windows Update, falling back to cached builds"
+        )
+
+    @patch("download_uup.fetch_url")
+    def test_fetch_latest_from_wu_success(self, mock_fetch_url):
+        mock_fetch_url.return_value = {
+            "response": {
+                "updateId": "12345",
+                "updateTitle": "Windows 11 Build",
+                "foundBuild": "22621.1",
+                "arch": "amd64",
+            }
+        }
+        result = download_uup.fetch_latest_from_wu(arch="amd64", ring="Retail")
+        self.assertIsNotNone(result)
+        self.assertEqual(result["updateId"], "12345")
+        self.assertEqual(result["updateTitle"], "Windows 11 Build")
+        self.assertEqual(result["foundBuild"], "22621.1")
+        self.assertEqual(result["arch"], "amd64")
+
+
 class TestGetBuildInfo(unittest.TestCase):
     @patch("download_uup.fetch_url")
     def test_get_build_info_success(self, mock_fetch_url):
-        import json
-
-        mock_fetch_url.return_value = json.dumps(
-            {"response": {"build": "info", "files": {}}}
-        )
+        mock_fetch_url.return_value = {"response": {"build": "info", "files": {}}}
 
         result = download_uup.get_build_info("fake-id")
 
         self.assertEqual(result, {"build": "info", "files": {}})
         mock_fetch_url.assert_called_once_with(
-            "https://api.uupdump.net/get.php?id=fake-id"
+            "https://api.uupdump.net/get.php?id=fake-id", return_json=True
+        )
+
+    @patch("download_uup.fetch_url")
+    def test_get_build_info_fetch_fails(self, mock_fetch_url):
+        mock_fetch_url.return_value = None
+        result = download_uup.get_build_info("fake-id")
+        self.assertIsNone(result)
+        mock_fetch_url.assert_called_once_with(
+            "https://api.uupdump.net/get.php?id=fake-id", return_json=True
+        )
+
+    @patch("download_uup.fetch_url")
+    @patch("download_uup.log_error")
+    def test_get_build_info_api_error(self, mock_log_error, mock_fetch_url):
+        mock_fetch_url.return_value = {"response": {"error": "Invalid build ID"}}
+        result = download_uup.get_build_info("fake-id")
+        self.assertIsNone(result)
+        mock_log_error.assert_called_once_with("API Error: Invalid build ID")
+        mock_fetch_url.assert_called_once_with(
+            "https://api.uupdump.net/get.php?id=fake-id", return_json=True
         )
 
 
+class TestGetAvailableLanguages(unittest.TestCase):
+    @patch("download_uup.fetch_url")
+    def test_get_available_languages_with_build_id_success(self, mock_fetch_url):
+        mock_fetch_url.return_value = {"response": {"lang": "en-us", "langList": []}}
+
+        result = download_uup.get_available_languages("fake-id")
+
+        self.assertEqual(result, {"lang": "en-us", "langList": []})
+        mock_fetch_url.assert_called_once_with(
+            "https://api.uupdump.net/listlangs.php?id=fake-id&lang=en-us",
+            return_json=True,
+        )
+
+    @patch("download_uup.fetch_url")
+    def test_get_available_languages_no_build_id_success(self, mock_fetch_url):
+        mock_fetch_url.return_value = {"response": {"lang": "en-us", "langList": []}}
+
+        result = download_uup.get_available_languages()
+
+        self.assertEqual(result, {"lang": "en-us", "langList": []})
+        mock_fetch_url.assert_called_once_with(
+            "https://api.uupdump.net/listlangs.php", return_json=True
+        )
+
+    @patch("download_uup.fetch_url")
+    def test_get_available_languages_fetch_fails(self, mock_fetch_url):
+        mock_fetch_url.return_value = None
+        result = download_uup.get_available_languages("fake-id")
+        self.assertIsNone(result)
+
+    @patch("download_uup.fetch_url")
+    def test_get_available_languages_api_error(self, mock_fetch_url):
+        mock_fetch_url.return_value = {"response": {"error": "Invalid build id"}}
+        result = download_uup.get_available_languages("fake-id")
+        self.assertIsNone(result)
+
+    @patch("download_uup.fetch_url")
+    def test_get_available_languages_json_error(self, mock_fetch_url):
+        mock_fetch_url.return_value = None
+        result = download_uup.get_available_languages("fake-id")
+        self.assertIsNone(result)
+
+
 class TestFetchUrl(unittest.TestCase):
+    def setUp(self):
+        download_uup._url_cache.clear()
+
     @patch("download_uup.urlopen")
     def test_fetch_url_success_get(self, mock_urlopen):
         mock_response = unittest.mock.MagicMock()
@@ -232,7 +382,7 @@ class TestFetchUrl(unittest.TestCase):
 
         self.assertIsNone(result)
         mock_log_error.assert_called_once()
-        self.assertIn("Error fetching URL", mock_log_error.call_args[0][0])
+        self.assertIn("Unexpected error fetching URL", mock_log_error.call_args[0][0])
 
     @patch("download_uup.urlopen")
     @patch("download_uup.log_error")
@@ -245,7 +395,7 @@ class TestFetchUrl(unittest.TestCase):
 
         self.assertIsNone(result)
         mock_log_error.assert_called_once()
-        self.assertIn("Error fetching URL", mock_log_error.call_args[0][0])
+        self.assertIn("Network error fetching URL", mock_log_error.call_args[0][0])
 
     @patch("download_uup.urlopen")
     @patch("download_uup.log_error")
@@ -256,7 +406,7 @@ class TestFetchUrl(unittest.TestCase):
 
         self.assertIsNone(result)
         mock_log_error.assert_called_once()
-        self.assertIn("Error fetching URL", mock_log_error.call_args[0][0])
+        self.assertIn("Network error fetching URL", mock_log_error.call_args[0][0])
 
     @patch("download_uup.urlopen")
     @patch("download_uup.log_error")
@@ -267,7 +417,7 @@ class TestFetchUrl(unittest.TestCase):
 
         self.assertIsNone(result)
         mock_log_error.assert_called_once()
-        self.assertIn("Error fetching URL", mock_log_error.call_args[0][0])
+        self.assertIn("Network error fetching URL", mock_log_error.call_args[0][0])
 
 
 class TestRunAria2Download(unittest.TestCase):
@@ -314,7 +464,23 @@ class TestRunAria2Download(unittest.TestCase):
 
         self.assertFalse(result)
         mock_log_error.assert_called_with(
-            "An unexpected error occurred: Unexpected error"
+            "An unexpected error occurred during download: Unexpected error"
+        )
+
+    @patch("builtins.open", new_callable=unittest.mock.mock_open)
+    @patch("subprocess.run")
+    @patch("download_uup.log_error")
+    def test_run_aria2_download_os_error(
+        self, mock_log_error, mock_run, mock_open
+    ):
+        mock_run.side_effect = FileNotFoundError("No such file")
+        dl_list = [{"url": "http://test", "name": "test.esd"}]
+
+        result = download_uup._run_aria2_download(Path("out"), Path("in.txt"), dl_list)
+
+        self.assertFalse(result)
+        mock_log_error.assert_called_with(
+            "System error during download: No such file"
         )
 
 
@@ -406,6 +572,168 @@ class TestInteractiveMode(unittest.TestCase):
         result = download_uup.interactive_mode(Path("/tmp"))
         self.assertFalse(result)
         mock_log_info.assert_called_once_with("Cancelled by user")
+
+    @patch("download_uup.log_warn")
+    @patch("builtins.input", side_effect=["invalid", "q"])
+    @patch("download_uup.display_builds")
+    @patch("download_uup.get_latest_builds")
+    def test_interactive_mode_value_error(
+        self, mock_get_builds, mock_display_builds, mock_input, mock_log_warn
+    ):
+        mock_get_builds.return_value = [{"id": "1", "title": "Build 1"}]
+        result = download_uup.interactive_mode(Path("/tmp"))
+        self.assertFalse(result)
+        mock_log_warn.assert_any_call("Invalid input. Please enter a number.")
+
+    @patch("download_uup.log_info")
+    @patch("builtins.input", side_effect=KeyboardInterrupt)
+    @patch("download_uup.display_builds")
+    @patch("download_uup.get_latest_builds")
+    def test_interactive_mode_keyboard_interrupt(
+        self, mock_get_builds, mock_display_builds, mock_input, mock_log_info
+    ):
+        mock_get_builds.return_value = [{"id": "1", "title": "Build 1"}]
+        result = download_uup.interactive_mode(Path("/tmp"))
+        self.assertFalse(result)
+        mock_log_info.assert_any_call("Cancelled by user")
+
+
+class TestGetAvailableEditions(unittest.TestCase):
+    @patch("download_uup.fetch_url")
+    @patch("download_uup.log_info")
+    def test_get_available_editions_success(self, mock_log_info, mock_fetch_url):
+        mock_fetch_url.return_value = {
+            "response": {"editionList": ["Core", "Professional"]}
+        }
+
+        result = download_uup.get_available_editions("fake-build-id")
+
+        self.assertEqual(result, {"editionList": ["Core", "Professional"]})
+        mock_fetch_url.assert_called_once_with(
+            "https://api.uupdump.net/listeditions.php?id=fake-build-id&lang=en-us",
+            return_json=True,
+        )
+        mock_log_info.assert_called_once_with(
+            "Fetching available editions for build: fake-build-id"
+        )
+
+    @patch("download_uup.fetch_url")
+    @patch("download_uup.log_info")
+    def test_get_available_editions_no_response(self, mock_log_info, mock_fetch_url):
+        mock_fetch_url.return_value = None
+
+        result = download_uup.get_available_editions("fake-build-id")
+
+        self.assertIsNone(result)
+
+    @patch("download_uup.fetch_url")
+    @patch("download_uup.log_error")
+    @patch("download_uup.log_info")
+    def test_get_available_editions_api_error(
+        self, mock_log_info, mock_log_error, mock_fetch_url
+    ):
+        mock_fetch_url.return_value = {"response": {"error": "Invalid build ID"}}
+
+        result = download_uup.get_available_editions("fake-build-id")
+
+        self.assertIsNone(result)
+        mock_log_error.assert_called_once_with("API Error: Invalid build ID")
+
+    @patch("download_uup.fetch_url")
+    @patch("download_uup.log_info")
+    def test_get_available_editions_json_decode_error(
+        self, mock_log_info, mock_fetch_url
+    ):
+        mock_fetch_url.return_value = None
+
+        result = download_uup.get_available_editions("fake-build-id")
+
+        self.assertIsNone(result)
+
+
+class TestGetApiVersion(unittest.TestCase):
+    @patch("download_uup.fetch_url")
+    def test_get_api_version_success(self, mock_fetch_url):
+        mock_fetch_url.return_value = '{"response": {"version": "1.0.0"}}'
+        result = download_uup.get_api_version()
+        self.assertEqual(result, {"version": "1.0.0"})
+        mock_fetch_url.assert_called_once_with("https://api.uupdump.net/")
+
+    @patch("download_uup.fetch_url")
+    def test_get_api_version_fetch_fails(self, mock_fetch_url):
+        mock_fetch_url.return_value = None
+        result = download_uup.get_api_version()
+        self.assertIsNone(result)
+
+    @patch("download_uup.fetch_url")
+    @patch("download_uup.log_error")
+    def test_get_api_version_invalid_json(self, mock_log_error, mock_fetch_url):
+        mock_fetch_url.return_value = "invalid json"
+        result = download_uup.get_api_version()
+        self.assertIsNone(result)
+        mock_log_error.assert_called_once()
+
+    @patch("download_uup.fetch_url")
+    def test_get_api_version_no_response_key(self, mock_fetch_url):
+        mock_fetch_url.return_value = '{"other_key": "value"}'
+        result = download_uup.get_api_version()
+        self.assertEqual(result, {})
+
+
+class TestDisplayBuilds(unittest.TestCase):
+    def _get_print_calls(self, mock_print):
+        return [call[0][0] for call in mock_print.call_args_list if call[0]]
+
+    @patch("download_uup.log_warn")
+    def test_display_builds_empty(self, mock_log_warn):
+        download_uup.display_builds([])
+        mock_log_warn.assert_called_once_with("No builds available.")
+
+    @patch("builtins.print")
+    def test_display_builds_success(self, mock_print):
+        builds = [
+            {
+                "id": "build-1",
+                "title": "Windows 11 Test Build",
+                "build": "22621.1",
+                "arch": "amd64",
+                "created": "1600000000",
+            }
+        ]
+        download_uup.display_builds(builds)
+
+        calls = self._get_print_calls(mock_print)
+
+        # Check header
+        self.assertTrue(any("Available Windows 11 Builds" in c for c in calls))
+        # Check build details
+        self.assertTrue(any("[1]" in c and "Windows 11 Test Build" in c for c in calls))
+        self.assertTrue(
+            any(
+                "Build: 22621.1" in c
+                and "Arch: amd64" in c
+                and "Created: 1600000000" in c
+                for c in calls
+            )
+        )
+
+    @patch("builtins.print")
+    def test_display_builds_missing_fields(self, mock_print):
+        builds = [{"id": "build-1"}]
+        download_uup.display_builds(builds)
+
+        calls = self._get_print_calls(mock_print)
+
+        # Check for defaults
+        self.assertTrue(any("Unknown" in c for c in calls))  # Title
+        self.assertTrue(
+            any(
+                "Build: N/A" in c and "Arch: N/A" in c and "Created: N/A" in c
+                for c in calls
+            )
+        )
+
+
 
 
 class TestGetAvailableLanguages(unittest.TestCase):

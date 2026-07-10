@@ -11,16 +11,22 @@ source "$SCRIPT_DIR/utils.sh"
 
 log_info "Checking and installing dependencies..."
 
+if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then
+  log_error "This script must run as root to install system packages. Re-run as root or via your orchestrator with elevated privileges."
+  exit 1
+fi
+
+# Detect package manager
 if command -v pacman &>/dev/null; then
   log_info "Detected Arch Linux (pacman)"
-  sudo pacman -S --needed aria2 cabextract wimlib chntpw cdrtools
+  pacman -S --needed aria2 cabextract wimlib chntpw cdrtools
 elif command -v apt &>/dev/null; then
   log_info "Detected Debian/Ubuntu (apt)"
-  sudo apt update
-  sudo apt install -y aria2 cabextract wimtools chntpw genisoimage
+  apt update
+  apt install -y aria2 cabextract wimtools chntpw genisoimage
 elif command -v dnf &>/dev/null; then
   log_info "Detected Fedora (dnf)"
-  sudo dnf install -y aria2 cabextract wimlib-utils chntpw genisoimage
+  dnf install -y aria2 cabextract wimlib-utils chntpw genisoimage
 else
   log_error "Unsupported package manager. Please install manually:"
   echo "  - aria2 (download acceleration)"
@@ -31,14 +37,17 @@ else
   exit 1
 fi
 
+# Verify critical tools are available
 log_info "Verifying tool availability..."
 
 MISSING_TOOLS=()
 
+# Check primary tools using centralized list
 for tool in "${REQUIRED_TOOLS[@]}"; do
   check_tool "$tool" || MISSING_TOOLS+=("$tool")
 done
 
+# Check ISO creation tools
 check_iso_tool || MISSING_TOOLS+=("genisoimage/mkisofs")
 
 if [[ ${#MISSING_TOOLS[@]} -gt 0 ]]; then

@@ -1,0 +1,20 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"(^|[^a-z])sudo( |$)\" && echo \"BLOCKED: sudo is not permitted in the build pipeline (AGENTS.md Hard Invariants)\" >&2 && exit 2 || exit 0'"
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "deny": [
+      "Bash(sudo:*)"
+    ]
+  }
+}

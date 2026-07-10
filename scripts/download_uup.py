@@ -5,6 +5,7 @@ Automates the download of UUP files from uupdump.net
 
 import sys
 import os
+import time
 from typing import Optional, Dict, List, Any, Union
 import json
 import argparse
@@ -14,32 +15,51 @@ from urllib.request import urlopen, Request
 from urllib.error import URLError, HTTPError
 from urllib.parse import urlencode
 
+CACHE_DIR_NAME: str = ".uup_cache"
+DEFAULT_CACHE_TTL_SECONDS: int = 3600
+COMPONENT_GROUPS_FILE: str = "config/component_groups.json"
+ALL_COMPONENT_GROUPS: List[str] = [
+    "gaming",
+    "productivity",
+    "social",
+    "telemetry",
+    "media",
+    "system",
+    "news",
+    "oem",
+]
+
 # Profile definitions for different use cases
 PROFILES: Dict[str, Dict[str, Any]] = {
     "minimal": {
         "description": "Stripped-down Windows 11 with maximum debloating",
         "edition": "Core",
         "language": "en-us",
+        "component_groups": ["gaming", "productivity", "social", "telemetry", "media", "system", "news", "oem"],
     },
     "standard": {
         "description": "Default debloated Windows 11 (Professional)",
         "edition": "Professional",
         "language": "en-us",
+        "component_groups": ["telemetry", "social", "oem", "news"],
     },
     "gaming": {
         "description": "Gaming-optimized Windows 11 with Game Mode enabled",
         "edition": "Professional",
         "language": "en-us",
+        "component_groups": ["productivity", "telemetry", "system", "news", "oem"],
     },
     "enterprise": {
         "description": "Enterprise-ready Windows 11 with domain features",
         "edition": "Enterprise",
         "language": "en-us",
+        "component_groups": ["gaming", "social", "media", "news", "oem"],
     },
     "dev": {
         "description": "Developer configuration with WSL and tools",
         "edition": "Professional",
         "language": "en-us",
+        "component_groups": ["social", "oem", "news", "media"],
     },
 }
 
@@ -279,6 +299,117 @@ def get_api_version() -> Optional[Dict[str, Any]]:
     return data.get("response", {})
 
 
+def get_cache_dir() -> Path:
+    """Return the cache directory, creating it if necessary."""
+    cache_dir = Path.cwd() / CACHE_DIR_NAME
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    return cache_dir
+
+
+def _safe_cache_name(key: str) -> str:
+    """Convert a cache key into a filesystem-safe filename."""
+    safe = "".join(c if c.isalnum() or c in "-_." else "_" for c in key)
+    return safe[:128] + ".json"
+
+
+def cache_get(key: str, ttl_seconds: int = DEFAULT_CACHE_TTL_SECONDS) -> Optional[Any]:
+    """Read a cached value if present and not expired."""
+    cache_file = get_cache_dir() / _safe_cache_name(key)
+    if not cache_file.exists():
+        return None
+
+    try:
+        with open(cache_file, "r") as f:
+            entry = json.load(f)
+    except (json.JSONDecodeError, OSError) as e:
+        log_warn(f"Cache read failed for {key}: {e}")
+        return None
+
+    if not isinstance(entry, dict) or "timestamp" not in entry or "data" not in entry:
+        return None
+
+    age = time.time() - float(entry["timestamp"])
+    if age > ttl_seconds:
+        return None
+
+    return entry["data"]
+
+
+def cache_set(key: str, data: Any) -> bool:
+    """Store a value in the local cache with the current timestamp."""
+    cache_file = get_cache_dir() / _safe_cache_name(key)
+    entry = {"timestamp": time.time(), "data": data}
+    try:
+        with open(cache_file, "w") as f:
+            json.dump(entry, f)
+        return True
+    except (OSError, TypeError) as e:
+        log_warn(f"Cache write failed for {key}: {e}")
+        return False
+
+
+def cache_clear(key: Optional[str] = None) -> int:
+    """Remove a single cache entry (if key given) or all entries. Returns the number removed."""
+    cache_dir = get_cache_dir()
+    if key:
+        target = cache_dir / _safe_cache_name(key)
+        if target.exists():
+            try:
+                target.unlink()
+                return 1
+            except OSError as e:
+                log_warn(f"Cache clear failed for {key}: {e}")
+                return 0
+        return 0
+
+    count = 0
+    for f in cache_dir.glob("*.json"):
+        try:
+            f.unlink()
+            count += 1
+        except OSError:
+            pass
+    return count
+
+
+def get_latest_builds_cached(
+    max_results: int = 10,
+    ttl_seconds: int = DEFAULT_CACHE_TTL_SECONDS,
+    force_refresh: bool = False,
+) -> Optional[List[Dict[str, Any]]]:
+    """Fetch latest builds, returning a cached result when fresh enough."""
+    cache_key = f"latest_builds_{max_results}"
+
+    if not force_refresh:
+        cached = cache_get(cache_key, ttl_seconds=ttl_seconds)
+        if cached is not None:
+            return cached
+
+    builds = get_latest_builds(max_results)
+    if builds is not None:
+        cache_set(cache_key, builds)
+    return builds
+
+
+def get_build_info_cached(
+    build_id: str,
+    ttl_seconds: int = DEFAULT_CACHE_TTL_SECONDS,
+    force_refresh: bool = False,
+) -> Optional[Dict[str, Any]]:
+    """Fetch build info, returning a cached result when fresh enough."""
+    cache_key = f"build_info_{build_id}"
+
+    if not force_refresh:
+        cached = cache_get(cache_key, ttl_seconds=ttl_seconds)
+        if cached is not None:
+            return cached
+
+    info = get_build_info(build_id)
+    if info is not None:
+        cache_set(cache_key, info)
+    return info
+
+
 def select_editions(build_info: Dict[str, Any]) -> Optional[List[str]]:
     """Allow user to select which editions to download"""
     files = build_info.get("files", {})
@@ -324,6 +455,55 @@ def select_editions(build_info: Dict[str, Any]) -> Optional[List[str]]:
         pass
 
     log_warn("Invalid selection, downloading all editions")
+    return None
+
+
+def list_edition_files(build_info: Dict[str, Any]) -> Dict[str, str]:
+    """Return the mapping of known edition name -> ESD filename from build info."""
+    edition_files: Dict[str, str] = {}
+    files = build_info.get("files", {})
+    for filename in files.keys():
+        if not filename.endswith(".esd"):
+            continue
+        lower = filename.lower()
+        for key in ("professional", "enterprise", "home", "core", "education"):
+            if key in lower:
+                edition_files[key] = filename
+                break
+    return edition_files
+
+
+def resolve_edition_filter(
+    build_info: Dict[str, Any],
+    edition: Optional[str] = None,
+) -> Optional[List[str]]:
+    """Resolve the edition name to its ESD filename, or return None for all.
+
+    Used by the --edition CLI flag to bypass the interactive prompt. The edition
+    name is matched case-insensitively against known keys (professional, enterprise,
+    home, core, education). If the edition cannot be resolved, an error is logged
+    and None is returned (which means: download all files).
+    """
+    if not edition:
+        return None
+
+    edition_files = list_edition_files(build_info)
+    if not edition_files:
+        log_warn("No edition-specific files in build metadata; downloading all files")
+        return None
+
+    key = edition.lower()
+    if key in edition_files:
+        log_info(f"Filtering to edition: {key} -> {edition_files[key]}")
+        return [edition_files[key]]
+
+    # Allow matching against the full filename too
+    for k, filename in edition_files.items():
+        if filename.lower() == key or k.startswith(key):
+            log_info(f"Filtering to edition: {k} -> {filename}")
+            return [filename]
+
+    log_error(f"Unknown edition '{edition}'. Available: {', '.join(edition_files.keys())}")
     return None
 
 
@@ -444,10 +624,14 @@ def download_build(
     edition_filter: Optional[List[str]] = None,
     build_info: Optional[Dict[str, Any]] = None,
     verbose: bool = False,
+    use_cache: bool = True,
+    cache_ttl: int = DEFAULT_CACHE_TTL_SECONDS,
 ) -> bool:
     """Download UUP files for a specific build"""
     if build_info is None:
-        build_info = get_build_info(build_id)
+        build_info = get_build_info_cached(
+            build_id, ttl_seconds=cache_ttl, force_refresh=not use_cache
+        )
 
     if not build_info:
         log_error("Failed to get build information")
@@ -488,6 +672,9 @@ def _process_selected_build(
     selected_build: Dict[str, Any],
     output_dir: Union[str, Path],
     verbose: bool = False,
+    use_cache: bool = True,
+    cache_ttl: int = DEFAULT_CACHE_TTL_SECONDS,
+    edition: Optional[str] = None,
 ) -> bool:
     """Process the selected build for download."""
     build_id = selected_build["id"]
@@ -498,13 +685,30 @@ def _process_selected_build(
     print(f"{Colors.BOLD}Build ID:{Colors.RESET} {build_id}")
 
     # Fetch build info once
-    build_info = get_build_info(build_id)
+    build_info = get_build_info_cached(
+        build_id, ttl_seconds=cache_ttl, force_refresh=not use_cache
+    )
     if not build_info:
         log_error("Failed to get build information")
         return False
 
-    # Ask for edition selection
-    edition_filter = select_editions(build_info)
+    # Resolve edition: non-interactive if --edition was supplied, else prompt
+    if edition:
+        edition_filter = resolve_edition_filter(build_info, edition)
+    else:
+        edition_filter = select_editions(build_info)
+
+    if edition:
+        # Non-interactive: skip the confirmation prompt
+        return download_build(
+            build_id,
+            output_dir,
+            edition_filter,
+            build_info=build_info,
+            verbose=verbose,
+            use_cache=use_cache,
+            cache_ttl=cache_ttl,
+        )
 
     confirm = (
         input(f"\n{Colors.BOLD}Proceed with download? [Y/n]:{Colors.RESET} ")
@@ -513,19 +717,33 @@ def _process_selected_build(
     )
     if confirm in ("", "y", "yes"):
         return download_build(
-            build_id, output_dir, edition_filter, build_info=build_info, verbose=verbose
+            build_id,
+            output_dir,
+            edition_filter,
+            build_info=build_info,
+            verbose=verbose,
+            use_cache=use_cache,
+            cache_ttl=cache_ttl,
         )
     else:
         log_info("Download cancelled")
         return False
 
 
-def interactive_mode(output_dir: Union[str, Path], verbose: bool = False) -> bool:
+def interactive_mode(
+    output_dir: Union[str, Path],
+    verbose: bool = False,
+    use_cache: bool = True,
+    cache_ttl: int = DEFAULT_CACHE_TTL_SECONDS,
+    edition: Optional[str] = None,
+) -> bool:
     """Interactive mode for selecting and downloading builds"""
     print(f"\n{Colors.BOLD}UUP File Downloader for Windows 11{Colors.RESET}")
     print("=" * 50)
 
-    builds = get_latest_builds()
+    builds = get_latest_builds_cached(
+        ttl_seconds=cache_ttl, force_refresh=not use_cache
+    )
     if not builds:
         log_error("Failed to fetch builds")
         return False
@@ -544,7 +762,14 @@ def interactive_mode(output_dir: Union[str, Path], verbose: bool = False) -> boo
 
             idx = int(choice) - 1
             if 0 <= idx < len(builds):
-                if _process_selected_build(builds[idx], output_dir, verbose=verbose):
+                if _process_selected_build(
+                    builds[idx],
+                    output_dir,
+                    verbose=verbose,
+                    use_cache=use_cache,
+                    cache_ttl=cache_ttl,
+                    edition=edition,
+                ):
                     return True
             else:
                 log_warn(f"Please enter a number between 1 and {len(builds)}")
@@ -638,6 +863,124 @@ def get_profile(name: str) -> Optional[Dict[str, Any]]:
     """Get a specific build profile by name."""
     profiles = get_profiles()
     return profiles.get(name)
+
+
+def load_component_groups(path: Optional[str] = None) -> Dict[str, Any]:
+    """Load component groups from config/component_groups.json.
+
+    Returns a dict mapping group name -> {"description": str, "patterns": List[str]}.
+    Returns an empty dict if the file is missing, malformed, or has unexpected shape.
+    """
+    if path is None:
+        path = COMPONENT_GROUPS_FILE
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data: Any = json.load(f)
+    except (OSError, json.JSONDecodeError, ValueError) as exc:
+        log_warn(f"Could not load component groups from {path}: {exc}")
+        return {}
+    if not isinstance(data, dict):
+        log_warn(f"Component groups file {path} is not a JSON object")
+        return {}
+    raw_groups: Any = data.get("groups", data)
+    if not isinstance(raw_groups, dict):
+        log_warn(f"Component groups in {path} are not a mapping")
+        return {}
+    result: Dict[str, Any] = {}
+    for name, body in raw_groups.items():
+        if not isinstance(name, str) or not isinstance(body, dict):
+            continue
+        patterns: Any = body.get("patterns", [])
+        if not isinstance(patterns, list):
+            continue
+        cleaned: List[str] = [p for p in patterns if isinstance(p, str) and p]
+        if not cleaned:
+            continue
+        description: str = body.get("description", "") if isinstance(body.get("description"), str) else ""
+        result[name] = {"description": description, "patterns": cleaned}
+    return result
+
+
+def list_component_groups(path: Optional[str] = None) -> List[str]:
+    """Return the names of all available component groups (sorted)."""
+    groups = load_component_groups(path)
+    return sorted(groups.keys())
+
+
+def get_component_group(name: str, path: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    """Get a single component group by name, or None if not found."""
+    groups = load_component_groups(path)
+    return groups.get(name)
+
+
+def validate_component_groups(names: List[str], path: Optional[str] = None) -> List[str]:
+    """Return the subset of `names` that exist in the component groups file.
+
+    Logs a warning for any names that are unknown.
+    """
+    available = set(list_component_groups(path))
+    valid: List[str] = []
+    for name in names:
+        if name in available:
+            valid.append(name)
+        else:
+            log_warn(f"Unknown component group: {name}")
+    return valid
+
+
+def collect_component_patterns(
+    group_names: List[str], path: Optional[str] = None
+) -> List[str]:
+    """Collect deduplicated glob patterns from the given component groups.
+
+    Order is preserved (group order, then pattern order within each group).
+    """
+    seen: set = set()
+    combined: List[str] = []
+    for group_name in group_names:
+        group = get_component_group(group_name, path)
+        if not group:
+            continue
+        for pattern in group.get("patterns", []):
+            if pattern in seen:
+                continue
+            seen.add(pattern)
+            combined.append(pattern)
+    return combined
+
+
+def write_component_groups_for_build(
+    group_names: List[str], output_path: str = ".uup-groups"
+) -> bool:
+    """Write the selected component groups to a file consumable by the build pipeline.
+
+    The output file is a simple newline-separated list of group names.
+    Returns True on success, False on failure.
+    """
+    try:
+        with open(output_path, "w", encoding="utf-8") as f:
+            for name in group_names:
+                f.write(f"{name}\n")
+        return True
+    except OSError as exc:
+        log_error(f"Could not write component groups file {output_path}: {exc}")
+        return False
+
+
+def display_component_groups(path: Optional[str] = None) -> None:
+    """Print all available component groups with descriptions to stdout."""
+    groups = load_component_groups(path)
+    if not groups:
+        print("No component groups available.")
+        return
+    print(f"\n{Colors.BOLD}Available Component Groups:{Colors.RESET}\n")
+    for name in sorted(groups.keys()):
+        description = groups[name].get("description", "")
+        pattern_count = len(groups[name].get("patterns", []))
+        print(f"  {Colors.CYAN}{name}{Colors.RESET} ({pattern_count} patterns)")
+        if description:
+            print(f"    {description}")
+    print()
 
 
 def parse_args(args: Optional[List[str]] = None) -> argparse.Namespace:
@@ -747,6 +1090,54 @@ For more information, visit: https://uupdump.net
         help="Show the currently pinned build and exit",
     )
 
+    parser.add_argument(
+        "--no-cache",
+        action="store_true",
+        help="Bypass the build metadata cache and force a network refresh",
+    )
+
+    parser.add_argument(
+        "--clear-cache",
+        action="store_true",
+        help="Clear the local build metadata cache and exit",
+    )
+
+    parser.add_argument(
+        "--cache-ttl",
+        type=int,
+        default=DEFAULT_CACHE_TTL_SECONDS,
+        help=f"Cache TTL in seconds (default: {DEFAULT_CACHE_TTL_SECONDS})",
+    )
+
+    parser.add_argument(
+        "--edition",
+        help=(
+            "Non-interactive edition filter: pick a specific edition by name "
+            "(professional, enterprise, home, core, education) or by ESD filename"
+        ),
+    )
+
+    parser.add_argument(
+        "--groups",
+        dest="groups",
+        help=(
+            "Comma-separated component group names to remove during build "
+            "(gaming, productivity, social, telemetry, media, system, news, oem)"
+        ),
+    )
+
+    parser.add_argument(
+        "--list-groups",
+        action="store_true",
+        help="List available component groups and exit",
+    )
+
+    parser.add_argument(
+        "--write-groups",
+        metavar="PATH",
+        help="Write selected component group names to PATH (one per line) and exit",
+    )
+
     return parser.parse_args(args)
 
 
@@ -826,6 +1217,12 @@ def _resolve_output_dir(output_arg: str) -> Optional[Path]:
 def main() -> int:
     args = parse_args()
 
+    # Handle --clear-cache mode
+    if args.clear_cache:
+        count = cache_clear()
+        log_success(f"Cleared {count} cache entries")
+        return 0
+
     # Handle list-presets mode
     if args.list_presets:
         display_profiles()
@@ -842,6 +1239,27 @@ def main() -> int:
                 print(f"  Edition: {pin['edition']}")
             return 0
         log_info("No build currently pinned (no .uup-pin.json found)")
+        return 1
+
+    # Handle list-groups mode
+    if args.list_groups:
+        display_component_groups()
+        return 0
+
+    # Handle write-groups mode
+    if args.write_groups:
+        names: List[str] = []
+        if args.groups:
+            names = [n.strip() for n in args.groups.split(",") if n.strip()]
+        if not names:
+            log_error("--write-groups requires --groups to be specified")
+            return 1
+        valid = validate_component_groups(names)
+        if not valid:
+            return 1
+        if write_component_groups_for_build(valid, args.write_groups):
+            log_success(f"Wrote {len(valid)} component groups to {args.write_groups}")
+            return 0
         return 1
 
     # Handle --use-pin: replace build_id with pinned value
@@ -873,6 +1291,25 @@ def main() -> int:
             return 1
         log_info(f"Using profile: {args.preset}")
         print(f"  {profile.get('description', '')}")
+        # Persist the profile's component groups to .uup-groups for the build pipeline.
+        profile_groups: Any = profile.get("component_groups", [])
+        if isinstance(profile_groups, list) and profile_groups:
+            valid_profile_groups = validate_component_groups(profile_groups)
+            if valid_profile_groups:
+                if write_component_groups_for_build(valid_profile_groups):
+                    log_info(
+                        f"Component groups for build: {', '.join(valid_profile_groups)}"
+                    )
+
+    # Handle --groups override (always wins over profile defaults)
+    if args.groups:
+        cli_groups = [n.strip() for n in args.groups.split(",") if n.strip()]
+        valid_cli_groups = validate_component_groups(cli_groups)
+        if valid_cli_groups:
+            if write_component_groups_for_build(valid_cli_groups):
+                log_info(
+                    f"Component groups (from --groups): {', '.join(valid_cli_groups)}"
+                )
 
     # Check dependencies (skip for info-only commands)
     info_only = (
@@ -905,7 +1342,9 @@ def main() -> int:
 
     # List mode
     if args.list:
-        builds = get_latest_builds(args.max_results)
+        builds = get_latest_builds_cached(
+            args.max_results, ttl_seconds=args.cache_ttl, force_refresh=args.no_cache
+        )
         if builds:
             display_builds(builds)
             return 0
@@ -914,13 +1353,35 @@ def main() -> int:
     # Direct build ID mode
     if args.build_id:
         log_info(f"Downloading build ID: {args.build_id}")
-        success = download_build(args.build_id, output_dir, verbose=args.verbose)
+        edition_filter: Optional[List[str]] = None
+        if args.edition:
+            build_info = get_build_info_cached(
+                args.build_id,
+                ttl_seconds=args.cache_ttl,
+                force_refresh=args.no_cache,
+            )
+            if not build_info:
+                log_error("Failed to get build information")
+                return 1
+            edition_filter = resolve_edition_filter(build_info, args.edition)
+        success = download_build(
+            args.build_id,
+            output_dir,
+            edition_filter,
+            verbose=args.verbose,
+            use_cache=not args.no_cache,
+            cache_ttl=args.cache_ttl,
+        )
         return 0 if success else 1
 
     # Preset mode: fetch latest builds and auto-select
     if preset_mode:
         log_info(f"Fetching latest builds for profile '{args.preset}'...")
-        builds = get_latest_builds(args.max_results)
+        builds = get_latest_builds_cached(
+            args.max_results,
+            ttl_seconds=args.cache_ttl,
+            force_refresh=args.no_cache,
+        )
         if builds:
             # For preset mode, just list builds and let user select
             display_builds(builds)
@@ -928,7 +1389,13 @@ def main() -> int:
         return 1
 
     # Interactive mode
-    success = interactive_mode(output_dir, verbose=args.verbose)
+    success = interactive_mode(
+        output_dir,
+        verbose=args.verbose,
+        use_cache=not args.no_cache,
+        cache_ttl=args.cache_ttl,
+        edition=args.edition,
+    )
     return 0 if success else 1
 
 

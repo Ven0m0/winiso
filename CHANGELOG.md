@@ -20,6 +20,9 @@ All notable changes to this project will be documented in this file.
 - Added `get_profiles()`, `display_profiles()`, and `get_profile()` functions to `scripts/download_uup.py` for non-interactive profile selection.
 - Added version pinning support (T018): `get_pinned_build()` and `save_pinned_build()` functions plus `--pin-build`, `--use-pin`, and `--show-pin` CLI flags for reproducible builds.
 - Added ISO signing (T019): new `scripts/sign_iso.sh` that generates SHA256/SHA512 checksums and (optionally) a GPG detached signature, plus a `make sign` target.
+- Added build history cache (T011): TTL-based local cache for build list and build info, with `cache_get`, `cache_set`, `cache_clear`, `get_latest_builds_cached`, and `get_build_info_cached` helpers, plus `--no-cache`, `--clear-cache`, and `--cache-ttl` CLI flags.
+- Added custom edition selection (T012): `--edition` CLI flag for non-interactive edition filtering, plus `list_edition_files()` and `resolve_edition_filter()` helpers.
+- Added component groups (T017): `config/component_groups.json` with 8 toggleable groups (gaming, productivity, social, telemetry, media, system, news, oem), `load_component_groups()`, `list_component_groups()`, `get_component_group()`, `validate_component_groups()`, `collect_component_patterns()`, `write_component_groups_for_build()`, and `display_component_groups()` helpers, plus `--groups`, `--list-groups`, and `--write-groups` CLI flags. Profiles now declare a `component_groups` list that is auto-persisted to `.uup-groups` for the build pipeline.
 
 ### Changed
 - Added xmllint validation for autounattend.xml in validate_prereqs.sh (T055).

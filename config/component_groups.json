@@ -1,0 +1,129 @@
+{
+	"_about": "Component groups for toggleable debloating. Each group lists glob patterns from debloat_list.txt-style format. Pass group names to build via the GROUPS env var (space-separated) or to the Makefile target.",
+	"groups": {
+		"gaming": {
+			"description": "Game launchers and entertainment apps (gaming-friendly profile keeps Xbox Game Pass; this is a more aggressive removal)",
+			"patterns": [
+				"*Xbox*",
+				"*Solitaire*",
+				"*CandyCrush*",
+				"*BubbleWitch*",
+				"*MarchofEmpires*",
+				"*Minecraft*",
+				"*Roblox*",
+				"*HiddenCity*",
+				"*CaesarsSlotsFreeCasino*"
+			]
+		},
+		"productivity": {
+			"description": "Productivity apps that ship with Windows but most users replace with Office or web apps",
+			"patterns": [
+				"*Clipchamp*",
+				"*OfficeHub*",
+				"*GetOffice*",
+				"*MicrosoftStickyNotes*",
+				"*Todos*",
+				"*PowerAutomateDesktop*",
+				"*PowerAutomate*",
+				"*Whiteboard*"
+			]
+		},
+		"social": {
+			"description": "Streaming, social media and communications apps",
+			"patterns": [
+				"*Disney*",
+				"*Spotify*",
+				"*Netflix*",
+				"*Hulu*",
+				"*TikTok*",
+				"*Instagram*",
+				"*Facebook*",
+				"*Twitter*",
+				"*LinkedInforWindows*",
+				"*Pandora*",
+				"*YourPhone*",
+				"*PhoneLink*",
+				"*SkypeApp*",
+				"*Teams*",
+				"*CommunicationsApps*",
+				"*windowscommunicationsapps*",
+				"*OutlookForWindows*"
+			]
+		},
+		"telemetry": {
+			"description": "Telemetry, advertising, AI, and tracking components",
+			"patterns": [
+				"*DiagnosticDataViewer*",
+				"*Advertising*",
+				"*Copilot*",
+				"*CoreAI*",
+				"*WritingAssistant*",
+				"*GameAssist*",
+				"*ActionsServer*",
+				"*aimgr*",
+				"*Recall*",
+				"*WindowsWorkload*",
+				"*VoiceExtraction*",
+				"*SpeechIntegration*",
+				"*LiveCaptions*",
+				"*InputApp*",
+				"*FileSuggestions*"
+			]
+		},
+		"media": {
+			"description": "Media apps: music, video, 3D, mixed reality",
+			"patterns": [
+				"*ZuneMusic*",
+				"*ZuneVideo*",
+				"*Zune*",
+				"*MixedReality*",
+				"*3DViewer*",
+				"*3DBuilder*",
+				"*Print3D*"
+			]
+		},
+		"system": {
+			"description": "Windows system apps and bloat utilities",
+			"patterns": [
+				"*GetHelp*",
+				"*FeedbackHub*",
+				"*Getstarted*",
+				"*QuickAssist*",
+				"*People*",
+				"*PeopleExperienceHost*",
+				"*Cortana*",
+				"*PinningConfirmationDialog*",
+				"*SecureAssessmentBrowser*",
+				"*CompatibilityEnhancements*"
+			]
+		},
+		"news": {
+			"description": "News, weather and search apps",
+			"patterns": [
+				"*BingWeather*",
+				"*BingNews*",
+				"*MSN*",
+				"*FlipBoard*",
+				"*BingSearch*",
+				"*BingTranslator*",
+				"*Bing*"
+			]
+		},
+		"oem": {
+			"description": "Common OEM bloat preinstalls",
+			"patterns": [
+				"*McAfee*",
+				"*Norton*",
+				"*Dropbox*",
+				"*ExpressVPN*",
+				"*Fitbit*",
+				"*Phototastic*",
+				"*PolarrPhotoEditor*",
+				"*Wunderlist*",
+				"*Keeper*",
+				"*Drawboard*",
+				"*Duolingo*"
+			]
+		}
+	}
+}

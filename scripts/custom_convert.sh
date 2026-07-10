@@ -320,7 +320,7 @@ if [ "$1" == "-?" -o "$1" == "--help" -o "$1" == "-h" ]; then
   echo "It is required to place configuration in the same directory as script."
   echo ""
   echo "Possible configuration options:"
-  echo "VIRTUAL_EDITIONS_LIST='space delimited editions sequence'"
+  echo "VIRTUAL_EDITIONS_LIST=('Edition1' 'Edition2')"
   echo ""
   echo -e "${infoColor}List of editions created if you enable virtual editions creation:${resetColor}"
   for edition in "${VIRTUAL_EDITIONS_LIST[@]}"; do
@@ -632,7 +632,7 @@ declare -a cachedInfoVals=()
 get_wim_info() {
   local metadata="$1"
   local i
-  for (( i=0; i<${#cachedInfoKeys[@]}; i++ )); do
+  for i in "${!cachedInfoKeys[@]}"; do
     if [[ "${cachedInfoKeys[$i]}" == "$metadata" ]]; then
       currentInfo="${cachedInfoVals[$i]}"
       return 0

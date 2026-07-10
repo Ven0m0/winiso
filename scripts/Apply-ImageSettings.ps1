@@ -122,8 +122,9 @@ function Remove-Packages {
         "Microsoft-Windows-TabletPCMath-Package*",
         "Microsoft-Windows-Wallpaper-Content-Extended-FoD-Package*"
     )
+    $allPackages = Get-WindowsPackage -Path $MountDir
     foreach ($p in $packages) {
-        Get-WindowsPackage -Path $MountDir | Where-Object { $_.PackageName -like $p -and $_.State -eq 'Installed' } | ForEach-Object {
+        $allPackages | Where-Object { $_.PackageName -like $p -and $_.State -eq 'Installed' } | ForEach-Object {
             Remove-WindowsPackage -Path $MountDir -PackageName $_.PackageName -NoRestart
         }
     }
@@ -192,8 +193,9 @@ function Remove-AppxPackages {
         "MicrosoftCorporationII.QuickAssist*",
         "MicrosoftWindows.Client.WebExperience*"
     )
+    $allAppx = Get-AppxProvisionedAppxPackage -Path $MountDir
     foreach ($p in $appx) {
-        Get-AppxProvisionedAppxPackage -Path $MountDir | Where-Object { $_.DisplayName -like $p } | ForEach-Object {
+        $allAppx | Where-Object { $_.DisplayName -like $p } | ForEach-Object {
             try { Remove-AppxProvisionedAppxPackage -Path $MountDir -PackageName $_.PackageName -ErrorAction Stop } catch { }
         }
     }
@@ -214,8 +216,9 @@ function Remove-Capabilities {
         "Microsoft.Windows.Wifi.Client*",
         "OneCoreUAP.OneSync*"
     )
+    $allCaps = Get-WindowsCapability -Path $MountDir
     foreach ($c in $capability) {
-        Get-WindowsCapability -Path $MountDir | Where-Object { $_.Name -like $c } | ForEach-Object {
+        $allCaps | Where-Object { $_.Name -like $c } | ForEach-Object {
             try { Remove-WindowsCapability -Path $MountDir -Name $_.Name -ErrorAction Stop } catch { }
         }
     }

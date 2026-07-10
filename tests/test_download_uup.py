@@ -617,12 +617,10 @@ class TestGetAvailableEditions(unittest.TestCase):
 class TestGetApiVersion(unittest.TestCase):
     @patch("download_uup.fetch_url")
     def test_get_api_version_success(self, mock_fetch_url):
-        mock_fetch_url.return_value = {"response": {"version": "1.0.0"}}
+        mock_fetch_url.return_value = '{"response": {"version": "1.0.0"}}'
         result = download_uup.get_api_version()
         self.assertEqual(result, {"version": "1.0.0"})
-        mock_fetch_url.assert_called_once_with(
-            "https://api.uupdump.net/", return_json=True
-        )
+        mock_fetch_url.assert_called_once_with("https://api.uupdump.net/")
 
     @patch("download_uup.fetch_url")
     def test_get_api_version_fetch_fails(self, mock_fetch_url):
@@ -631,14 +629,16 @@ class TestGetApiVersion(unittest.TestCase):
         self.assertIsNone(result)
 
     @patch("download_uup.fetch_url")
-    def test_get_api_version_invalid_json(self, mock_fetch_url):
-        mock_fetch_url.return_value = None
+    @patch("download_uup.log_error")
+    def test_get_api_version_invalid_json(self, mock_log_error, mock_fetch_url):
+        mock_fetch_url.return_value = "invalid json"
         result = download_uup.get_api_version()
         self.assertIsNone(result)
+        mock_log_error.assert_called_once()
 
     @patch("download_uup.fetch_url")
     def test_get_api_version_no_response_key(self, mock_fetch_url):
-        mock_fetch_url.return_value = {"other_key": "value"}
+        mock_fetch_url.return_value = '{"other_key": "value"}'
         result = download_uup.get_api_version()
         self.assertEqual(result, {})
 

@@ -301,7 +301,9 @@ def get_api_version() -> Optional[Dict[str, Any]]:
 
 def get_cache_dir() -> Path:
     """Return the cache directory, creating it if necessary."""
-    cache_dir = Path.cwd() / CACHE_DIR_NAME
+    script_dir = Path(__file__).parent
+    project_root = script_dir.parent
+    cache_dir = project_root / CACHE_DIR_NAME
     cache_dir.mkdir(parents=True, exist_ok=True)
     return cache_dir
 

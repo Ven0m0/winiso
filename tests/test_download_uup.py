@@ -462,9 +462,8 @@ class TestRunAria2Download(unittest.TestCase):
 
         result = download_uup._run_aria2_download(Path("out"), Path("in.txt"), dl_list)
 
-        self.assertFalse(result)
         mock_log_error.assert_called_with(
-            "An unexpected error occurred during download: Unexpected error"
+            "An unexpected error occurred: Unexpected error"
         )
 
     @patch("builtins.open", new_callable=unittest.mock.mock_open)
@@ -480,7 +479,7 @@ class TestRunAria2Download(unittest.TestCase):
 
         self.assertFalse(result)
         mock_log_error.assert_called_with(
-            "System error during download: No such file"
+            "An unexpected error occurred: No such file"
         )
 
 

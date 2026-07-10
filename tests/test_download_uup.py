@@ -247,6 +247,20 @@ class TestGetBuildInfo(unittest.TestCase):
             "https://api.uupdump.net/get.php?id=fake-id", return_json=True
         )
 
+    @patch("download_uup.fetch_url")
+    def test_get_build_info_fetch_fails(self, mock_fetch_url):
+        mock_fetch_url.return_value = None
+        result = download_uup.get_build_info("fake-id")
+        self.assertIsNone(result)
+
+    @patch("download_uup.fetch_url")
+    @patch("download_uup.log_error")
+    def test_get_build_info_api_error(self, mock_log_error, mock_fetch_url):
+        mock_fetch_url.return_value = {"response": {"error": "Invalid build ID"}}
+        result = download_uup.get_build_info("fake-id")
+        self.assertIsNone(result)
+        mock_log_error.assert_called_once_with("API Error: Invalid build ID")
+
 
 class TestGetAvailableLanguages(unittest.TestCase):
     @patch("download_uup.fetch_url")

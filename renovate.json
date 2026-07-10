@@ -51,7 +51,7 @@
     "enabled": false
   },
   "npm": {
-    "managerFilePatterns": ["/.kilo/package.json/", "kilo-tools/package.json/"]
+    "managerFilePatterns": ["/.kilo/package.json/"]
   },
   "postUpdateOptions": ["uvLockUpdate"],
   "packageRules": [

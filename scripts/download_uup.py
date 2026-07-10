@@ -845,7 +845,7 @@ def save_pinned_build(
         data["edition"] = edition
 
     try:
-        with open(pin_path, "w") as f:
+        with open(pin_path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
         log_success(f"Pinned build {build_id} to {pin_path}")
         return True

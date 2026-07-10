@@ -798,7 +798,7 @@ def get_profiles() -> Dict[str, Dict[str, Any]]:
 
     if profiles_path.exists():
         try:
-            with open(profiles_path, "r") as f:
+            with open(profiles_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 return data.get("profiles", PROFILES)
         except (json.JSONDecodeError, OSError):

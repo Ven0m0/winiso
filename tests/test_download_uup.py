@@ -430,7 +430,9 @@ class TestRunAria2Download(unittest.TestCase):
         mock_run.side_effect = subprocess.CalledProcessError(1, "aria2c")
         dl_list = [{"url": "http://test", "name": "test.esd"}]
 
-        result = download_uup._run_aria2_download(Path("out"), Path("in.txt"), dl_list)
+        result = download_uup._run_aria2_download(
+            Path("out"), Path("in.txt"), dl_list, verbose=False
+        )
 
         self.assertFalse(result)
         mock_log_error.assert_called_with("Download failed with exit code 1")
@@ -445,11 +447,12 @@ class TestRunAria2Download(unittest.TestCase):
         mock_run.side_effect = KeyboardInterrupt()
         dl_list = [{"url": "http://test", "name": "test.esd"}]
 
-        result = download_uup._run_aria2_download(Path("out"), Path("in.txt"), dl_list)
+        result = download_uup._run_aria2_download(
+            Path("out"), Path("in.txt"), dl_list, verbose=False
+        )
 
         self.assertFalse(result)
         mock_log_warn.assert_called_with("\nDownload cancelled by user")
-        # Should call unlink on aria2_input
 
     @patch("builtins.open", new_callable=unittest.mock.mock_open)
     @patch("subprocess.run")
@@ -460,10 +463,12 @@ class TestRunAria2Download(unittest.TestCase):
         mock_run.side_effect = Exception("Unexpected error")
         dl_list = [{"url": "http://test", "name": "test.esd"}]
 
-        result = download_uup._run_aria2_download(Path("out"), Path("in.txt"), dl_list)
+        result = download_uup._run_aria2_download(
+            Path("out"), Path("in.txt"), dl_list, verbose=False
+        )
 
         mock_log_error.assert_called_with(
-            "An unexpected error occurred: Unexpected error"
+            "An unexpected error occurred during download: Unexpected error"
         )
 
     @patch("builtins.open", new_callable=unittest.mock.mock_open)
@@ -475,12 +480,61 @@ class TestRunAria2Download(unittest.TestCase):
         mock_run.side_effect = FileNotFoundError("No such file")
         dl_list = [{"url": "http://test", "name": "test.esd"}]
 
-        result = download_uup._run_aria2_download(Path("out"), Path("in.txt"), dl_list)
+        result = download_uup._run_aria2_download(
+            Path("out"), Path("in.txt"), dl_list, verbose=False
+        )
 
         self.assertFalse(result)
         mock_log_error.assert_called_with(
-            "An unexpected error occurred: No such file"
+            "System error during download: No such file"
         )
+
+    @patch("builtins.open", new_callable=unittest.mock.mock_open)
+    @patch("subprocess.run")
+    @patch("download_uup.Path.unlink")
+    def test_run_aria2_download_success(
+        self, mock_unlink, mock_run, mock_open
+    ):
+        mock_result = unittest.mock.MagicMock()
+        mock_result.stdout = "Download progress"
+        mock_run.return_value = mock_result
+        dl_list = [{"url": "http://test", "name": "test.esd"}]
+
+        result = download_uup._run_aria2_download(
+            Path("out"), Path("in.txt"), dl_list, verbose=True
+        )
+
+        self.assertTrue(result)
+        mock_run.assert_called_once()
+
+
+class TestPrepareDownloadList(unittest.TestCase):
+    def test_prepare_download_list_no_filter(self):
+        build_id = "test-id"
+        files = {
+            "file1.esd": {"size": 100},
+            "file2.cab": {"size": 200},
+        }
+        result = download_uup._prepare_download_list(build_id, files)
+
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result[0]["url"], "https://uupdump.net/get.php?id=test-id&pack=file1.esd&aria2=2")
+        self.assertEqual(result[0]["name"], "file1.esd")
+
+    def test_prepare_download_list_with_filter(self):
+        build_id = "test-id"
+        files = {
+            "file1.esd": {"size": 100},
+            "file2.cab": {"size": 200},
+        }
+        edition_filter = ["file1.esd"]
+        result = download_uup._prepare_download_list(build_id, files, edition_filter)
+
+        # .cab files are always included, .esd files are filtered
+        self.assertEqual(len(result), 2)
+        names = [item["name"] for item in result]
+        self.assertIn("file1.esd", names)
+        self.assertIn("file2.cab", names)
 
 
 class TestSelectEditions(unittest.TestCase):
@@ -648,18 +702,20 @@ class TestGetAvailableEditions(unittest.TestCase):
         result = download_uup.get_available_editions("fake-build-id")
 
         self.assertIsNone(result)
+
+    @patch("download_uup.fetch_url")
     def test_get_api_version_success(self, mock_fetch_url):
-        mock_fetch_url.return_value = {"response": {"version": "1.0.0"}}
+        mock_fetch_url.return_value = '{"response": {"version": "1.0.0"}}'
         result = download_uup.get_api_version()
         self.assertEqual(result, {"version": "1.0.0"})
-        mock_fetch_url.assert_called_once_with(
-            "https://api.uupdump.net/", return_json=True
-        )
+        mock_fetch_url.assert_called_once_with("https://api.uupdump.net/")
 
     @patch("download_uup.fetch_url")
     def test_get_api_version_fetch_fails(self, mock_fetch_url):
         mock_fetch_url.return_value = None
         result = download_uup.get_api_version()
+        self.assertIsNone(result)
+
     @patch("download_uup.fetch_url")
     def test_get_api_version_invalid_json(self, mock_fetch_url):
         mock_fetch_url.return_value = None
@@ -728,3 +784,46 @@ class TestDisplayBuilds(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestProcessSelectedBuild(unittest.TestCase):
+    @patch("download_uup.download_build", return_value=True)
+    @patch("builtins.input", return_value="y")
+    @patch("download_uup.select_editions", return_value=None)
+    @patch("download_uup.get_build_info")
+    def test_process_selected_build_success(
+        self, mock_get_build_info, mock_select_editions, mock_input, mock_download_build
+    ):
+        mock_get_build_info.return_value = {"files": {}}
+        selected_build = {"id": "test-build-id", "title": "Test Build"}
+
+        result = download_uup._process_selected_build(selected_build, Path("/tmp"), verbose=False)
+
+        self.assertTrue(result)
+        mock_download_build.assert_called_once()
+
+
+class TestPrepareOutputDirectory(unittest.TestCase):
+    @patch("builtins.input", return_value="")
+    def test_prepare_output_directory_creates_dir(self, mock_input):
+        import tempfile
+        import shutil
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_path = Path(tmpdir) / "output" / "uup_files"
+            # The directory doesn't exist yet
+            download_uup._prepare_output_directory(output_path)
+            # Directory should be created
+            self.assertTrue(output_path.exists())
+
+    @patch("builtins.input", return_value="y")
+    def test_prepare_output_directory_clears_files(self, mock_input):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_path = Path(tmpdir) / "output" / "uup_files"
+            output_path.mkdir(parents=True, exist_ok=True)
+            # Create a test file
+            (output_path / "test.txt").write_text("test content")
+
+            download_uup._prepare_output_directory(output_path)
+            # Test file should be deleted
+            self.assertFalse((output_path / "test.txt").exists())

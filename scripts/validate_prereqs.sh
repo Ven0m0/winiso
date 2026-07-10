@@ -88,11 +88,11 @@ fi
 
 if [[ -f "$PROJECT_ROOT/config/autounattend.xml" ]]; then
   log_success "autounattend.xml found"
-  if grep -q "<?xml" "$PROJECT_ROOT/config/autounattend.xml"; then
-    log_success "  → autounattend.xml appears to be valid XML"
+  if ! xmllint --noout "$PROJECT_ROOT/config/autounattend.xml" 2>&1; then
+    log_error "autounattend.xml failed XML validation - run 'xmllint --noout config/autounattend.xml' for details"
+    ((ERRORS++))
   else
-    log_warn "  → autounattend.xml may not be valid XML"
-    ((WARNINGS++))
+    log_success "  → autounattend.xml is valid XML"
   fi
 else
   log_warn "autounattend.xml not found - installation will require manual setup"

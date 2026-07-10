@@ -11,7 +11,7 @@
 #   make help           - Show this help
 # =============================================================================
 
-.PHONY: all deps build build-pro build-nano build-pause clean help validate download
+.PHONY: all deps build build-pro build-nano build-pause clean help validate download validate-xml
 
 # Default target
 all: build
@@ -26,6 +26,16 @@ validate:
 	@echo "Validating prerequisites..."
 	chmod +x scripts/*.sh
 	./scripts/validate_prereqs.sh
+
+# Validate autounattend.xml specifically
+validate-xml:
+	@echo "Validating autounattend.xml..."
+	@if [[ -f config/autounattend.xml ]]; then \
+		xmllint --noout config/autounattend.xml && echo "autounattend.xml is valid XML"; \
+	else \
+		echo "autounattend.xml not found"; \
+		exit 1; \
+	fi
 
 # Download UUP files from uupdump.net
 download:

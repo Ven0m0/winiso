@@ -5,7 +5,7 @@ Automates the download of UUP files from uupdump.net
 
 import sys
 import os
-from typing import Optional
+from typing import Optional, Dict, List, Any, Union
 import json
 import argparse
 import shutil
@@ -13,8 +13,6 @@ from pathlib import Path
 from urllib.request import urlopen, Request
 from urllib.error import URLError, HTTPError
 from urllib.parse import urlencode
-
-# Colors for terminal output
 
 
 class Colors:
@@ -26,26 +24,29 @@ class Colors:
     BOLD = "\033[1m"
 
 
-def log_info(msg):
+_url_cache: Dict[str, Union[str, Dict[str, Any]]] = {}
+
+
+def log_info(msg: str) -> None:
     print(f"{Colors.CYAN}[INFO]{Colors.RESET} {msg}")
 
 
-def log_success(msg):
+def log_success(msg: str) -> None:
     print(f"{Colors.GREEN}[OK]{Colors.RESET} {msg}")
 
 
-def log_warn(msg):
+def log_warn(msg: str) -> None:
     print(f"{Colors.YELLOW}[WARN]{Colors.RESET} {msg}")
 
 
-def log_error(msg):
+def log_error(msg: str) -> None:
     print(f"{Colors.RED}[ERROR]{Colors.RESET} {msg}")
 
 
-def check_dependencies():
+def check_dependencies() -> bool:
     """Check if required tools are installed"""
     required = ["aria2c", "wimlib-imagex", "cabextract"]
-    missing = []
+    missing: List[str] = []
     for tool in required:
         if not shutil.which(tool):
             missing.append(tool)
@@ -56,10 +57,12 @@ def check_dependencies():
     return True
 
 
-_url_cache = {}
-
-
-def fetch_url(url, headers=None, data=None, return_json=False):
+def fetch_url(
+    url: str,
+    headers: Optional[Dict[str, str]] = None,
+    data: Optional[Dict[str, Any]] = None,
+    return_json: bool = False,
+) -> Optional[Union[str, Dict[str, Any]]]:
     """Fetch URL with error handling and optional caching"""
     if headers is None:
         headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"}
@@ -100,7 +103,7 @@ def fetch_url(url, headers=None, data=None, return_json=False):
         return None
 
 
-def get_latest_builds(max_results=10):
+def get_latest_builds(max_results: int = 10) -> Optional[List[Dict[str, Any]]]:
     """Fetch latest Windows 11 builds from uupdump.net API"""
     log_info("Fetching latest Windows 11 builds from uupdump.net...")
 
@@ -122,7 +125,7 @@ def get_latest_builds(max_results=10):
         log_warn("No builds found in API response")
         return []
 
-    build_list = []
+    build_list: List[Dict[str, Any]] = []
     for build_id, build_info in builds.items():
         build_info["id"] = build_id
         build_list.append(build_info)
@@ -131,7 +134,7 @@ def get_latest_builds(max_results=10):
     return build_list[:max_results]
 
 
-def display_builds(builds):
+def display_builds(builds: Optional[List[Dict[str, Any]]]) -> None:
     """Display builds in a user-friendly format"""
     if not builds:
         log_warn("No builds available.")
@@ -150,7 +153,7 @@ def display_builds(builds):
         print()
 
 
-def get_build_info(build_id):
+def get_build_info(build_id: str) -> Optional[Dict[str, Any]]:
     """Get detailed information about a specific build"""
     log_info(f"Fetching build information for ID: {build_id}")
 
@@ -167,7 +170,7 @@ def get_build_info(build_id):
     return data.get("response")
 
 
-def get_available_editions(build_id):
+def get_available_editions(build_id: str) -> Optional[Dict[str, Any]]:
     """Get available editions for a specific build from the API"""
     log_info(f"Fetching available editions for build: {build_id}")
 
@@ -186,7 +189,7 @@ def get_available_editions(build_id):
     return response_data
 
 
-def get_available_languages(build_id=None):
+def get_available_languages(build_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
     """Get available languages for a specific build from the API"""
     if build_id:
         log_info(f"Fetching available languages for build: {build_id}")
@@ -208,7 +211,7 @@ def get_available_languages(build_id=None):
     return data.get("response", {})
 
 
-def fetch_latest_from_wu(arch="amd64", ring="Retail"):
+def fetch_latest_from_wu(arch: str = "amd64", ring: str = "Retail") -> Optional[Dict[str, Any]]:
     """Fetch the latest build from Windows Update servers"""
     log_info(f"Fetching latest {arch} build from Windows Update ({ring} ring)...")
 
@@ -227,7 +230,7 @@ def fetch_latest_from_wu(arch="amd64", ring="Retail"):
     return data.get("response", {})
 
 
-def get_api_version():
+def get_api_version() -> Optional[Dict[str, Any]]:
     """Get the current UUP dump API version"""
     api_url = "https://api.uupdump.net/"
     response = fetch_url(api_url)
@@ -247,12 +250,12 @@ def get_api_version():
     return data.get("response", {})
 
 
-def select_editions(build_info):
+def select_editions(build_info: Dict[str, Any]) -> Optional[List[str]]:
     """Allow user to select which editions to download"""
     files = build_info.get("files", {})
 
     # Find edition-specific ESD files
-    edition_files = {}
+    edition_files: Dict[str, str] = {}
 
     for filename, file_info in files.items():
         if filename.endswith(".esd"):
@@ -295,7 +298,7 @@ def select_editions(build_info):
     return None
 
 
-def _prepare_output_directory(output_path):
+def _prepare_output_directory(output_path: Path) -> None:
     output_path.mkdir(parents=True, exist_ok=True)
     existing_files = list(output_path.glob("*"))
     if existing_files:
@@ -310,8 +313,12 @@ def _prepare_output_directory(output_path):
                     f.unlink()
 
 
-def _prepare_download_list(build_id, files, edition_filter):
-    download_list = []
+def _prepare_download_list(
+    build_id: str,
+    files: Dict[str, Any],
+    edition_filter: Optional[List[str]] = None,
+) -> List[Dict[str, Any]]:
+    download_list: List[Dict[str, Any]] = []
     base_url = "https://uupdump.net/get.php"
     for filename, file_info in files.items():
         if edition_filter and filename.endswith(".esd"):
@@ -324,7 +331,12 @@ def _prepare_download_list(build_id, files, edition_filter):
     return download_list
 
 
-def _run_aria2_download(output_path, aria2_input, download_list):
+def _run_aria2_download(
+    output_path: Path,
+    aria2_input: Path,
+    download_list: List[Dict[str, Any]],
+    verbose: bool = False,
+) -> bool:
     import subprocess
 
     try:
@@ -362,11 +374,23 @@ def _run_aria2_download(output_path, aria2_input, download_list):
             "--continue=true",
         ]
         log_info("Starting download...")
-        subprocess.run(cmd, check=True)
+        result = subprocess.run(
+            cmd,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        if verbose and result.stdout:
+            print(result.stdout)
         log_success("Download completed successfully")
         return True
     except subprocess.CalledProcessError as e:
         log_error(f"Download failed with exit code {e.returncode}")
+        if verbose and (e.stdout or e.stderr):
+            if e.stdout:
+                print(f"stdout: {e.stdout}")
+            if e.stderr:
+                print(f"stderr: {e.stderr}")
         return False
     except KeyboardInterrupt:
         log_warn("\nDownload cancelled by user")
@@ -385,7 +409,13 @@ def _run_aria2_download(output_path, aria2_input, download_list):
                 pass
 
 
-def download_build(build_id, output_dir, edition_filter=None, build_info=None):
+def download_build(
+    build_id: str,
+    output_dir: Union[str, Path],
+    edition_filter: Optional[List[str]] = None,
+    build_info: Optional[Dict[str, Any]] = None,
+    verbose: bool = False,
+) -> bool:
     """Download UUP files for a specific build"""
     if build_info is None:
         build_info = get_build_info(build_id)
@@ -422,10 +452,14 @@ def download_build(build_id, output_dir, edition_filter=None, build_info=None):
     log_success(f"Will download {len(download_list)} files")
 
     aria2_input = output_path / "aria2_input.txt"
-    return _run_aria2_download(output_path, aria2_input, download_list)
+    return _run_aria2_download(output_path, aria2_input, download_list, verbose=verbose)
 
 
-def _process_selected_build(selected_build, output_dir):
+def _process_selected_build(
+    selected_build: Dict[str, Any],
+    output_dir: Union[str, Path],
+    verbose: bool = False,
+) -> bool:
     """Process the selected build for download."""
     build_id = selected_build["id"]
 
@@ -450,14 +484,14 @@ def _process_selected_build(selected_build, output_dir):
     )
     if confirm in ("", "y", "yes"):
         return download_build(
-            build_id, output_dir, edition_filter, build_info=build_info
+            build_id, output_dir, edition_filter, build_info=build_info, verbose=verbose
         )
     else:
         log_info("Download cancelled")
         return False
 
 
-def interactive_mode(output_dir):
+def interactive_mode(output_dir: Union[str, Path], verbose: bool = False) -> bool:
     """Interactive mode for selecting and downloading builds"""
     print(f"\n{Colors.BOLD}UUP File Downloader for Windows 11{Colors.RESET}")
     print("=" * 50)
@@ -481,7 +515,7 @@ def interactive_mode(output_dir):
 
             idx = int(choice) - 1
             if 0 <= idx < len(builds):
-                if _process_selected_build(builds[idx], output_dir):
+                if _process_selected_build(builds[idx], output_dir, verbose=verbose):
                     return True
             else:
                 log_warn(f"Please enter a number between 1 and {len(builds)}")
@@ -494,7 +528,7 @@ def interactive_mode(output_dir):
             return False
 
 
-def parse_args(args=None):
+def parse_args(args: Optional[List[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Download UUP files from uupdump.net for Windows 11 ISO building",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -566,13 +600,13 @@ For more information, visit: https://uupdump.net
     )
 
     parser.add_argument(
-        "--version", action="store_true", help="Show API version info and exit"
+        "--verbose", action="store_true", help="Show verbose output including aria2c stderr/stdout"
     )
 
     return parser.parse_args(args)
 
 
-def _handle_info_mode(args):
+def _handle_info_mode(args: argparse.Namespace) -> Optional[int]:
     """Handles info-only modes and returns the appropriate exit code. Returns None if not handled."""
     if args.version:
         version_info = get_api_version()
@@ -645,7 +679,7 @@ def _resolve_output_dir(output_arg: str) -> Optional[Path]:
     return output_dir
 
 
-def main():
+def main() -> int:
     args = parse_args()
 
     # Check dependencies (skip for info-only commands)
@@ -655,17 +689,19 @@ def main():
         or args.languages is not None
         or args.latest
         or args.version
+        or args.verbose
     )
-    if not info_only and not check_dependencies():
+    # Note: verbose is not info_only - it affects download behavior
+    info_only_mode = (
+        args.version or args.editions or args.languages is not None or args.latest
+    )
+
+    if not info_only_mode and not check_dependencies():
         return 1
 
     # API version check
     # Info-only modes should exit before any download/output-dir setup so they can
     # run without invoking normal-path dependency or filesystem checks.
-    info_only_mode = (
-        args.version or args.editions or args.languages is not None or args.latest
-    )
-
     if info_only_mode:
         result = _handle_info_mode(args)
         if result is not None:
@@ -686,11 +722,11 @@ def main():
     # Direct build ID mode
     if args.build_id:
         log_info(f"Downloading build ID: {args.build_id}")
-        success = download_build(args.build_id, output_dir)
+        success = download_build(args.build_id, output_dir, verbose=args.verbose)
         return 0 if success else 1
 
     # Interactive mode
-    success = interactive_mode(output_dir)
+    success = interactive_mode(output_dir, verbose=args.verbose)
     return 0 if success else 1
 
 

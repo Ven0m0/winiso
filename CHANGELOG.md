@@ -12,8 +12,16 @@ All notable changes to this project will be documented in this file.
 - Added `xmllint` documentation to `mise.toml` (system package via libxml2-utils on Debian/Ubuntu, libxml2 on Arch/Fedora).
 - Added `biome` to `mise.toml` for JS/TS/JSON/HTML/CSS linting and formatting (via bun x @biomejs/biome).
 - Added `mise run lint-xml` and `mise run lint-biome` tasks for linting workflows.
+- Added `--verbose` CLI option to download_uup.py for capturing aria2c stderr/stdout on failure.
+- Added `log_debug()` function to utils.sh with LOG_LEVEL environment variable support.
+- Added complete type annotations to all functions in `scripts/download_uup.py`.
+- Added test coverage for `_prepare_download_list`, `_run_aria2_download` success, `_process_selected_build`, and `_prepare_output_directory`.
 
 ### Changed
+- Added xmllint validation for autounattend.xml in validate_prereqs.sh (T055).
+- Added `validate-xml` Makefile target for standalone XML validation.
+- Added xmllint to required tools in utils.sh.
+- Captured subprocess stderr/stdout in `_run_aria2_download` for better error diagnostics (T056).
 - Refactored shell scripts (utils.sh, debloat_wim.sh, setup_env.sh, validate_prereqs.sh) to use consistent 2-space indentation.
 - Inlined `generate_commands()` function in debloat_wim.sh (single-use function).
 - Removed redundant section comments from shell scripts.

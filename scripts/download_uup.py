@@ -817,7 +817,7 @@ def get_pinned_build() -> Optional[Dict[str, Any]]:
         return None
 
     try:
-        with open(pin_path, "r") as f:
+        with open(pin_path, "r", encoding="utf-8") as f:
             data = json.load(f)
             if isinstance(data, dict) and "build_id" in data:
                 return data

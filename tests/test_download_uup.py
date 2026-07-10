@@ -643,5 +643,57 @@ class TestGetApiVersion(unittest.TestCase):
         self.assertEqual(result, {})
 
 
+class TestDisplayBuilds(unittest.TestCase):
+    @patch("download_uup.log_warn")
+    def test_display_builds_empty(self, mock_log_warn):
+        download_uup.display_builds([])
+        mock_log_warn.assert_called_once_with("No builds available.")
+
+    @patch("builtins.print")
+    def test_display_builds_success(self, mock_print):
+        builds = [
+            {
+                "id": "build-1",
+                "title": "Windows 11 Test Build",
+                "build": "22621.1",
+                "arch": "amd64",
+                "created": "1600000000",
+            }
+        ]
+        download_uup.display_builds(builds)
+
+        # Check for title and build info in calls
+        calls = [call[0][0] for call in mock_print.call_args_list if call[0]]
+
+        # Check header
+        self.assertTrue(any("Available Windows 11 Builds" in c for c in calls))
+        # Check build details
+        self.assertTrue(any("[1]" in c and "Windows 11 Test Build" in c for c in calls))
+        self.assertTrue(
+            any(
+                "Build: 22621.1" in c
+                and "Arch: amd64" in c
+                and "Created: 1600000000" in c
+                for c in calls
+            )
+        )
+
+    @patch("builtins.print")
+    def test_display_builds_missing_fields(self, mock_print):
+        builds = [{"id": "build-1"}]
+        download_uup.display_builds(builds)
+
+        calls = [call[0][0] for call in mock_print.call_args_list if call[0]]
+
+        # Check for defaults
+        self.assertTrue(any("Unknown" in c for c in calls))  # Title
+        self.assertTrue(
+            any(
+                "Build: N/A" in c and "Arch: N/A" in c and "Created: N/A" in c
+                for c in calls
+            )
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

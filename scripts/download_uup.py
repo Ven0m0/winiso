@@ -133,6 +133,10 @@ def get_latest_builds(max_results=10):
 
 def display_builds(builds):
     """Display builds in a user-friendly format"""
+    if not builds:
+        log_warn("No builds available.")
+        return
+
     print(f"\n{Colors.BOLD}Available Windows 11 Builds:{Colors.RESET}\n")
 
     for i, build in enumerate(builds, 1):

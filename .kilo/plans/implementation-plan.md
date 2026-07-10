@@ -67,6 +67,8 @@ _Generated: 2026-07-10 · Updated: 2026-07-10_
 
 ## Tasks
 
+create a pyproject.toml and add httpx[http2], uvloop, orjson
+
 ### Priority 1: Foundation (0-30d)
 
 **T003 · Python type hints**  

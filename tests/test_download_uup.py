@@ -649,15 +649,13 @@ class TestGetAvailableEditions(unittest.TestCase):
         result = download_uup.get_available_editions("fake-build-id")
 
         self.assertIsNone(result)
-
-
-class TestGetApiVersion(unittest.TestCase):
-    @patch("download_uup.fetch_url")
     def test_get_api_version_success(self, mock_fetch_url):
-        mock_fetch_url.return_value = '{"response": {"version": "1.0.0"}}'
+        mock_fetch_url.return_value = {"response": {"version": "1.0.0"}}
         result = download_uup.get_api_version()
         self.assertEqual(result, {"version": "1.0.0"})
-        mock_fetch_url.assert_called_once_with("https://api.uupdump.net/")
+        mock_fetch_url.assert_called_once_with(
+            "https://api.uupdump.net/", return_json=True
+        )
 
     @patch("download_uup.fetch_url")
     def test_get_api_version_fetch_fails(self, mock_fetch_url):

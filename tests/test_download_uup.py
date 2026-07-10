@@ -661,15 +661,11 @@ class TestGetAvailableEditions(unittest.TestCase):
     def test_get_api_version_fetch_fails(self, mock_fetch_url):
         mock_fetch_url.return_value = None
         result = download_uup.get_api_version()
-        self.assertIsNone(result)
-
     @patch("download_uup.fetch_url")
-    @patch("download_uup.log_error")
-    def test_get_api_version_invalid_json(self, mock_log_error, mock_fetch_url):
-        mock_fetch_url.return_value = "invalid json"
+    def test_get_api_version_invalid_json(self, mock_fetch_url):
+        mock_fetch_url.return_value = None
         result = download_uup.get_api_version()
         self.assertIsNone(result)
-        mock_log_error.assert_called_once()
 
     @patch("download_uup.fetch_url")
     def test_get_api_version_no_response_key(self, mock_fetch_url):

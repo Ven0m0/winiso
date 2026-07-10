@@ -54,6 +54,38 @@ class TestSecurity(unittest.TestCase):
             f"Path {prefix_exploit_path} should be detected as traversal from {project_root}",
         )
 
+    def test_no_sudo_usage(self):
+        """
+        Verify that no shell scripts in the scripts/ directory use sudo or su.
+        This is a project-specific security invariant.
+        """
+        scripts_dir = Path(__file__).resolve().parent.parent / "scripts"
+        scripts = list(scripts_dir.glob("*.sh"))
+
+        # Also check mise tasks and config scripts
+        mise_tasks_dir = Path(__file__).resolve().parent.parent / ".mise" / "tasks"
+        if mise_tasks_dir.exists():
+            scripts.extend(list(mise_tasks_dir.glob("*")))
+
+        # Commands to check for
+        forbidden_patterns = [r"\bsudo\b", r"\bsu\b"]
+
+        import re
+
+        for script in scripts:
+            if script.is_dir():
+                continue
+
+            content = script.read_text()
+            # Remove comments before checking to avoid false positives in documentation
+            content_no_comments = re.sub(r"#.*", "", content)
+
+            for pattern in forbidden_patterns:
+                self.assertFalse(
+                    re.search(pattern, content_no_comments),
+                    f"Forbidden command pattern '{pattern}' found in {script.relative_to(scripts_dir.parent)}",
+                )
+
 
 if __name__ == "__main__":
     unittest.main()

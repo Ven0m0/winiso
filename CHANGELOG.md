@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Added delta downloads support (T008): `--delta-from <build_id>` and `--delta-store <dir>` CLI flags for downloading only files added or modified compared to a previous build, plus `--save-delta-manifest` and `--delta-info` info modes. Per-build file lists are persisted to the local delta store after a successful download so subsequent delta runs have a baseline. New helpers: `get_build_files`, `calculate_delta`, `compute_changed_files`, `save_delta_manifest`, `load_delta_manifest`, `format_delta_summary`.
 - Added language packs support (T014): `--language` and `--languages-download` CLI flags, `download_language_packs()` function for multi-language ISO creation, and language-aware `get_build_info()`.
 - Added unit tests for `download_language_packs()` in `tests/test_download_uup.py`.
 - Added `get_update_info()` function for `updateinfo.php` endpoint (T007).

@@ -669,6 +669,7 @@ def _prepare_download_list(
     files: Dict[str, Any],
     edition_filter: Optional[List[str]] = None,
     mirrors: Optional[List[str]] = None,
+    delta_filter: Optional[Set[str]] = None,
 ) -> List[Dict[str, Any]]:
     download_list: List[Dict[str, Any]] = []
     base_urls = mirrors if mirrors else load_mirrors()
@@ -678,11 +679,220 @@ def _prepare_download_list(
         if edition_filter and filename.endswith(".esd"):
             if filename not in edition_filter:
                 continue
+        if delta_filter is not None and filename not in delta_filter:
+            continue
         file_url = f"{primary_url}?id={build_id}&pack={filename}&aria2=2"
         download_list.append(
             {"url": file_url, "name": filename, "size": file_info.get("size", 0)}
         )
     return download_list
+
+
+# Default on-disk location for delta manifests (per-build file lists). Set
+# via --delta-store. Files are JSON objects keyed by filename.
+DEFAULT_DELTA_STORE: str = ".uup-delta"
+
+
+def get_build_files(build_info: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
+    """Extract the per-file metadata from a build info dict.
+
+    Returns a mapping of ``filename -> {size, sha256, ...}`` for every entry in
+    ``build_info['files']``. Only entries that are mappings are preserved so a
+    malformed value does not crash downstream consumers.
+
+    The returned dict is suitable for passing to :func:`calculate_delta` or
+    :func:`save_delta_manifest`.
+    """
+    raw_files: Any = build_info.get("files", {})
+    if not isinstance(raw_files, dict):
+        return {}
+    result: Dict[str, Dict[str, Any]] = {}
+    for filename, info in raw_files.items():
+        if not isinstance(filename, str) or not isinstance(info, dict):
+            continue
+        result[filename] = dict(info)
+    return result
+
+
+def calculate_delta(
+    base_files: Dict[str, Dict[str, Any]],
+    target_files: Dict[str, Dict[str, Any]],
+) -> Dict[str, List[str]]:
+    """Compare two file lists and classify each file by change type.
+
+    The returned dict has four keys:
+    - ``added``: filenames present in ``target_files`` but not in ``base_files``
+    - ``removed``: filenames present in ``base_files`` but not in ``target_files``
+    - ``modified``: filenames present in both, with a different ``size`` or
+      ``sha256`` (or any other top-level key) value
+    - ``unchanged``: filenames present in both with identical metadata
+
+    A file is treated as ``modified`` if any of its metadata keys differ; this
+    is conservative but correct in the absence of a guaranteed per-file
+    checksum.
+    """
+    base_keys = set(base_files.keys())
+    target_keys = set(target_files.keys())
+
+    added: List[str] = sorted(target_keys - base_keys)
+    removed: List[str] = sorted(base_keys - target_keys)
+
+    common = base_keys & target_keys
+    modified: List[str] = []
+    unchanged: List[str] = []
+    for name in sorted(common):
+        if base_files[name] != target_files[name]:
+            modified.append(name)
+        else:
+            unchanged.append(name)
+
+    return {
+        "added": added,
+        "removed": removed,
+        "modified": modified,
+        "unchanged": unchanged,
+    }
+
+
+def get_delta_store_path(store_dir: Optional[Union[str, Path]] = None) -> Path:
+    """Return the path to the local delta-manifest store, creating it if needed.
+
+    The store is intentionally outside the project root in spirit (it is a
+    runtime cache of file lists), but the default keeps it alongside the
+    ``.uup_cache`` directory in the project root for simplicity.
+    """
+    if store_dir is None:
+        project_root = Path(__file__).resolve().parent.parent
+        path = project_root / DEFAULT_DELTA_STORE
+    else:
+        path = Path(store_dir)
+        if not path.is_absolute():
+            project_root = Path(__file__).resolve().parent.parent
+            path = project_root / path
+    try:
+        path = path.resolve()
+    except (OSError, RuntimeError):
+        return path
+    try:
+        path.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        log_warn(f"Could not create delta store at {path}: {exc}")
+    return path
+
+
+def _safe_delta_filename(build_id: str) -> str:
+    """Return a filesystem-safe filename for a delta manifest.
+
+    Aggressively replaces any non-alphanumeric character (including ``.`` and
+    path separators) with ``_`` to prevent path-traversal issues when a
+    caller-supplied build ID contains ``..`` or ``/``.
+    """
+    safe = "".join(c if c.isalnum() or c in "-_" else "_" for c in build_id)
+    return f"{safe[:128]}.json"
+
+
+def save_delta_manifest(
+    build_id: str,
+    files: Dict[str, Dict[str, Any]],
+    store_dir: Optional[Union[str, Path]] = None,
+) -> Optional[Path]:
+    """Persist a build's file list to the local delta store.
+
+    Returns the manifest path on success, or ``None`` on failure. The manifest
+    is a JSON object with ``build_id``, ``saved_at`` (unix timestamp), and
+    ``files`` keys.
+    """
+    store_path = get_delta_store_path(store_dir)
+    manifest_path = store_path / _safe_delta_filename(build_id)
+    payload = {
+        "build_id": build_id,
+        "saved_at": time.time(),
+        "files": files,
+    }
+    try:
+        with open(manifest_path, "w", encoding="utf-8") as f:
+            json.dump(payload, f, indent=2, sort_keys=True)
+        return manifest_path
+    except (OSError, TypeError) as exc:
+        log_error(f"Failed to save delta manifest for {build_id}: {exc}")
+        return None
+
+
+def load_delta_manifest(
+    build_id: str,
+    store_dir: Optional[Union[str, Path]] = None,
+) -> Optional[Dict[str, Dict[str, Any]]]:
+    """Load a previously saved delta manifest for ``build_id``.
+
+    Returns the ``files`` mapping, or ``None`` if the manifest is missing or
+    malformed. The resolved manifest path is verified to be inside the
+    resolved store directory to prevent path traversal via a malicious
+    ``build_id``.
+    """
+    store_path = get_delta_store_path(store_dir)
+    safe_name = _safe_delta_filename(build_id)
+    manifest_path = (store_path / safe_name).resolve()
+
+    try:
+        store_resolved = store_path.resolve()
+    except (OSError, RuntimeError):
+        return None
+
+    try:
+        manifest_path.relative_to(store_resolved)
+    except (ValueError, RuntimeError):
+        log_error("Delta manifest path is outside the delta store")
+        return None
+
+    if not manifest_path.exists():
+        return None
+    try:
+        with open(manifest_path, "r", encoding="utf-8") as f:
+            data: Any = json.load(f)
+    except (OSError, json.JSONDecodeError) as exc:
+        log_warn(f"Failed to read delta manifest for {build_id}: {exc}")
+        return None
+    if not isinstance(data, dict):
+        return None
+    files: Any = data.get("files", {})
+    if not isinstance(files, dict):
+        return None
+    result: Dict[str, Dict[str, Any]] = {}
+    for name, info in files.items():
+        if isinstance(name, str) and isinstance(info, dict):
+            result[name] = cast(Dict[str, Any], info)
+    return result
+
+
+def compute_changed_files(
+    base_files: Dict[str, Dict[str, Any]],
+    target_files: Dict[str, Dict[str, Any]],
+) -> Set[str]:
+    """Return the set of filenames that need to be re-downloaded.
+
+    Equivalent to ``added | modified`` from :func:`calculate_delta`. This is
+    the convenience helper used by the download pipeline when filtering a
+    download list for a delta build.
+    """
+    delta = calculate_delta(base_files, target_files)
+    return set(delta["added"]) | set(delta["modified"])
+
+
+def format_delta_summary(
+    base_id: str,
+    target_id: str,
+    delta: Dict[str, List[str]],
+) -> str:
+    """Format a human-readable summary of a delta for CLI output."""
+    lines = [
+        f"Delta: {base_id} -> {target_id}",
+        f"  added:    {len(delta['added'])}",
+        f"  modified: {len(delta['modified'])}",
+        f"  removed:  {len(delta['removed'])}",
+        f"  unchanged:{len(delta['unchanged'])}",
+        f"  to download: {len(delta['added']) + len(delta['modified'])}",
+    ]
+    return "\n".join(lines)
 
 
 def _run_aria2_download(
@@ -794,8 +1004,17 @@ def download_build(
     cache_ttl: int = DEFAULT_CACHE_TTL_SECONDS,
     mirrors: Optional[List[str]] = None,
     language: Optional[str] = "en-us",
+    delta_from: Optional[str] = None,
+    delta_store: Optional[Union[str, Path]] = None,
 ) -> bool:
-    """Download UUP files for a specific build"""
+    """Download UUP files for a specific build
+
+    If ``delta_from`` is provided and a previously saved manifest exists in the
+    delta store for that build, only the files that have been added or modified
+    (compared to the saved manifest) are downloaded. A fresh manifest for
+    ``build_id`` is written to the delta store after a successful download so
+    subsequent delta runs have a baseline.
+    """
     if build_info is None:
         build_info = get_build_info_cached(
             build_id, ttl_seconds=cache_ttl, force_refresh=not use_cache, language=language
@@ -823,8 +1042,34 @@ def download_build(
 
     _prepare_output_directory(output_path)
 
+    target_files = get_build_files(build_info)
+    delta_filter: Optional[Set[str]] = None
+    if delta_from:
+        base_files = load_delta_manifest(delta_from, store_dir=delta_store)
+        if base_files is None:
+            log_warn(
+                f"No saved delta manifest for build {delta_from}; "
+                "downloading all files (full set)"
+            )
+        else:
+            delta = calculate_delta(base_files, target_files)
+            log_info(
+                f"Delta vs {delta_from}: +{len(delta['added'])} added, "
+                f"~{len(delta['modified'])} modified, "
+                f"-{len(delta['removed'])} removed"
+            )
+            delta_filter = set(delta["added"]) | set(delta["modified"])
+            if not delta_filter:
+                log_success(
+                    f"No changes detected vs {delta_from}; nothing to download"
+                )
+                save_delta_manifest(build_id, target_files, store_dir=delta_store)
+                return True
+
     log_info(f"Preparing to download {len(files)} files...")
-    download_list = _prepare_download_list(build_id, files, edition_filter)
+    download_list = _prepare_download_list(
+        build_id, files, edition_filter, mirrors=mirrors, delta_filter=delta_filter
+    )
 
     if not download_list:
         log_error("No files to download after filtering")
@@ -833,7 +1078,15 @@ def download_build(
     log_success(f"Will download {len(download_list)} files")
 
     aria2_input = output_path / "aria2_input.txt"
-    return _run_aria2_download(output_path, aria2_input, download_list, verbose=verbose, resume=resume)
+    ok = _run_aria2_download(
+        output_path, aria2_input, download_list, verbose=verbose, resume=resume
+    )
+    if ok and delta_filter is not None:
+        save_delta_manifest(build_id, target_files, store_dir=delta_store)
+    elif ok:
+        # Always update the manifest so future delta runs have a baseline
+        save_delta_manifest(build_id, target_files, store_dir=delta_store)
+    return ok
 
 
 def _process_selected_build(
@@ -1347,6 +1600,45 @@ For more information, visit: https://uupdump.net
         help="Comma-separated languages to download for multi-language ISO (e.g., en-us,fr-fr,de-de)",
     )
 
+    parser.add_argument(
+        "--delta-from",
+        metavar="BUILD_ID",
+        dest="delta_from",
+        help=(
+            "Only download files that have been added or modified compared to a "
+            "previous build. BUILD_ID must have a saved manifest in the delta store."
+        ),
+    )
+
+    parser.add_argument(
+        "--delta-store",
+        metavar="DIR",
+        dest="delta_store",
+        help=(
+            f"Directory used to store per-build file manifests for delta downloads "
+            f"(default: {DEFAULT_DELTA_STORE})"
+        ),
+    )
+
+    parser.add_argument(
+        "--save-delta-manifest",
+        metavar="BUILD_ID",
+        dest="save_delta_manifest",
+        help=(
+            "Fetch a build's file list from the API and save it to the delta store, "
+            "then exit. Useful for seeding a baseline for future --delta-from runs."
+        ),
+    )
+
+    parser.add_argument(
+        "--delta-info",
+        metavar="BUILD_ID",
+        dest="delta_info",
+        help=(
+            "Show information about the saved delta manifest for BUILD_ID and exit."
+        ),
+    )
+
     return parser.parse_args(args)
 
 
@@ -1398,6 +1690,47 @@ def _handle_info_mode(args: argparse.Namespace) -> Optional[int]:
             print(f"  {json.dumps(info, indent=2)}")
             return 0
         return 1
+
+    # Save delta manifest mode
+    if args.save_delta_manifest:
+        build_id = args.save_delta_manifest
+        build_info = get_build_info_cached(
+            build_id, ttl_seconds=args.cache_ttl, force_refresh=args.no_cache
+        )
+        if not build_info:
+            log_error(f"Failed to get build information for {build_id}")
+            return 1
+        files = get_build_files(build_info)
+        if not files:
+            log_error(f"No files found for build {build_id}")
+            return 1
+        manifest_path = save_delta_manifest(
+            build_id, files, store_dir=args.delta_store
+        )
+        if manifest_path:
+            log_success(
+                f"Saved delta manifest for {build_id} ({len(files)} files) "
+                f"to {manifest_path}"
+            )
+            return 0
+        return 1
+
+    # Delta info mode
+    if args.delta_info:
+        files = load_delta_manifest(args.delta_info, store_dir=args.delta_store)
+        if files is None:
+            log_warn(
+                f"No saved delta manifest for build {args.delta_info} "
+                f"in store {args.delta_store or DEFAULT_DELTA_STORE}"
+            )
+            return 1
+        print(f"\n{Colors.BOLD}Delta Manifest:{Colors.RESET} {args.delta_info}\n")
+        print(f"  Files: {len(files)}")
+        total_size = sum(
+            int(info.get("size", 0)) for info in files.values() if isinstance(info, dict)
+        )
+        print(f"  Total size: {total_size} bytes")
+        return 0
 
     return None
 
@@ -1520,7 +1853,11 @@ def main() -> int:
 
     # Note: verbose is not info_only - it affects download behavior
     info_only_mode = (
-        args.editions or args.languages is not None or args.latest
+        args.editions
+        or args.languages is not None
+        or args.latest
+        or args.save_delta_manifest is not None
+        or args.delta_info is not None
     )
 
     if not info_only_mode and not check_dependencies():
@@ -1595,6 +1932,8 @@ def main() -> int:
             use_cache=not args.no_cache,
             cache_ttl=args.cache_ttl,
             mirrors=custom_mirrors,
+            delta_from=args.delta_from,
+            delta_store=args.delta_store,
         )
         return 0 if success else 1
 

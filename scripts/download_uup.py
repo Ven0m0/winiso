@@ -612,8 +612,12 @@ def _run_aria2_download(
     aria2_input: Path,
     download_list: List[Dict[str, Any]],
     verbose: bool = False,
+    resume: bool = True,
 ) -> bool:
     import subprocess
+
+    session_file = output_path / ".aria2_session"
+    aria2_log = output_path / ".aria2.log"
 
     try:
         lines = []
@@ -649,6 +653,16 @@ def _run_aria2_download(
             "--file-allocation=none",
             "--continue=true",
         ]
+        if resume:
+            cmd.extend([
+                "--save-session",
+                str(session_file),
+                "--save-session-interval",
+                "60",
+            ])
+        if verbose:
+            cmd.append("--log")
+            cmd.append(str(aria2_log))
         log_info("Starting download...")
         result = subprocess.run(
             cmd,
@@ -659,6 +673,11 @@ def _run_aria2_download(
         if verbose and result.stdout:
             print(result.stdout)
         log_success("Download completed successfully")
+        # Clean up session file on success
+        try:
+            session_file.unlink(missing_ok=True)
+        except OSError:
+            pass
         return True
     except subprocess.CalledProcessError as e:
         log_error(f"Download failed with exit code {e.returncode}")
@@ -669,7 +688,7 @@ def _run_aria2_download(
                 print(f"stderr: {e.stderr}")
         return False
     except KeyboardInterrupt:
-        log_warn("\nDownload cancelled by user")
+        log_warn("\nDownload cancelled by user - session saved for resume")
         return False
     except OSError as e:
         log_error(f"System error during download: {e}")
@@ -691,6 +710,7 @@ def download_build(
     edition_filter: Optional[List[str]] = None,
     build_info: Optional[Dict[str, Any]] = None,
     verbose: bool = False,
+    resume: bool = True,
     use_cache: bool = True,
     cache_ttl: int = DEFAULT_CACHE_TTL_SECONDS,
 ) -> bool:
@@ -732,7 +752,7 @@ def download_build(
     log_success(f"Will download {len(download_list)} files")
 
     aria2_input = output_path / "aria2_input.txt"
-    return _run_aria2_download(output_path, aria2_input, download_list, verbose=verbose)
+    return _run_aria2_download(output_path, aria2_input, download_list, verbose=verbose, resume=resume)
 
 
 def _process_selected_build(
@@ -773,6 +793,7 @@ def _process_selected_build(
             edition_filter,
             build_info=build_info,
             verbose=verbose,
+            resume=True,
             use_cache=use_cache,
             cache_ttl=cache_ttl,
         )
@@ -789,6 +810,7 @@ def _process_selected_build(
             edition_filter,
             build_info=build_info,
             verbose=verbose,
+            resume=True,
             use_cache=use_cache,
             cache_ttl=cache_ttl,
         )
@@ -1130,6 +1152,14 @@ For more information, visit: https://uupdump.net
     )
 
     parser.add_argument(
+        "--no-resume",
+        action="store_false",
+        dest="resume",
+        default=True,
+        help="Disable aria2c session persistence for resuming interrupted downloads",
+    )
+
+    parser.add_argument(
         "-p",
         "--preset",
         dest="preset",
@@ -1435,6 +1465,7 @@ def main() -> int:
             output_dir,
             edition_filter,
             verbose=args.verbose,
+            resume=args.resume,
             use_cache=not args.no_cache,
             cache_ttl=args.cache_ttl,
         )

@@ -5,6 +5,9 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Added `get_update_info()` function for `updateinfo.php` endpoint (T007).
+- Added `--update-info` CLI flag for fetching update information.
+- Added unit tests for `get_update_info()` in `tests/test_download_uup.py`.
 - Added unit tests for `get_available_languages` in `tests/test_download_uup.py` to improve coverage of API functions.
 - Added a dedicated `test-matrix.yml` workflow for Python tests on uv-managed Python runtimes.
 - Added `.github/instructions/windows-servicing.instructions.md` to keep Windows-only servicing changes separate from the default Linux build path.

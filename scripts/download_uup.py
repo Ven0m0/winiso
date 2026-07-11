@@ -339,6 +339,24 @@ def get_api_version() -> Optional[Dict[str, Any]]:
     return _get_response_dict(data, {})
 
 
+def get_update_info(update_id: str) -> Optional[Dict[str, Any]]:
+    """Get update information from updateinfo.php endpoint"""
+    log_info(f"Fetching update info for ID: {update_id}")
+
+    api_url = f"https://api.uupdump.net/updateinfo.php?id={update_id}"
+    data = fetch_url(api_url, return_json=True)
+
+    if not data:
+        log_error(f"Failed to fetch update info for {update_id}")
+        return None
+
+    if data.get("response", {}).get("error"):
+        log_error(f"API Error: {data['response']['error']}")
+        return None
+
+    return _get_response_dict(data, {})
+
+
 def get_cache_dir() -> Path:
     """Return the cache directory, creating it if necessary."""
     script_dir = Path(__file__).parent
@@ -1190,6 +1208,13 @@ For more information, visit: https://uupdump.net
         help="Write selected component group names to PATH (one per line) and exit",
     )
 
+    parser.add_argument(
+        "--update-info",
+        metavar="ID",
+        dest="update_info",
+        help="Fetch update information for a specific update ID and exit",
+    )
+
     return parser.parse_args(args)
 
 
@@ -1230,6 +1255,15 @@ def _handle_info_mode(args: argparse.Namespace) -> Optional[int]:
             print(f"  Title: {latest_info.get('updateTitle', 'N/A')}")
             print(f"  Build: {latest_info.get('foundBuild', 'N/A')}")
             print(f"  Arch: {latest_info.get('arch', 'N/A')}")
+            return 0
+        return 1
+
+    # Update info mode
+    if args.update_info:
+        info = get_update_info(args.update_info)
+        if info:
+            print(f"\n{Colors.BOLD}Update Information:{Colors.RESET}\n")
+            print(f"  {json.dumps(info, indent=2)}")
             return 0
         return 1
 

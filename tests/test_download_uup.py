@@ -269,6 +269,41 @@ class TestFetchLatestFromWU(unittest.TestCase):
         self.assertEqual(result["arch"], "amd64")
 
 
+class TestGetUpdateInfo(unittest.TestCase):
+    @patch("download_uup.fetch_url")
+    def test_get_update_info_success(self, mock_fetch_url):
+        mock_fetch_url.return_value = {
+            "response": {
+                "updateId": "test-update-id",
+                "title": "Windows 11 Update",
+                "build": "22621.1",
+            }
+        }
+
+        result = download_uup.get_update_info("test-update-id")
+
+        self.assertIsNotNone(result)
+        self.assertEqual(result["updateId"], "test-update-id")
+        self.assertEqual(result["title"], "Windows 11 Update")
+        mock_fetch_url.assert_called_once_with(
+            "https://api.uupdump.net/updateinfo.php?id=test-update-id", return_json=True
+        )
+
+    @patch("download_uup.fetch_url")
+    def test_get_update_info_fetch_fails(self, mock_fetch_url):
+        mock_fetch_url.return_value = None
+        result = download_uup.get_update_info("test-update-id")
+        self.assertIsNone(result)
+
+    @patch("download_uup.fetch_url")
+    @patch("download_uup.log_error")
+    def test_get_update_info_api_error(self, mock_log_error, mock_fetch_url):
+        mock_fetch_url.return_value = {"response": {"error": "Update not found"}}
+        result = download_uup.get_update_info("invalid-id")
+        self.assertIsNone(result)
+        mock_log_error.assert_called_once_with("API Error: Update not found")
+
+
 class TestGetBuildInfo(unittest.TestCase):
     @patch("download_uup.fetch_url")
     def test_get_build_info_success(self, mock_fetch_url):

@@ -1,6 +1,6 @@
 # Implementation Plan
 
-_Generated: 2026-07-10 · Updated: 2026-07-10_
+_Generated: 2026-07-10 · Updated: 2026-07-11_
 
 ## Summary
 
@@ -13,19 +13,19 @@ _Generated: 2026-07-10 · Updated: 2026-07-10_
 | 1 | T003 | Python type hints - download_uup.py | refactor | M | — | completed |
 | 2 | T005 | Unified logging levels (DEBUG + LOG_LEVEL) | refactor | M | — | completed |
 | 3 | T006 | Test coverage ~60%→80% | debt | L | T042 | completed |
-| 4 | T007 | UUP JSON API v2 client | api | M | T008,T009,T010,T011 | pending |
+| 4 | T007 | UUP JSON API v2 client | api | M | T008,T009,T010,T011 | completed |
 | 5 | T008 | Delta downloads | api | L | — | pending |
 | 6 | T009 | Resume interrupted downloads | api | M | — | pending |
 | 7 | T010 | Mirror sources | api | M | — | pending |
-| 8 | T011 | Build history cache | api | S | — | pending |
-| 9 | T012 | Custom edition selection | build | M | T013,T014,T015 | pending |
+| 8 | T011 | Build history cache | api | S | — | completed |
+| 9 | T012 | Custom edition selection | build | M | T013,T014,T015 | completed |
 | 10 | T013 | Multi-edition ISO | build | L | — | pending |
 | 11 | T014 | Language packs support | build | M | — | pending |
 | 12 | T015 | Driver injection | build | M | — | pending |
-| 13 | T016 | Build profiles | build | S | T017 | pending |
-| 14 | T017 | Component groups | build | S | — | pending |
-| 15 | T018 | Version pinning | build | S | — | pending |
-| 16 | T019 | ISO signing (GPG + SHA256) | build | S | — | pending |
+| 13 | T016 | Build profiles | build | S | T017 | completed |
+| 14 | T017 | Component groups | build | S | — | completed |
+| 15 | T018 | Version pinning | build | S | — | completed |
+| 16 | T019 | ISO signing (GPG + SHA256) | build | S | — | completed |
 | 17 | T020 | Debloat dependency checker | debloat | M | T022,T047,T054 | pending |
 | 18 | T021 | Telemetry scoring | debloat | S | T047 | pending |
 | 19 | T022 | Privacy dashboard | debloat | M | — | pending |

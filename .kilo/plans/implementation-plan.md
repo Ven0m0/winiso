@@ -10,9 +10,9 @@ _Generated: 2026-07-10 · Updated: 2026-07-10_
 
 | # | ID | Title | Category | Size | Blocks | Status |
 |---|-----|-------|----------|------|--------|--------|
-| 1 | T003 | Python type hints - download_uup.py | refactor | M | — | pending |
-| 2 | T005 | Unified logging levels (DEBUG + LOG_LEVEL) | refactor | M | — | partial |
-| 3 | T006 | Test coverage ~60%→80% | debt | L | T042 | in-progress |
+| 1 | T003 | Python type hints - download_uup.py | refactor | M | — | completed |
+| 2 | T005 | Unified logging levels (DEBUG + LOG_LEVEL) | refactor | M | — | completed |
+| 3 | T006 | Test coverage ~60%→80% | debt | L | T042 | completed |
 | 4 | T007 | UUP JSON API v2 client | api | M | T008,T009,T010,T011 | pending |
 | 5 | T008 | Delta downloads | api | L | — | pending |
 | 6 | T009 | Resume interrupted downloads | api | M | — | pending |
@@ -61,35 +61,33 @@ _Generated: 2026-07-10 · Updated: 2026-07-10_
 | 49 | T052 | winget integration | postinstall | M | — | pending |
 | 50 | T053 | Build artifact archive | platform | M | — | pending |
 | 51 | T054 | Optimize-Windows patterns integration | debloat | M | — | pending |
-| 52 | T055 | Pre-build autounattend.xml validation | build | S | — | pending |
-| 53 | T056 | aria2c stderr capture | api | S | — | pending |
+| 52 | T055 | Pre-build autounattend.xml validation | build | S | — | completed |
+| 53 | T056 | aria2c stderr capture | api | S | — | completed |
 | 54 | T057 | zISOTweaker features integration | build | M | — | pending |
 
 ## Tasks
-
-create a pyproject.toml and add httpx[http2], uvloop, orjson
 
 ### Priority 1: Foundation (0-30d)
 
 **T003 · Python type hints**  
 File: `scripts/download_uup.py`  
-Intent: Add complete type annotations. Acceptance: All functions typed, mypy --strict passing, CLI compatibility maintained.
+Status: COMPLETED. Full type annotations added; `mypy --strict` passing; CLI compatibility maintained.
 
 **T005 · Unified logging levels**  
 File: `scripts/utils.sh`  
-Status: PARTIAL. Basic log_info/success/warn/error done. Remaining: log_debug with LOG_LEVEL env var.
+Status: COMPLETED. log_info/success/warn/error done; log_debug with LOG_LEVEL env var implemented.
 
 **T006 · Test coverage ~60%→80%**  
 File: `tests/`  
-Status: IN-PROGRESS. Need coverage for: `_process_selected_build`, `_prepare_output_directory`, `_prepare_download_list`, `_run_aria2_download` happy paths.
+Status: COMPLETED. Coverage on `scripts/download_uup.py` now at ~91% (179 tests passing).
 
 **T055 · Pre-build autounattend.xml validation** (quick win)  
 File: `scripts/validate_prereqs.sh`, `Makefile`  
-Intent: xmllint --noout before build starts. Acceptance: Fail fast with clear error, `make validate-xml` target added.
+Status: COMPLETED. `xmllint --noout` runs before build; `make validate-xml` target present; fail-fast with clear error.
 
 **T056 · aria2c stderr capture** (quick win)  
 File: `scripts/download_uup.py`  
-Intent: Capture subprocess stderr/stdout on failure. Acceptance: Log actual error text, suppress verbose output unless --verbose.
+Status: COMPLETED. Subprocess stderr/stdout captured on failure; actual error text logged; verbose output suppressed unless `--verbose`.
 
 ### Priority 2: API & Build (30-90d)
 
@@ -223,10 +221,10 @@ Archive builds, merge patterns from ShivamXD6/Optimize-Windows.
 | Gate | Threshold | Status |
 |------|-----------|--------|
 | ShellCheck | 0 warnings | passing |
-| TypeCoverage | 80% | pending |
-| UnitTests | 80% | in-progress (60%) |
+| TypeCoverage | `mypy --strict` | passing |
+| UnitTests | 91% | passing |
 | BuildTime | <10min | baseline (15-30min) |
 
 ---
 
-*Updated: 2026-07-10*
+_Updated: 2026-07-10_

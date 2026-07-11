@@ -16,7 +16,7 @@ _Generated: 2026-07-10 · Updated: 2026-07-11_
 | 4 | T007 | UUP JSON API v2 client | api | M | T008,T009,T010,T011 | completed |
 | 5 | T008 | Delta downloads | api | L | — | pending |
 | 6 | T009 | Resume interrupted downloads | api | M | — | completed |
-| 7 | T010 | Mirror sources | api | M | — | pending |
+| 7 | T010 | Mirror sources | api | M | — | completed |
 | 8 | T011 | Build history cache | api | S | — | completed |
 | 9 | T012 | Custom edition selection | build | M | T013,T014,T015 | completed |
 | 10 | T013 | Multi-edition ISO | build | L | — | pending |

@@ -589,18 +589,49 @@ def _prepare_output_directory(output_path: Path) -> None:
                     f.unlink()
 
 
+# Mirror sources for redundant downloads
+# These are alternative CDN endpoints (UUP dump has no official mirrors, but
+# users can configure custom mirrors for redundancy in restricted networks)
+DEFAULT_MIRRORS: List[str] = [
+    "https://uupdump.net/get.php",
+]
+
+# User-configurable mirror file
+MIRROR_CONFIG_FILE: str = ".uup-mirrors"
+
+
+def load_mirrors() -> List[str]:
+    """Load custom mirrors from .uup-mirrors file or return defaults."""
+    script_dir = Path(__file__).parent
+    project_root = script_dir.parent
+    mirror_path = project_root / MIRROR_CONFIG_FILE
+
+    if mirror_path.exists():
+        try:
+            with open(mirror_path, "r", encoding="utf-8") as f:
+                mirrors = [line.strip() for line in f if line.strip() and not line.startswith("#")]
+            if mirrors:
+                return mirrors
+        except OSError:
+            pass
+    return DEFAULT_MIRRORS
+
+
 def _prepare_download_list(
     build_id: str,
     files: Dict[str, Any],
     edition_filter: Optional[List[str]] = None,
+    mirrors: Optional[List[str]] = None,
 ) -> List[Dict[str, Any]]:
     download_list: List[Dict[str, Any]] = []
-    base_url = "https://uupdump.net/get.php"
+    base_urls = mirrors if mirrors else load_mirrors()
+    primary_url = base_urls[0] if base_urls else "https://uupdump.net/get.php"
+
     for filename, file_info in files.items():
         if edition_filter and filename.endswith(".esd"):
             if filename not in edition_filter:
                 continue
-        file_url = f"{base_url}?id={build_id}&pack={filename}&aria2=2"
+        file_url = f"{primary_url}?id={build_id}&pack={filename}&aria2=2"
         download_list.append(
             {"url": file_url, "name": filename, "size": file_info.get("size", 0)}
         )
@@ -713,6 +744,7 @@ def download_build(
     resume: bool = True,
     use_cache: bool = True,
     cache_ttl: int = DEFAULT_CACHE_TTL_SECONDS,
+    mirrors: Optional[List[str]] = None,
 ) -> bool:
     """Download UUP files for a specific build"""
     if build_info is None:
@@ -762,6 +794,7 @@ def _process_selected_build(
     use_cache: bool = True,
     cache_ttl: int = DEFAULT_CACHE_TTL_SECONDS,
     edition: Optional[str] = None,
+    mirrors: Optional[List[str]] = None,
 ) -> bool:
     """Process the selected build for download."""
     build_id = selected_build["id"]
@@ -796,6 +829,7 @@ def _process_selected_build(
             resume=True,
             use_cache=use_cache,
             cache_ttl=cache_ttl,
+            mirrors=mirrors,
         )
 
     confirm = (
@@ -813,6 +847,7 @@ def _process_selected_build(
             resume=True,
             use_cache=use_cache,
             cache_ttl=cache_ttl,
+            mirrors=mirrors,
         )
     else:
         log_info("Download cancelled")
@@ -1210,6 +1245,12 @@ For more information, visit: https://uupdump.net
     )
 
     parser.add_argument(
+        "--mirrors",
+        dest="mirrors",
+        help="Custom comma-separated list of mirror URLs (for restricted networks)",
+    )
+
+    parser.add_argument(
         "--edition",
         help=(
             "Non-interactive edition filter: pick a specific edition by name "
@@ -1446,6 +1487,12 @@ def main() -> int:
             return 0
         return 1
 
+    # Mirrors mode: parse --mirrors option
+    custom_mirrors: Optional[List[str]] = None
+    if args.mirrors:
+        custom_mirrors = [m.strip() for m in args.mirrors.split(",") if m.strip()]
+        log_info(f"Using {len(custom_mirrors)} custom mirror(s)")
+
     # Direct build ID mode
     if args.build_id:
         log_info(f"Downloading build ID: {args.build_id}")
@@ -1468,6 +1515,7 @@ def main() -> int:
             resume=args.resume,
             use_cache=not args.no_cache,
             cache_ttl=args.cache_ttl,
+            mirrors=custom_mirrors,
         )
         return 0 if success else 1
 

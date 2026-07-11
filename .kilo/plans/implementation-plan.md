@@ -6,6 +6,8 @@ _Generated: 2026-07-10 · Updated: 2026-07-11_
 
 54 tasks across 9 categories, organized into 4 priority tiers. Technical debt items (T003, T005, T006) are Priority 1, API/build features are Priority 2, debloat/post-install/testing are Priority 3, architecture/AI are Priority 4.
 
+**Progress**: 18 of 54 tasks completed (T003, T005, T006, T007, T009, T010, T011, T012, T014, T016, T017, T018, T019, T055, T056, and 3 quick wins).
+
 ## Task Index (topological order)
 
 | # | ID | Title | Category | Size | Blocks | Status |
@@ -20,7 +22,7 @@ _Generated: 2026-07-10 · Updated: 2026-07-11_
 | 8 | T011 | Build history cache | api | S | — | completed |
 | 9 | T012 | Custom edition selection | build | M | T013,T014,T015 | completed |
 | 10 | T013 | Multi-edition ISO | build | L | — | pending |
-| 11 | T014 | Language packs support | build | M | — | pending |
+| 11 | T014 | Language packs support | build | M | — | completed |
 | 12 | T015 | Driver injection | build | M | — | pending |
 | 13 | T016 | Build profiles | build | S | T017 | completed |
 | 14 | T017 | Component groups | build | S | — | completed |
@@ -93,7 +95,7 @@ Status: COMPLETED. Subprocess stderr/stdout captured on failure; actual error te
 
 **T007 · UUP JSON API v2 client**  
 File: `scripts/download_uup.py`  
-Intent: Match api.uupdump.net schema. Acceptance: Map all endpoints, handle pagination, parse build metadata.
+Status: COMPLETED. All API endpoints mapped (get_api_version, get_latest_builds, get_build_info, get_available_editions, get_available_languages, fetch_latest_from_wu, get_update_info). Pagination handled via max_results parameter. Build metadata parsed correctly. --update-info CLI flag added.
 
 **T008 · Delta downloads**  
 Intent: Only download changed packages between builds.
@@ -114,7 +116,8 @@ Intent: Any edition ID from metadata via --edition flag.
 Intent: Single ISO with boot menu selection.
 
 **T014 · Language packs support**  
-Intent: Multi-language ISO support.
+File: `scripts/download_uup.py`  
+Status: COMPLETED. Added `--language` and `--languages-download` CLI flags; `get_build_info` now accepts language parameter; new `download_language_packs()` function for multi-language ISO creation.
 
 **T015 · Driver injection**  
 Intent: Automated driver pack integration.

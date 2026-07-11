@@ -313,7 +313,18 @@ class TestGetBuildInfo(unittest.TestCase):
 
         self.assertEqual(result, {"build": "info", "files": {}})
         mock_fetch_url.assert_called_once_with(
-            "https://api.uupdump.net/get.php?id=fake-id", return_json=True
+            "https://api.uupdump.net/get.php?id=fake-id&lang=en-us", return_json=True
+        )
+
+    @patch("download_uup.fetch_url")
+    def test_get_build_info_with_language(self, mock_fetch_url):
+        mock_fetch_url.return_value = {"response": {"build": "info", "files": {}}}
+
+        result = download_uup.get_build_info("fake-id", language="fr-fr")
+
+        self.assertEqual(result, {"build": "info", "files": {}})
+        mock_fetch_url.assert_called_once_with(
+            "https://api.uupdump.net/get.php?id=fake-id&lang=fr-fr", return_json=True
         )
 
     @patch("download_uup.fetch_url")
@@ -322,7 +333,7 @@ class TestGetBuildInfo(unittest.TestCase):
         result = download_uup.get_build_info("fake-id")
         self.assertIsNone(result)
         mock_fetch_url.assert_called_once_with(
-            "https://api.uupdump.net/get.php?id=fake-id", return_json=True
+            "https://api.uupdump.net/get.php?id=fake-id&lang=en-us", return_json=True
         )
 
     @patch("download_uup.fetch_url")
@@ -333,7 +344,7 @@ class TestGetBuildInfo(unittest.TestCase):
         self.assertIsNone(result)
         mock_log_error.assert_called_once_with("API Error: Invalid build ID")
         mock_fetch_url.assert_called_once_with(
-            "https://api.uupdump.net/get.php?id=fake-id", return_json=True
+            "https://api.uupdump.net/get.php?id=fake-id&lang=en-us", return_json=True
         )
 
 
@@ -520,7 +531,7 @@ class TestRunAria2Download(unittest.TestCase):
         )
 
         self.assertFalse(result)
-        mock_log_warn.assert_called_with("\nDownload cancelled by user")
+        mock_log_warn.assert_called_with("\nDownload cancelled by user - session saved for resume")
 
     @patch("builtins.open", new_callable=unittest.mock.mock_open)
     @patch("subprocess.run")
@@ -593,8 +604,10 @@ class TestRunAria2Download(unittest.TestCase):
         self.assertFalse(result)
         mock_log_error.assert_called_with("Download failed with exit code 1")
 
+    @patch("builtins.open", new_callable=unittest.mock.mock_open)
+    @patch("subprocess.run")
     @patch("download_uup.log_error")
-    def test_run_aria2_download_invalid_filename(self, mock_log_error):
+    def test_run_aria2_download_invalid_filename(self, mock_log_error, mock_run, mock_open):
         dl_list = [{"url": "http://test", "name": "../escape.esd"}]
 
         result = download_uup._run_aria2_download(
@@ -1676,7 +1689,7 @@ class TestHandleInfoMode(unittest.TestCase):
     def test_not_handled(self):
         from argparse import Namespace
         args = Namespace(
-            editions=None, languages=None, latest=False,
+            editions=None, languages=None, latest=False, update_info=None,
         )
         rc = download_uup._handle_info_mode(args)
         self.assertIsNone(rc)
@@ -1934,6 +1947,39 @@ class TestGetLatestBuildsEmpty(unittest.TestCase):
     @patch("download_uup.fetch_url", return_value={"response": {"builds": []}})
     def test_empty_builds_list(self, mock_fetch):
         self.assertEqual(download_uup.get_latest_builds(), [])
+
+
+class TestDownloadLanguagePacks(unittest.TestCase):
+    @patch("download_uup.download_build", return_value=True)
+    @patch("download_uup.get_build_info_cached")
+    def test_download_language_packs_success(
+        self, mock_get_build_info_cached, mock_download_build
+    ):
+        mock_get_build_info_cached.return_value = {"files": {"foo.esd": {"size": 1}}}
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            result = download_uup.download_language_packs(
+                "test-id", ["en-us", "fr-fr"], tmpdir
+            )
+            self.assertTrue(result)
+            self.assertEqual(mock_download_build.call_count, 2)
+            # First call should be en-us, second should be fr-fr
+            first_call_args = mock_download_build.call_args_list[0]
+            self.assertIn("lang_en-us", str(first_call_args))
+            second_call_args = mock_download_build.call_args_list[1]
+            self.assertIn("lang_fr-fr", str(second_call_args))
+
+    @patch("download_uup.download_build", return_value=True)
+    @patch("download_uup.get_build_info_cached", return_value=None)
+    def test_download_language_packs_no_files(
+        self, mock_get_build_info_cached, mock_download_build
+    ):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            result = download_uup.download_language_packs(
+                "test-id", ["en-us"], tmpdir
+            )
+            self.assertFalse(result)
+            mock_download_build.assert_not_called()
 
 
 if __name__ == "__main__":

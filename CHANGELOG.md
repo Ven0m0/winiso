@@ -5,6 +5,8 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Added language packs support (T014): `--language` and `--languages-download` CLI flags, `download_language_packs()` function for multi-language ISO creation, and language-aware `get_build_info()`.
+- Added unit tests for `download_language_packs()` in `tests/test_download_uup.py`.
 - Added `get_update_info()` function for `updateinfo.php` endpoint (T007).
 - Added `--update-info` CLI flag for fetching update information.
 - Added unit tests for `get_update_info()` in `tests/test_download_uup.py`.

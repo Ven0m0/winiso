@@ -242,11 +242,14 @@ def display_builds(builds: Optional[List[Dict[str, Any]]]) -> None:
         print()
 
 
-def get_build_info(build_id: str) -> Optional[Dict[str, Any]]:
-    """Get detailed information about a specific build"""
+def get_build_info(build_id: str, language: Optional[str] = "en-us") -> Optional[Dict[str, Any]]:
+    """Get detailed information about a specific build, optionally for a specific language"""
     log_info(f"Fetching build information for ID: {build_id}")
 
-    api_url = f"https://api.uupdump.net/get.php?id={build_id}"
+    params: Dict[str, str] = {"id": build_id}
+    if language:
+        params["lang"] = language
+    api_url = f"https://api.uupdump.net/get.php?{urlencode(params)}"
     data = fetch_url(api_url, return_json=True)
 
     if not data:
@@ -462,19 +465,63 @@ def get_build_info_cached(
     build_id: str,
     ttl_seconds: int = DEFAULT_CACHE_TTL_SECONDS,
     force_refresh: bool = False,
+    language: Optional[str] = "en-us",
 ) -> Optional[Dict[str, Any]]:
     """Fetch build info, returning a cached result when fresh enough."""
     cache_key = f"build_info_{build_id}"
+    if language:
+        cache_key = f"build_info_{build_id}_{language}"
 
     if not force_refresh:
         cached = cache_get(cache_key, ttl_seconds=ttl_seconds)
         if cached is not None:
             return cast(Dict[str, Any], cached)
 
-    info = get_build_info(build_id)
+    info = get_build_info(build_id, language=language)
     if info is not None:
         cache_set(cache_key, info)
     return info
+
+
+def download_language_packs(
+    build_id: str,
+    languages: List[str],
+    output_dir: Union[str, Path],
+    edition_filter: Optional[List[str]] = None,
+    verbose: bool = False,
+    use_cache: bool = True,
+    cache_ttl: int = DEFAULT_CACHE_TTL_SECONDS,
+) -> bool:
+    """Download language packs for a build."""
+    log_info(f"Downloading language packs: {', '.join(languages)}")
+
+    all_success = True
+    for lang in languages:
+        lang_output = Path(output_dir) / f"lang_{lang}"
+        log_info(f"Fetching language pack: {lang}")
+
+        lang_build_info = get_build_info_cached(
+            build_id, ttl_seconds=cache_ttl, force_refresh=not use_cache, language=lang
+        )
+
+        if not lang_build_info:
+            log_warn(f"No files found for language {lang}")
+            all_success = False
+            continue
+
+        if not download_build(
+            build_id,
+            lang_output,
+            edition_filter,
+            build_info=lang_build_info,
+            verbose=verbose,
+            resume=True,
+            use_cache=use_cache,
+            cache_ttl=cache_ttl,
+        ):
+            all_success = False
+
+    return all_success
 
 
 def select_editions(build_info: Dict[str, Any]) -> Optional[List[str]]:
@@ -653,15 +700,16 @@ def _run_aria2_download(
     try:
         lines = []
         for item in download_list:
-            sanitized_name = str(Path(item["name"].replace("\\", "/")).name)
-            if ".." in sanitized_name or "/" in sanitized_name:
-                log_error(f"Invalid filename detected: {item['name']}")
+            raw_name = str(item["name"])
+            if ".." in raw_name or "/" in raw_name or "\\" in raw_name:
+                log_error(f"Invalid filename detected: {raw_name}")
                 return False
+            sanitized_name = str(Path(raw_name).name)
             url = str(item["url"])
             if "\n" in url or "\r" in url:
                 url = url.replace("\n", "").replace("\r", "")
 
-            name = str(item["name"])
+            name = sanitized_name
             if "\n" in name or "\r" in name:
                 name = name.replace("\n", "").replace("\r", "")
             lines.append(f"{url}\n  out={name}")
@@ -745,11 +793,12 @@ def download_build(
     use_cache: bool = True,
     cache_ttl: int = DEFAULT_CACHE_TTL_SECONDS,
     mirrors: Optional[List[str]] = None,
+    language: Optional[str] = "en-us",
 ) -> bool:
     """Download UUP files for a specific build"""
     if build_info is None:
         build_info = get_build_info_cached(
-            build_id, ttl_seconds=cache_ttl, force_refresh=not use_cache
+            build_id, ttl_seconds=cache_ttl, force_refresh=not use_cache, language=language
         )
 
     if not build_info:
@@ -1286,6 +1335,18 @@ For more information, visit: https://uupdump.net
         help="Fetch update information for a specific update ID and exit",
     )
 
+    parser.add_argument(
+        "--language",
+        dest="language",
+        help="Language pack to download (e.g., en-us, fr-fr, de-de). Use with --build-id.",
+    )
+
+    parser.add_argument(
+        "--languages-download",
+        dest="languages_download",
+        help="Comma-separated languages to download for multi-language ISO (e.g., en-us,fr-fr,de-de)",
+    )
+
     return parser.parse_args(args)
 
 
@@ -1507,6 +1568,24 @@ def main() -> int:
                 log_error("Failed to get build information")
                 return 1
             edition_filter = resolve_edition_filter(build_info, args.edition)
+
+        # Handle multi-language download
+        if args.languages_download:
+            langs = [l.strip() for l in args.languages_download.split(",") if l.strip()]
+            if langs:
+                success = download_language_packs(
+                    args.build_id,
+                    langs,
+                    output_dir,
+                    edition_filter,
+                    verbose=args.verbose,
+                    use_cache=not args.no_cache,
+                    cache_ttl=args.cache_ttl,
+                )
+                return 0 if success else 1
+            log_error("No valid languages specified for download")
+            return 1
+
         success = download_build(
             args.build_id,
             output_dir,

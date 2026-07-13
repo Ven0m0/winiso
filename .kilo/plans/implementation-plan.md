@@ -1,10 +1,12 @@
 # Implementation Plan
 
-_Generated: 2026-07-10 · Updated: 2026-07-10_
+_Generated: 2026-07-10 · Updated: 2026-07-11_
 
 ## Summary
 
 54 tasks across 9 categories, organized into 4 priority tiers. Technical debt items (T003, T005, T006) are Priority 1, API/build features are Priority 2, debloat/post-install/testing are Priority 3, architecture/AI are Priority 4.
+
+**Progress**: 19 of 54 tasks completed (T003, T005, T006, T007, T008, T009, T010, T011, T012, T014, T016, T017, T018, T019, T055, T056, and 3 quick wins).
 
 ## Task Index (topological order)
 
@@ -13,19 +15,19 @@ _Generated: 2026-07-10 · Updated: 2026-07-10_
 | 1 | T003 | Python type hints - download_uup.py | refactor | M | — | completed |
 | 2 | T005 | Unified logging levels (DEBUG + LOG_LEVEL) | refactor | M | — | completed |
 | 3 | T006 | Test coverage ~60%→80% | debt | L | T042 | completed |
-| 4 | T007 | UUP JSON API v2 client | api | M | T008,T009,T010,T011 | pending |
-| 5 | T008 | Delta downloads | api | L | — | pending |
-| 6 | T009 | Resume interrupted downloads | api | M | — | pending |
-| 7 | T010 | Mirror sources | api | M | — | pending |
-| 8 | T011 | Build history cache | api | S | — | pending |
-| 9 | T012 | Custom edition selection | build | M | T013,T014,T015 | pending |
+| 4 | T007 | UUP JSON API v2 client | api | M | T008,T009,T010,T011 | completed |
+| 5 | T008 | Delta downloads | api | L | — | completed |
+| 6 | T009 | Resume interrupted downloads | api | M | — | completed |
+| 7 | T010 | Mirror sources | api | M | — | completed |
+| 8 | T011 | Build history cache | api | S | — | completed |
+| 9 | T012 | Custom edition selection | build | M | T013,T014,T015 | completed |
 | 10 | T013 | Multi-edition ISO | build | L | — | pending |
-| 11 | T014 | Language packs support | build | M | — | pending |
+| 11 | T014 | Language packs support | build | M | — | completed |
 | 12 | T015 | Driver injection | build | M | — | pending |
-| 13 | T016 | Build profiles | build | S | T017 | pending |
-| 14 | T017 | Component groups | build | S | — | pending |
-| 15 | T018 | Version pinning | build | S | — | pending |
-| 16 | T019 | ISO signing (GPG + SHA256) | build | S | — | pending |
+| 13 | T016 | Build profiles | build | S | T017 | completed |
+| 14 | T017 | Component groups | build | S | — | completed |
+| 15 | T018 | Version pinning | build | S | — | completed |
+| 16 | T019 | ISO signing (GPG + SHA256) | build | S | — | completed |
 | 17 | T020 | Debloat dependency checker | debloat | M | T022,T047,T054 | pending |
 | 18 | T021 | Telemetry scoring | debloat | S | T047 | pending |
 | 19 | T022 | Privacy dashboard | debloat | M | — | pending |
@@ -93,10 +95,11 @@ Status: COMPLETED. Subprocess stderr/stdout captured on failure; actual error te
 
 **T007 · UUP JSON API v2 client**  
 File: `scripts/download_uup.py`  
-Intent: Match api.uupdump.net schema. Acceptance: Map all endpoints, handle pagination, parse build metadata.
+Status: COMPLETED. All API endpoints mapped (get_api_version, get_latest_builds, get_build_info, get_available_editions, get_available_languages, fetch_latest_from_wu, get_update_info). Pagination handled via max_results parameter. Build metadata parsed correctly. --update-info CLI flag added.
 
 **T008 · Delta downloads**  
-Intent: Only download changed packages between builds.
+File: `scripts/download_uup.py`  
+Status: COMPLETED. Added `--delta-from <build_id>` and `--delta-store <dir>` CLI flags. New helpers: `get_build_files`, `calculate_delta` (returns added/removed/modified/unchanged), `compute_changed_files`, `save_delta_manifest`, `load_delta_manifest`, and `format_delta_summary`. Delta manifest is automatically written after a successful download so future delta runs have a baseline. Added `--save-delta-manifest <id>` and `--delta-info <id>` info modes. 41 new tests in `tests/test_download_uup.py`. Path-traversal protection in `_safe_delta_filename` (now sanitizes `.` and `/`) and in `load_delta_manifest` (resolves the manifest path and verifies it is inside the store).
 
 **T009 · Resume interrupted downloads**  
 Intent: aria2c state persistence for download resume.
@@ -114,7 +117,8 @@ Intent: Any edition ID from metadata via --edition flag.
 Intent: Single ISO with boot menu selection.
 
 **T014 · Language packs support**  
-Intent: Multi-language ISO support.
+File: `scripts/download_uup.py`  
+Status: COMPLETED. Added `--language` and `--languages-download` CLI flags; `get_build_info` now accepts language parameter; new `download_language_packs()` function for multi-language ISO creation.
 
 **T015 · Driver injection**  
 Intent: Automated driver pack integration.

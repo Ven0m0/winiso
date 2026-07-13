@@ -242,11 +242,14 @@ def display_builds(builds: Optional[List[Dict[str, Any]]]) -> None:
         print()
 
 
-def get_build_info(build_id: str) -> Optional[Dict[str, Any]]:
-    """Get detailed information about a specific build"""
+def get_build_info(build_id: str, language: Optional[str] = "en-us") -> Optional[Dict[str, Any]]:
+    """Get detailed information about a specific build, optionally for a specific language"""
     log_info(f"Fetching build information for ID: {build_id}")
 
-    api_url = f"https://api.uupdump.net/get.php?id={build_id}"
+    params: Dict[str, str] = {"id": build_id}
+    if language:
+        params["lang"] = language
+    api_url = f"https://api.uupdump.net/get.php?{urlencode(params)}"
     data = fetch_url(api_url, return_json=True)
 
     if not data:
@@ -334,6 +337,24 @@ def get_api_version() -> Optional[Dict[str, Any]]:
         return None
 
     if not isinstance(data, dict):
+        return None
+
+    return _get_response_dict(data, {})
+
+
+def get_update_info(update_id: str) -> Optional[Dict[str, Any]]:
+    """Get update information from updateinfo.php endpoint"""
+    log_info(f"Fetching update info for ID: {update_id}")
+
+    api_url = f"https://api.uupdump.net/updateinfo.php?id={update_id}"
+    data = fetch_url(api_url, return_json=True)
+
+    if not data:
+        log_error(f"Failed to fetch update info for {update_id}")
+        return None
+
+    if data.get("response", {}).get("error"):
+        log_error(f"API Error: {data['response']['error']}")
         return None
 
     return _get_response_dict(data, {})
@@ -444,19 +465,63 @@ def get_build_info_cached(
     build_id: str,
     ttl_seconds: int = DEFAULT_CACHE_TTL_SECONDS,
     force_refresh: bool = False,
+    language: Optional[str] = "en-us",
 ) -> Optional[Dict[str, Any]]:
     """Fetch build info, returning a cached result when fresh enough."""
     cache_key = f"build_info_{build_id}"
+    if language:
+        cache_key = f"build_info_{build_id}_{language}"
 
     if not force_refresh:
         cached = cache_get(cache_key, ttl_seconds=ttl_seconds)
         if cached is not None:
             return cast(Dict[str, Any], cached)
 
-    info = get_build_info(build_id)
+    info = get_build_info(build_id, language=language)
     if info is not None:
         cache_set(cache_key, info)
     return info
+
+
+def download_language_packs(
+    build_id: str,
+    languages: List[str],
+    output_dir: Union[str, Path],
+    edition_filter: Optional[List[str]] = None,
+    verbose: bool = False,
+    use_cache: bool = True,
+    cache_ttl: int = DEFAULT_CACHE_TTL_SECONDS,
+) -> bool:
+    """Download language packs for a build."""
+    log_info(f"Downloading language packs: {', '.join(languages)}")
+
+    all_success = True
+    for lang in languages:
+        lang_output = Path(output_dir) / f"lang_{lang}"
+        log_info(f"Fetching language pack: {lang}")
+
+        lang_build_info = get_build_info_cached(
+            build_id, ttl_seconds=cache_ttl, force_refresh=not use_cache, language=lang
+        )
+
+        if not lang_build_info:
+            log_warn(f"No files found for language {lang}")
+            all_success = False
+            continue
+
+        if not download_build(
+            build_id,
+            lang_output,
+            edition_filter,
+            build_info=lang_build_info,
+            verbose=verbose,
+            resume=True,
+            use_cache=use_cache,
+            cache_ttl=cache_ttl,
+        ):
+            all_success = False
+
+    return all_success
 
 
 def select_editions(build_info: Dict[str, Any]) -> Optional[List[str]]:
@@ -571,22 +636,263 @@ def _prepare_output_directory(output_path: Path) -> None:
                     f.unlink()
 
 
+# Mirror sources for redundant downloads
+# These are alternative CDN endpoints (UUP dump has no official mirrors, but
+# users can configure custom mirrors for redundancy in restricted networks)
+DEFAULT_MIRRORS: List[str] = [
+    "https://uupdump.net/get.php",
+]
+
+# User-configurable mirror file
+MIRROR_CONFIG_FILE: str = ".uup-mirrors"
+
+
+def load_mirrors() -> List[str]:
+    """Load custom mirrors from .uup-mirrors file or return defaults."""
+    script_dir = Path(__file__).parent
+    project_root = script_dir.parent
+    mirror_path = project_root / MIRROR_CONFIG_FILE
+
+    if mirror_path.exists():
+        try:
+            with open(mirror_path, "r", encoding="utf-8") as f:
+                mirrors = [line.strip() for line in f if line.strip() and not line.startswith("#")]
+            if mirrors:
+                return mirrors
+        except OSError:
+            pass
+    return DEFAULT_MIRRORS
+
+
 def _prepare_download_list(
     build_id: str,
     files: Dict[str, Any],
     edition_filter: Optional[List[str]] = None,
+    mirrors: Optional[List[str]] = None,
+    delta_filter: Optional[Set[str]] = None,
 ) -> List[Dict[str, Any]]:
     download_list: List[Dict[str, Any]] = []
-    base_url = "https://uupdump.net/get.php"
+    base_urls = mirrors if mirrors else load_mirrors()
+    primary_url = base_urls[0] if base_urls else "https://uupdump.net/get.php"
+
     for filename, file_info in files.items():
         if edition_filter and filename.endswith(".esd"):
             if filename not in edition_filter:
                 continue
-        file_url = f"{base_url}?id={build_id}&pack={filename}&aria2=2"
+        if delta_filter is not None and filename not in delta_filter:
+            continue
+        file_url = f"{primary_url}?id={build_id}&pack={filename}&aria2=2"
         download_list.append(
             {"url": file_url, "name": filename, "size": file_info.get("size", 0)}
         )
     return download_list
+
+
+# Default on-disk location for delta manifests (per-build file lists). Set
+# via --delta-store. Files are JSON objects keyed by filename.
+DEFAULT_DELTA_STORE: str = ".uup-delta"
+
+
+def get_build_files(build_info: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
+    """Extract the per-file metadata from a build info dict.
+
+    Returns a mapping of ``filename -> {size, sha256, ...}`` for every entry in
+    ``build_info['files']``. Only entries that are mappings are preserved so a
+    malformed value does not crash downstream consumers.
+
+    The returned dict is suitable for passing to :func:`calculate_delta` or
+    :func:`save_delta_manifest`.
+    """
+    raw_files: Any = build_info.get("files", {})
+    if not isinstance(raw_files, dict):
+        return {}
+    result: Dict[str, Dict[str, Any]] = {}
+    for filename, info in raw_files.items():
+        if not isinstance(filename, str) or not isinstance(info, dict):
+            continue
+        result[filename] = dict(info)
+    return result
+
+
+def calculate_delta(
+    base_files: Dict[str, Dict[str, Any]],
+    target_files: Dict[str, Dict[str, Any]],
+) -> Dict[str, List[str]]:
+    """Compare two file lists and classify each file by change type.
+
+    The returned dict has four keys:
+    - ``added``: filenames present in ``target_files`` but not in ``base_files``
+    - ``removed``: filenames present in ``base_files`` but not in ``target_files``
+    - ``modified``: filenames present in both, with a different ``size`` or
+      ``sha256`` (or any other top-level key) value
+    - ``unchanged``: filenames present in both with identical metadata
+
+    A file is treated as ``modified`` if any of its metadata keys differ; this
+    is conservative but correct in the absence of a guaranteed per-file
+    checksum.
+    """
+    base_keys = set(base_files.keys())
+    target_keys = set(target_files.keys())
+
+    added: List[str] = sorted(target_keys - base_keys)
+    removed: List[str] = sorted(base_keys - target_keys)
+
+    common = base_keys & target_keys
+    modified: List[str] = []
+    unchanged: List[str] = []
+    for name in sorted(common):
+        if base_files[name] != target_files[name]:
+            modified.append(name)
+        else:
+            unchanged.append(name)
+
+    return {
+        "added": added,
+        "removed": removed,
+        "modified": modified,
+        "unchanged": unchanged,
+    }
+
+
+def get_delta_store_path(store_dir: Optional[Union[str, Path]] = None) -> Path:
+    """Return the path to the local delta-manifest store, creating it if needed.
+
+    The store is intentionally outside the project root in spirit (it is a
+    runtime cache of file lists), but the default keeps it alongside the
+    ``.uup_cache`` directory in the project root for simplicity.
+    """
+    if store_dir is None:
+        project_root = Path(__file__).resolve().parent.parent
+        path = project_root / DEFAULT_DELTA_STORE
+    else:
+        path = Path(store_dir)
+        if not path.is_absolute():
+            project_root = Path(__file__).resolve().parent.parent
+            path = project_root / path
+    try:
+        path = path.resolve()
+    except (OSError, RuntimeError):
+        return path
+    try:
+        path.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        log_warn(f"Could not create delta store at {path}: {exc}")
+    return path
+
+
+def _safe_delta_filename(build_id: str) -> str:
+    """Return a filesystem-safe filename for a delta manifest.
+
+    Aggressively replaces any non-alphanumeric character (including ``.`` and
+    path separators) with ``_`` to prevent path-traversal issues when a
+    caller-supplied build ID contains ``..`` or ``/``.
+    """
+    safe = "".join(c if c.isalnum() or c in "-_" else "_" for c in build_id)
+    return f"{safe[:128]}.json"
+
+
+def save_delta_manifest(
+    build_id: str,
+    files: Dict[str, Dict[str, Any]],
+    store_dir: Optional[Union[str, Path]] = None,
+) -> Optional[Path]:
+    """Persist a build's file list to the local delta store.
+
+    Returns the manifest path on success, or ``None`` on failure. The manifest
+    is a JSON object with ``build_id``, ``saved_at`` (unix timestamp), and
+    ``files`` keys.
+    """
+    store_path = get_delta_store_path(store_dir)
+    manifest_path = store_path / _safe_delta_filename(build_id)
+    payload = {
+        "build_id": build_id,
+        "saved_at": time.time(),
+        "files": files,
+    }
+    try:
+        with open(manifest_path, "w", encoding="utf-8") as f:
+            json.dump(payload, f, indent=2, sort_keys=True)
+        return manifest_path
+    except (OSError, TypeError) as exc:
+        log_error(f"Failed to save delta manifest for {build_id}: {exc}")
+        return None
+
+
+def load_delta_manifest(
+    build_id: str,
+    store_dir: Optional[Union[str, Path]] = None,
+) -> Optional[Dict[str, Dict[str, Any]]]:
+    """Load a previously saved delta manifest for ``build_id``.
+
+    Returns the ``files`` mapping, or ``None`` if the manifest is missing or
+    malformed. The resolved manifest path is verified to be inside the
+    resolved store directory to prevent path traversal via a malicious
+    ``build_id``.
+    """
+    store_path = get_delta_store_path(store_dir)
+    safe_name = _safe_delta_filename(build_id)
+    manifest_path = (store_path / safe_name).resolve()
+
+    try:
+        store_resolved = store_path.resolve()
+    except (OSError, RuntimeError):
+        return None
+
+    try:
+        manifest_path.relative_to(store_resolved)
+    except (ValueError, RuntimeError):
+        log_error("Delta manifest path is outside the delta store")
+        return None
+
+    if not manifest_path.exists():
+        return None
+    try:
+        with open(manifest_path, "r", encoding="utf-8") as f:
+            data: Any = json.load(f)
+    except (OSError, json.JSONDecodeError) as exc:
+        log_warn(f"Failed to read delta manifest for {build_id}: {exc}")
+        return None
+    if not isinstance(data, dict):
+        return None
+    files: Any = data.get("files", {})
+    if not isinstance(files, dict):
+        return None
+    result: Dict[str, Dict[str, Any]] = {}
+    for name, info in files.items():
+        if isinstance(name, str) and isinstance(info, dict):
+            result[name] = cast(Dict[str, Any], info)
+    return result
+
+
+def compute_changed_files(
+    base_files: Dict[str, Dict[str, Any]],
+    target_files: Dict[str, Dict[str, Any]],
+) -> Set[str]:
+    """Return the set of filenames that need to be re-downloaded.
+
+    Equivalent to ``added | modified`` from :func:`calculate_delta`. This is
+    the convenience helper used by the download pipeline when filtering a
+    download list for a delta build.
+    """
+    delta = calculate_delta(base_files, target_files)
+    return set(delta["added"]) | set(delta["modified"])
+
+
+def format_delta_summary(
+    base_id: str,
+    target_id: str,
+    delta: Dict[str, List[str]],
+) -> str:
+    """Format a human-readable summary of a delta for CLI output."""
+    lines = [
+        f"Delta: {base_id} -> {target_id}",
+        f"  added:    {len(delta['added'])}",
+        f"  modified: {len(delta['modified'])}",
+        f"  removed:  {len(delta['removed'])}",
+        f"  unchanged:{len(delta['unchanged'])}",
+        f"  to download: {len(delta['added']) + len(delta['modified'])}",
+    ]
+    return "\n".join(lines)
 
 
 def _run_aria2_download(
@@ -594,21 +900,26 @@ def _run_aria2_download(
     aria2_input: Path,
     download_list: List[Dict[str, Any]],
     verbose: bool = False,
+    resume: bool = True,
 ) -> bool:
     import subprocess
+
+    session_file = output_path / ".aria2_session"
+    aria2_log = output_path / ".aria2.log"
 
     try:
         lines = []
         for item in download_list:
-            sanitized_name = str(Path(item["name"].replace("\\", "/")).name)
-            if ".." in sanitized_name or "/" in sanitized_name:
-                log_error(f"Invalid filename detected: {item['name']}")
+            raw_name = str(item["name"])
+            if ".." in raw_name or "/" in raw_name or "\\" in raw_name:
+                log_error(f"Invalid filename detected: {raw_name}")
                 return False
+            sanitized_name = str(Path(raw_name).name)
             url = str(item["url"])
             if "\n" in url or "\r" in url:
                 url = url.replace("\n", "").replace("\r", "")
 
-            name = str(item["name"])
+            name = sanitized_name
             if "\n" in name or "\r" in name:
                 name = name.replace("\n", "").replace("\r", "")
             lines.append(f"{url}\n  out={name}")
@@ -631,6 +942,16 @@ def _run_aria2_download(
             "--file-allocation=none",
             "--continue=true",
         ]
+        if resume:
+            cmd.extend([
+                "--save-session",
+                str(session_file),
+                "--save-session-interval",
+                "60",
+            ])
+        if verbose:
+            cmd.append("--log")
+            cmd.append(str(aria2_log))
         log_info("Starting download...")
         result = subprocess.run(
             cmd,
@@ -641,6 +962,11 @@ def _run_aria2_download(
         if verbose and result.stdout:
             print(result.stdout)
         log_success("Download completed successfully")
+        # Clean up session file on success
+        try:
+            session_file.unlink(missing_ok=True)
+        except OSError:
+            pass
         return True
     except subprocess.CalledProcessError as e:
         log_error(f"Download failed with exit code {e.returncode}")
@@ -651,7 +977,7 @@ def _run_aria2_download(
                 print(f"stderr: {e.stderr}")
         return False
     except KeyboardInterrupt:
-        log_warn("\nDownload cancelled by user")
+        log_warn("\nDownload cancelled by user - session saved for resume")
         return False
     except OSError as e:
         log_error(f"System error during download: {e}")
@@ -673,13 +999,25 @@ def download_build(
     edition_filter: Optional[List[str]] = None,
     build_info: Optional[Dict[str, Any]] = None,
     verbose: bool = False,
+    resume: bool = True,
     use_cache: bool = True,
     cache_ttl: int = DEFAULT_CACHE_TTL_SECONDS,
+    mirrors: Optional[List[str]] = None,
+    language: Optional[str] = "en-us",
+    delta_from: Optional[str] = None,
+    delta_store: Optional[Union[str, Path]] = None,
 ) -> bool:
-    """Download UUP files for a specific build"""
+    """Download UUP files for a specific build
+
+    If ``delta_from`` is provided and a previously saved manifest exists in the
+    delta store for that build, only the files that have been added or modified
+    (compared to the saved manifest) are downloaded. A fresh manifest for
+    ``build_id`` is written to the delta store after a successful download so
+    subsequent delta runs have a baseline.
+    """
     if build_info is None:
         build_info = get_build_info_cached(
-            build_id, ttl_seconds=cache_ttl, force_refresh=not use_cache
+            build_id, ttl_seconds=cache_ttl, force_refresh=not use_cache, language=language
         )
 
     if not build_info:
@@ -704,8 +1042,34 @@ def download_build(
 
     _prepare_output_directory(output_path)
 
+    target_files = get_build_files(build_info)
+    delta_filter: Optional[Set[str]] = None
+    if delta_from:
+        base_files = load_delta_manifest(delta_from, store_dir=delta_store)
+        if base_files is None:
+            log_warn(
+                f"No saved delta manifest for build {delta_from}; "
+                "downloading all files (full set)"
+            )
+        else:
+            delta = calculate_delta(base_files, target_files)
+            log_info(
+                f"Delta vs {delta_from}: +{len(delta['added'])} added, "
+                f"~{len(delta['modified'])} modified, "
+                f"-{len(delta['removed'])} removed"
+            )
+            delta_filter = set(delta["added"]) | set(delta["modified"])
+            if not delta_filter:
+                log_success(
+                    f"No changes detected vs {delta_from}; nothing to download"
+                )
+                save_delta_manifest(build_id, target_files, store_dir=delta_store)
+                return True
+
     log_info(f"Preparing to download {len(files)} files...")
-    download_list = _prepare_download_list(build_id, files, edition_filter)
+    download_list = _prepare_download_list(
+        build_id, files, edition_filter, mirrors=mirrors, delta_filter=delta_filter
+    )
 
     if not download_list:
         log_error("No files to download after filtering")
@@ -714,7 +1078,15 @@ def download_build(
     log_success(f"Will download {len(download_list)} files")
 
     aria2_input = output_path / "aria2_input.txt"
-    return _run_aria2_download(output_path, aria2_input, download_list, verbose=verbose)
+    ok = _run_aria2_download(
+        output_path, aria2_input, download_list, verbose=verbose, resume=resume
+    )
+    if ok and delta_filter is not None:
+        save_delta_manifest(build_id, target_files, store_dir=delta_store)
+    elif ok:
+        # Always update the manifest so future delta runs have a baseline
+        save_delta_manifest(build_id, target_files, store_dir=delta_store)
+    return ok
 
 
 def _process_selected_build(
@@ -724,6 +1096,7 @@ def _process_selected_build(
     use_cache: bool = True,
     cache_ttl: int = DEFAULT_CACHE_TTL_SECONDS,
     edition: Optional[str] = None,
+    mirrors: Optional[List[str]] = None,
 ) -> bool:
     """Process the selected build for download."""
     build_id = selected_build["id"]
@@ -755,8 +1128,10 @@ def _process_selected_build(
             edition_filter,
             build_info=build_info,
             verbose=verbose,
+            resume=True,
             use_cache=use_cache,
             cache_ttl=cache_ttl,
+            mirrors=mirrors,
         )
 
     confirm = (
@@ -771,8 +1146,10 @@ def _process_selected_build(
             edition_filter,
             build_info=build_info,
             verbose=verbose,
+            resume=True,
             use_cache=use_cache,
             cache_ttl=cache_ttl,
+            mirrors=mirrors,
         )
     else:
         log_info("Download cancelled")
@@ -1112,6 +1489,14 @@ For more information, visit: https://uupdump.net
     )
 
     parser.add_argument(
+        "--no-resume",
+        action="store_false",
+        dest="resume",
+        default=True,
+        help="Disable aria2c session persistence for resuming interrupted downloads",
+    )
+
+    parser.add_argument(
         "-p",
         "--preset",
         dest="preset",
@@ -1162,6 +1547,12 @@ For more information, visit: https://uupdump.net
     )
 
     parser.add_argument(
+        "--mirrors",
+        dest="mirrors",
+        help="Custom comma-separated list of mirror URLs (for restricted networks)",
+    )
+
+    parser.add_argument(
         "--edition",
         help=(
             "Non-interactive edition filter: pick a specific edition by name "
@@ -1188,6 +1579,64 @@ For more information, visit: https://uupdump.net
         "--write-groups",
         metavar="PATH",
         help="Write selected component group names to PATH (one per line) and exit",
+    )
+
+    parser.add_argument(
+        "--update-info",
+        metavar="ID",
+        dest="update_info",
+        help="Fetch update information for a specific update ID and exit",
+    )
+
+    parser.add_argument(
+        "--language",
+        dest="language",
+        help="Language pack to download (e.g., en-us, fr-fr, de-de). Use with --build-id.",
+    )
+
+    parser.add_argument(
+        "--languages-download",
+        dest="languages_download",
+        help="Comma-separated languages to download for multi-language ISO (e.g., en-us,fr-fr,de-de)",
+    )
+
+    parser.add_argument(
+        "--delta-from",
+        metavar="BUILD_ID",
+        dest="delta_from",
+        help=(
+            "Only download files that have been added or modified compared to a "
+            "previous build. BUILD_ID must have a saved manifest in the delta store."
+        ),
+    )
+
+    parser.add_argument(
+        "--delta-store",
+        metavar="DIR",
+        dest="delta_store",
+        help=(
+            f"Directory used to store per-build file manifests for delta downloads "
+            f"(default: {DEFAULT_DELTA_STORE})"
+        ),
+    )
+
+    parser.add_argument(
+        "--save-delta-manifest",
+        metavar="BUILD_ID",
+        dest="save_delta_manifest",
+        help=(
+            "Fetch a build's file list from the API and save it to the delta store, "
+            "then exit. Useful for seeding a baseline for future --delta-from runs."
+        ),
+    )
+
+    parser.add_argument(
+        "--delta-info",
+        metavar="BUILD_ID",
+        dest="delta_info",
+        help=(
+            "Show information about the saved delta manifest for BUILD_ID and exit."
+        ),
     )
 
     return parser.parse_args(args)
@@ -1232,6 +1681,56 @@ def _handle_info_mode(args: argparse.Namespace) -> Optional[int]:
             print(f"  Arch: {latest_info.get('arch', 'N/A')}")
             return 0
         return 1
+
+    # Update info mode
+    if args.update_info:
+        info = get_update_info(args.update_info)
+        if info:
+            print(f"\n{Colors.BOLD}Update Information:{Colors.RESET}\n")
+            print(f"  {json.dumps(info, indent=2)}")
+            return 0
+        return 1
+
+    # Save delta manifest mode
+    if args.save_delta_manifest:
+        build_id = args.save_delta_manifest
+        build_info = get_build_info_cached(
+            build_id, ttl_seconds=args.cache_ttl, force_refresh=args.no_cache
+        )
+        if not build_info:
+            log_error(f"Failed to get build information for {build_id}")
+            return 1
+        files = get_build_files(build_info)
+        if not files:
+            log_error(f"No files found for build {build_id}")
+            return 1
+        manifest_path = save_delta_manifest(
+            build_id, files, store_dir=args.delta_store
+        )
+        if manifest_path:
+            log_success(
+                f"Saved delta manifest for {build_id} ({len(files)} files) "
+                f"to {manifest_path}"
+            )
+            return 0
+        return 1
+
+    # Delta info mode
+    if args.delta_info:
+        files = load_delta_manifest(args.delta_info, store_dir=args.delta_store)
+        if files is None:
+            log_warn(
+                f"No saved delta manifest for build {args.delta_info} "
+                f"in store {args.delta_store or DEFAULT_DELTA_STORE}"
+            )
+            return 1
+        print(f"\n{Colors.BOLD}Delta Manifest:{Colors.RESET} {args.delta_info}\n")
+        print(f"  Files: {len(files)}")
+        total_size = sum(
+            int(info.get("size", 0)) for info in files.values() if isinstance(info, dict)
+        )
+        print(f"  Total size: {total_size} bytes")
+        return 0
 
     return None
 
@@ -1354,7 +1853,11 @@ def main() -> int:
 
     # Note: verbose is not info_only - it affects download behavior
     info_only_mode = (
-        args.editions or args.languages is not None or args.latest
+        args.editions
+        or args.languages is not None
+        or args.latest
+        or args.save_delta_manifest is not None
+        or args.delta_info is not None
     )
 
     if not info_only_mode and not check_dependencies():
@@ -1382,6 +1885,12 @@ def main() -> int:
             return 0
         return 1
 
+    # Mirrors mode: parse --mirrors option
+    custom_mirrors: Optional[List[str]] = None
+    if args.mirrors:
+        custom_mirrors = [m.strip() for m in args.mirrors.split(",") if m.strip()]
+        log_info(f"Using {len(custom_mirrors)} custom mirror(s)")
+
     # Direct build ID mode
     if args.build_id:
         log_info(f"Downloading build ID: {args.build_id}")
@@ -1396,13 +1905,35 @@ def main() -> int:
                 log_error("Failed to get build information")
                 return 1
             edition_filter = resolve_edition_filter(build_info, args.edition)
+
+        # Handle multi-language download
+        if args.languages_download:
+            langs = [l.strip() for l in args.languages_download.split(",") if l.strip()]
+            if langs:
+                success = download_language_packs(
+                    args.build_id,
+                    langs,
+                    output_dir,
+                    edition_filter,
+                    verbose=args.verbose,
+                    use_cache=not args.no_cache,
+                    cache_ttl=args.cache_ttl,
+                )
+                return 0 if success else 1
+            log_error("No valid languages specified for download")
+            return 1
+
         success = download_build(
             args.build_id,
             output_dir,
             edition_filter,
             verbose=args.verbose,
+            resume=args.resume,
             use_cache=not args.no_cache,
             cache_ttl=args.cache_ttl,
+            mirrors=custom_mirrors,
+            delta_from=args.delta_from,
+            delta_store=args.delta_store,
         )
         return 0 if success else 1
 

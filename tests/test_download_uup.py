@@ -5,6 +5,7 @@ import tempfile
 import shutil
 import os
 import json
+import argparse
 from unittest.mock import patch, MagicMock
 
 import subprocess
@@ -269,6 +270,41 @@ class TestFetchLatestFromWU(unittest.TestCase):
         self.assertEqual(result["arch"], "amd64")
 
 
+class TestGetUpdateInfo(unittest.TestCase):
+    @patch("download_uup.fetch_url")
+    def test_get_update_info_success(self, mock_fetch_url):
+        mock_fetch_url.return_value = {
+            "response": {
+                "updateId": "test-update-id",
+                "title": "Windows 11 Update",
+                "build": "22621.1",
+            }
+        }
+
+        result = download_uup.get_update_info("test-update-id")
+
+        self.assertIsNotNone(result)
+        self.assertEqual(result["updateId"], "test-update-id")
+        self.assertEqual(result["title"], "Windows 11 Update")
+        mock_fetch_url.assert_called_once_with(
+            "https://api.uupdump.net/updateinfo.php?id=test-update-id", return_json=True
+        )
+
+    @patch("download_uup.fetch_url")
+    def test_get_update_info_fetch_fails(self, mock_fetch_url):
+        mock_fetch_url.return_value = None
+        result = download_uup.get_update_info("test-update-id")
+        self.assertIsNone(result)
+
+    @patch("download_uup.fetch_url")
+    @patch("download_uup.log_error")
+    def test_get_update_info_api_error(self, mock_log_error, mock_fetch_url):
+        mock_fetch_url.return_value = {"response": {"error": "Update not found"}}
+        result = download_uup.get_update_info("invalid-id")
+        self.assertIsNone(result)
+        mock_log_error.assert_called_once_with("API Error: Update not found")
+
+
 class TestGetBuildInfo(unittest.TestCase):
     @patch("download_uup.fetch_url")
     def test_get_build_info_success(self, mock_fetch_url):
@@ -278,7 +314,18 @@ class TestGetBuildInfo(unittest.TestCase):
 
         self.assertEqual(result, {"build": "info", "files": {}})
         mock_fetch_url.assert_called_once_with(
-            "https://api.uupdump.net/get.php?id=fake-id", return_json=True
+            "https://api.uupdump.net/get.php?id=fake-id&lang=en-us", return_json=True
+        )
+
+    @patch("download_uup.fetch_url")
+    def test_get_build_info_with_language(self, mock_fetch_url):
+        mock_fetch_url.return_value = {"response": {"build": "info", "files": {}}}
+
+        result = download_uup.get_build_info("fake-id", language="fr-fr")
+
+        self.assertEqual(result, {"build": "info", "files": {}})
+        mock_fetch_url.assert_called_once_with(
+            "https://api.uupdump.net/get.php?id=fake-id&lang=fr-fr", return_json=True
         )
 
     @patch("download_uup.fetch_url")
@@ -287,7 +334,7 @@ class TestGetBuildInfo(unittest.TestCase):
         result = download_uup.get_build_info("fake-id")
         self.assertIsNone(result)
         mock_fetch_url.assert_called_once_with(
-            "https://api.uupdump.net/get.php?id=fake-id", return_json=True
+            "https://api.uupdump.net/get.php?id=fake-id&lang=en-us", return_json=True
         )
 
     @patch("download_uup.fetch_url")
@@ -298,7 +345,7 @@ class TestGetBuildInfo(unittest.TestCase):
         self.assertIsNone(result)
         mock_log_error.assert_called_once_with("API Error: Invalid build ID")
         mock_fetch_url.assert_called_once_with(
-            "https://api.uupdump.net/get.php?id=fake-id", return_json=True
+            "https://api.uupdump.net/get.php?id=fake-id&lang=en-us", return_json=True
         )
 
 
@@ -485,7 +532,7 @@ class TestRunAria2Download(unittest.TestCase):
         )
 
         self.assertFalse(result)
-        mock_log_warn.assert_called_with("\nDownload cancelled by user")
+        mock_log_warn.assert_called_with("\nDownload cancelled by user - session saved for resume")
 
     @patch("builtins.open", new_callable=unittest.mock.mock_open)
     @patch("subprocess.run")
@@ -558,8 +605,10 @@ class TestRunAria2Download(unittest.TestCase):
         self.assertFalse(result)
         mock_log_error.assert_called_with("Download failed with exit code 1")
 
+    @patch("builtins.open", new_callable=unittest.mock.mock_open)
+    @patch("subprocess.run")
     @patch("download_uup.log_error")
-    def test_run_aria2_download_invalid_filename(self, mock_log_error):
+    def test_run_aria2_download_invalid_filename(self, mock_log_error, mock_run, mock_open):
         dl_list = [{"url": "http://test", "name": "../escape.esd"}]
 
         result = download_uup._run_aria2_download(
@@ -1641,7 +1690,8 @@ class TestHandleInfoMode(unittest.TestCase):
     def test_not_handled(self):
         from argparse import Namespace
         args = Namespace(
-            editions=None, languages=None, latest=False,
+            editions=None, languages=None, latest=False, update_info=None,
+            save_delta_manifest=None, delta_info=None,
         )
         rc = download_uup._handle_info_mode(args)
         self.assertIsNone(rc)
@@ -1899,6 +1949,553 @@ class TestGetLatestBuildsEmpty(unittest.TestCase):
     @patch("download_uup.fetch_url", return_value={"response": {"builds": []}})
     def test_empty_builds_list(self, mock_fetch):
         self.assertEqual(download_uup.get_latest_builds(), [])
+
+
+class TestDownloadLanguagePacks(unittest.TestCase):
+    @patch("download_uup.download_build", return_value=True)
+    @patch("download_uup.get_build_info_cached")
+    def test_download_language_packs_success(
+        self, mock_get_build_info_cached, mock_download_build
+    ):
+        mock_get_build_info_cached.return_value = {"files": {"foo.esd": {"size": 1}}}
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            result = download_uup.download_language_packs(
+                "test-id", ["en-us", "fr-fr"], tmpdir
+            )
+            self.assertTrue(result)
+            self.assertEqual(mock_download_build.call_count, 2)
+            # First call should be en-us, second should be fr-fr
+            first_call_args = mock_download_build.call_args_list[0]
+            self.assertIn("lang_en-us", str(first_call_args))
+            second_call_args = mock_download_build.call_args_list[1]
+            self.assertIn("lang_fr-fr", str(second_call_args))
+
+    @patch("download_uup.download_build", return_value=True)
+    @patch("download_uup.get_build_info_cached", return_value=None)
+    def test_download_language_packs_no_files(
+        self, mock_get_build_info_cached, mock_download_build
+    ):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            result = download_uup.download_language_packs(
+                "test-id", ["en-us"], tmpdir
+            )
+            self.assertFalse(result)
+            mock_download_build.assert_not_called()
+
+
+class TestGetBuildFiles(unittest.TestCase):
+    def test_get_build_files_basic(self):
+        build_info = {
+            "files": {
+                "a.esd": {"size": 100, "sha256": "abc"},
+                "b.cab": {"size": 200},
+            }
+        }
+        result = download_uup.get_build_files(build_info)
+        self.assertEqual(set(result.keys()), {"a.esd", "b.cab"})
+        self.assertEqual(result["a.esd"], {"size": 100, "sha256": "abc"})
+
+    def test_get_build_files_empty(self):
+        self.assertEqual(download_uup.get_build_files({}), {})
+
+    def test_get_build_files_missing_files_key(self):
+        self.assertEqual(download_uup.get_build_files({"other": 1}), {})
+
+    def test_get_build_files_filters_non_dict_entries(self):
+        build_info = {
+            "files": {
+                "a.esd": {"size": 1},
+                "bad": "not-a-dict",
+                42: {"size": 2},
+            }
+        }
+        result = download_uup.get_build_files(build_info)
+        self.assertEqual(list(result.keys()), ["a.esd"])
+
+    def test_get_build_files_returns_copies(self):
+        """Modifying the returned dict must not affect build_info."""
+        info = {"files": {"a.esd": {"size": 1}}}
+        result = download_uup.get_build_files(info)
+        result["a.esd"]["size"] = 999
+        self.assertEqual(info["files"]["a.esd"]["size"], 1)
+
+    def test_get_build_files_files_not_dict(self):
+        """Non-dict 'files' entry is treated as empty."""
+        self.assertEqual(download_uup.get_build_files({"files": "garbage"}), {})
+
+
+class TestCalculateDelta(unittest.TestCase):
+    def test_identical_builds(self):
+        base = target = {"a.esd": {"size": 1}, "b.cab": {"size": 2}}
+        delta = download_uup.calculate_delta(base, target)
+        self.assertEqual(delta["added"], [])
+        self.assertEqual(delta["removed"], [])
+        self.assertEqual(delta["modified"], [])
+        self.assertEqual(set(delta["unchanged"]), {"a.esd", "b.cab"})
+
+    def test_added_files(self):
+        delta = download_uup.calculate_delta(
+            {"a": {"size": 1}}, {"a": {"size": 1}, "b": {"size": 2}, "c": {"size": 3}}
+        )
+        self.assertEqual(set(delta["added"]), {"b", "c"})
+        self.assertEqual(delta["removed"], [])
+        self.assertEqual(delta["modified"], [])
+        self.assertEqual(delta["unchanged"], ["a"])
+
+    def test_removed_files(self):
+        delta = download_uup.calculate_delta(
+            {"a": {"size": 1}, "b": {"size": 2}}, {"a": {"size": 1}}
+        )
+        self.assertEqual(delta["added"], [])
+        self.assertEqual(delta["removed"], ["b"])
+        self.assertEqual(delta["modified"], [])
+        self.assertEqual(delta["unchanged"], ["a"])
+
+    def test_modified_files_size_changed(self):
+        delta = download_uup.calculate_delta(
+            {"a": {"size": 1}}, {"a": {"size": 2}}
+        )
+        self.assertEqual(delta["added"], [])
+        self.assertEqual(delta["removed"], [])
+        self.assertEqual(delta["modified"], ["a"])
+        self.assertEqual(delta["unchanged"], [])
+
+    def test_modified_files_sha256_changed(self):
+        delta = download_uup.calculate_delta(
+            {"a": {"size": 1, "sha256": "old"}},
+            {"a": {"size": 1, "sha256": "new"}},
+        )
+        self.assertEqual(delta["modified"], ["a"])
+
+    def test_modified_files_extra_key(self):
+        """A new metadata key in the target should mark the file as modified."""
+        delta = download_uup.calculate_delta(
+            {"a": {"size": 1}}, {"a": {"size": 1, "sha256": "abc"}}
+        )
+        self.assertEqual(delta["modified"], ["a"])
+
+    def test_both_empty(self):
+        delta = download_uup.calculate_delta({}, {})
+        self.assertEqual(delta["added"], [])
+        self.assertEqual(delta["removed"], [])
+        self.assertEqual(delta["modified"], [])
+        self.assertEqual(delta["unchanged"], [])
+
+    def test_disjoint_builds(self):
+        delta = download_uup.calculate_delta(
+            {"a": {"size": 1}}, {"b": {"size": 2}}
+        )
+        self.assertEqual(delta["added"], ["b"])
+        self.assertEqual(delta["removed"], ["a"])
+        self.assertEqual(delta["modified"], [])
+        self.assertEqual(delta["unchanged"], [])
+
+    def test_results_sorted(self):
+        """added/removed/modified/unchanged must be sorted for stable output."""
+        delta = download_uup.calculate_delta(
+            {"z": {"size": 1}, "a": {"size": 1}}, {"m": {"size": 1}, "a": {"size": 1}}
+        )
+        self.assertEqual(delta["added"], ["m"])
+        self.assertEqual(delta["removed"], ["z"])
+        self.assertEqual(delta["unchanged"], ["a"])
+
+    def test_compute_changed_files(self):
+        result = download_uup.compute_changed_files(
+            {"a": {"size": 1}, "b": {"size": 2}, "c": {"size": 3}},
+            {"a": {"size": 1}, "b": {"size": 99}, "d": {"size": 4}},
+        )
+        self.assertEqual(result, {"b", "d"})
+
+
+class TestFormatDeltaSummary(unittest.TestCase):
+    def test_format_includes_counts(self):
+        delta = {
+            "added": ["a", "b"],
+            "removed": ["c"],
+            "modified": ["d"],
+            "unchanged": ["e", "f", "g"],
+        }
+        text = download_uup.format_delta_summary("base", "target", delta)
+        self.assertIn("base", text)
+        self.assertIn("target", text)
+        self.assertIn("2", text)
+        self.assertIn("1", text)
+        self.assertIn("3", text)
+
+
+class TestDeltaManifestIO(unittest.TestCase):
+    def setUp(self):
+        self._orig_cwd = os.getcwd()
+        self._tmp = tempfile.mkdtemp()
+        os.chdir(self._tmp)
+
+    def tearDown(self):
+        os.chdir(self._orig_cwd)
+        shutil.rmtree(self._tmp, ignore_errors=True)
+
+    def test_save_then_load_roundtrip(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            files = {
+                "a.esd": {"size": 100, "sha256": "abc"},
+                "b.cab": {"size": 200},
+            }
+            path = download_uup.save_delta_manifest("build-1", files, store_dir=tmp)
+            self.assertIsNotNone(path)
+            self.assertTrue(Path(path).exists())
+
+            loaded = download_uup.load_delta_manifest("build-1", store_dir=tmp)
+            self.assertIsNotNone(loaded)
+            self.assertEqual(loaded, files)
+
+    def test_load_missing_manifest_returns_none(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            result = download_uup.load_delta_manifest("missing", store_dir=tmp)
+            self.assertIsNone(result)
+
+    def test_load_malformed_manifest_returns_none(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = Path(tmp)
+            manifest = store / download_uup._safe_delta_filename("build-1")
+            manifest.write_text("not json{", encoding="utf-8")
+            self.assertIsNone(download_uup.load_delta_manifest("build-1", store_dir=tmp))
+
+    def test_load_manifest_filters_non_dict_entries(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = Path(tmp)
+            manifest = store / download_uup._safe_delta_filename("build-1")
+            manifest.write_text(
+                json.dumps({"build_id": "build-1", "files": {"a": {"size": 1}, "bad": "x"}}),
+                encoding="utf-8",
+            )
+            loaded = download_uup.load_delta_manifest("build-1", store_dir=tmp)
+            self.assertEqual(loaded, {"a": {"size": 1}})
+
+    def test_load_manifest_top_level_not_dict(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = Path(tmp)
+            manifest = store / download_uup._safe_delta_filename("build-1")
+            manifest.write_text(json.dumps(["a", "b"]), encoding="utf-8")
+            self.assertIsNone(download_uup.load_delta_manifest("build-1", store_dir=tmp))
+
+    def test_load_manifest_files_not_dict(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = Path(tmp)
+            manifest = store / download_uup._safe_delta_filename("build-1")
+            manifest.write_text(json.dumps({"files": "nope"}), encoding="utf-8")
+            self.assertIsNone(download_uup.load_delta_manifest("build-1", store_dir=tmp))
+
+    def test_save_creates_store_dir(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            nested = Path(tmp) / "nested" / "store"
+            path = download_uup.save_delta_manifest(
+                "build-1", {"a": {"size": 1}}, store_dir=nested
+            )
+            self.assertIsNotNone(path)
+            self.assertTrue(Path(path).exists())
+
+    def test_safe_delta_filename(self):
+        """Unsafe characters in build_id must be replaced with underscores."""
+        name = download_uup._safe_delta_filename("../../etc/passwd")
+        self.assertNotIn("..", name)
+        self.assertNotIn("/", name)
+        self.assertTrue(name.endswith(".json"))
+
+    def test_safe_delta_filename_preserves_alnum_dash(self):
+        name = download_uup._safe_delta_filename("abc-123_XYZ")
+        self.assertEqual(name, "abc-123_XYZ.json")
+
+    def test_load_manifest_path_traversal_rejected(self):
+        """A build_id that escapes the store must be rejected.
+
+        With the safer filename rules, traversal via build_id is impossible,
+        so we verify the safer-by-design path: even an attempt that contains
+        ``..`` is harmless because the safe filename sanitizes it.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            # Save a normal manifest, then attempt to load a traversal one
+            download_uup.save_delta_manifest(
+                "build-1", {"a": {"size": 1}}, store_dir=tmp
+            )
+            # "../../../etc/passwd" sanitizes to ".._.._.._etc_passwd" which
+            # is still inside the store - the path is just a non-existent
+            # file. The key safety property is that the resolved path is
+            # inside the store.
+            with patch("download_uup.log_error") as mock_log:
+                result = download_uup.load_delta_manifest(
+                    "../../../etc/passwd", store_dir=tmp
+                )
+            self.assertIsNone(result)  # file doesn't exist
+            mock_log.assert_not_called()  # and no traversal error
+
+
+class TestPrepareDownloadListWithDelta(unittest.TestCase):
+    def test_delta_filter_includes_only_named_files(self):
+        files = {
+            "a.esd": {"size": 1},
+            "b.cab": {"size": 2},
+            "c.esd": {"size": 3},
+        }
+        result = download_uup._prepare_download_list(
+            "test-id", files, delta_filter={"a.esd", "b.cab"}
+        )
+        names = {item["name"] for item in result}
+        self.assertEqual(names, {"a.esd", "b.cab"})
+
+    def test_delta_filter_none_includes_all(self):
+        files = {"a.esd": {"size": 1}, "b.cab": {"size": 2}}
+        result = download_uup._prepare_download_list("test-id", files, delta_filter=None)
+        self.assertEqual(len(result), 2)
+
+    def test_delta_filter_empty_set_excludes_all(self):
+        files = {"a.esd": {"size": 1}, "b.cab": {"size": 2}}
+        result = download_uup._prepare_download_list("test-id", files, delta_filter=set())
+        self.assertEqual(result, [])
+
+    def test_delta_filter_with_edition_filter(self):
+        files = {
+            "a.esd": {"size": 1},
+            "b.esd": {"size": 2},
+            "c.cab": {"size": 3},
+        }
+        # Edition filter keeps only a.esd, delta filter keeps a.esd + c.cab -> a.esd + c.cab
+        result = download_uup._prepare_download_list(
+            "test-id",
+            files,
+            edition_filter=["a.esd"],
+            delta_filter={"a.esd", "c.cab"},
+        )
+        names = {item["name"] for item in result}
+        self.assertEqual(names, {"a.esd", "c.cab"})
+
+
+class TestDownloadBuildDelta(unittest.TestCase):
+    def setUp(self):
+        self._orig_cwd = os.getcwd()
+        self._tmp = tempfile.mkdtemp()
+        os.chdir(self._tmp)
+
+    def tearDown(self):
+        os.chdir(self._orig_cwd)
+        shutil.rmtree(self._tmp, ignore_errors=True)
+
+    @patch("download_uup.save_delta_manifest")
+    @patch("download_uup._run_aria2_download", return_value=True)
+    @patch("download_uup.load_delta_manifest")
+    def test_download_build_with_delta_filters_files(
+        self, mock_load, mock_run, mock_save
+    ):
+        mock_load.return_value = {
+            "a.esd": {"size": 100},
+            "b.cab": {"size": 200},
+        }
+        build_info = {
+            "files": {
+                "a.esd": {"size": 100},
+                "b.cab": {"size": 200, "sha256": "new"},  # modified
+                "c.esd": {"size": 300},  # added
+            }
+        }
+        result = download_uup.download_build(
+            "target-id",
+            "uup_delta_out",
+            build_info=build_info,
+            delta_from="base-id",
+        )
+        self.assertTrue(result)
+        # Should have downloaded only b.cab and c.esd
+        download_list_arg = mock_run.call_args[0][2]
+        names = {item["name"] for item in download_list_arg}
+        self.assertEqual(names, {"b.cab", "c.esd"})
+
+    @patch("download_uup.save_delta_manifest")
+    @patch("download_uup._run_aria2_download", return_value=True)
+    @patch("download_uup.load_delta_manifest")
+    def test_download_build_no_changes_skips_aria2(
+        self, mock_load, mock_run, mock_save
+    ):
+        mock_load.return_value = {"a.esd": {"size": 1}, "b.cab": {"size": 2}}
+        build_info = {"files": {"a.esd": {"size": 1}, "b.cab": {"size": 2}}}
+        result = download_uup.download_build(
+            "target-id",
+            "uup_delta_out",
+            build_info=build_info,
+            delta_from="base-id",
+        )
+        self.assertTrue(result)
+        mock_run.assert_not_called()
+        # Manifest for target is still saved for future delta runs
+        mock_save.assert_called_once()
+        self.assertEqual(mock_save.call_args[0][0], "target-id")
+
+    @patch("download_uup.save_delta_manifest")
+    @patch("download_uup._run_aria2_download", return_value=True)
+    @patch("download_uup.load_delta_manifest", return_value=None)
+    def test_download_build_delta_from_missing_manifest_downloads_all(
+        self, mock_load, mock_run, mock_save
+    ):
+        build_info = {"files": {"a.esd": {"size": 1}, "b.cab": {"size": 2}}}
+        result = download_uup.download_build(
+            "target-id",
+            "uup_delta_out",
+            build_info=build_info,
+            delta_from="missing",
+        )
+        self.assertTrue(result)
+        download_list_arg = mock_run.call_args[0][2]
+        self.assertEqual(len(download_list_arg), 2)
+
+    @patch("download_uup.save_delta_manifest")
+    @patch("download_uup._run_aria2_download", return_value=True)
+    def test_download_build_without_delta_saves_manifest(
+        self, mock_run, mock_save
+    ):
+        build_info = {"files": {"a.esd": {"size": 1}}}
+        download_uup.download_build(
+            "test-id",
+            "uup_delta_out",
+            build_info=build_info,
+        )
+        # Manifest saved for the current build even without delta
+        self.assertTrue(mock_save.called)
+        self.assertEqual(mock_save.call_args[0][0], "test-id")
+
+    @patch("download_uup.save_delta_manifest")
+    @patch("download_uup._run_aria2_download", return_value=False)
+    @patch("download_uup.load_delta_manifest")
+    def test_download_build_failed_does_not_save_manifest(
+        self, mock_load, mock_run, mock_save
+    ):
+        """A failed aria2 run must not overwrite the saved manifest."""
+        mock_load.return_value = {"a.esd": {"size": 1}}
+        build_info = {"files": {"a.esd": {"size": 2}}}
+        result = download_uup.download_build(
+            "test-id",
+            "uup_delta_out",
+            build_info=build_info,
+            delta_from="base-id",
+        )
+        self.assertFalse(result)
+        mock_save.assert_not_called()
+
+
+class TestDeltaCLIArgs(unittest.TestCase):
+    def test_delta_from_flag(self):
+        args = download_uup.parse_args(
+            ["--build-id", "abc", "--delta-from", "xyz"]
+        )
+        self.assertEqual(args.delta_from, "xyz")
+
+    def test_delta_store_flag(self):
+        args = download_uup.parse_args(
+            ["--build-id", "abc", "--delta-store", "/some/path"]
+        )
+        self.assertEqual(args.delta_store, "/some/path")
+
+    def test_save_delta_manifest_flag(self):
+        args = download_uup.parse_args(["--save-delta-manifest", "abc"])
+        self.assertEqual(args.save_delta_manifest, "abc")
+
+    def test_delta_info_flag(self):
+        args = download_uup.parse_args(["--delta-info", "abc"])
+        self.assertEqual(args.delta_info, "abc")
+
+    def test_defaults_to_none(self):
+        args = download_uup.parse_args(["--list"])
+        self.assertIsNone(args.delta_from)
+        self.assertIsNone(args.delta_store)
+        self.assertIsNone(args.save_delta_manifest)
+        self.assertIsNone(args.delta_info)
+
+
+class TestHandleDeltaInfoMode(unittest.TestCase):
+    @patch("download_uup.log_warn")
+    @patch("download_uup.log_success")
+    @patch("download_uup.get_build_info_cached")
+    def test_save_delta_manifest_success(self, mock_get, mock_success, mock_warn):
+        mock_get.return_value = {"files": {"a.esd": {"size": 1}}}
+        args = download_uup.parse_args(
+            ["--save-delta-manifest", "abc-123", "--delta-store", "/tmp/x"]
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            args.delta_store = tmp
+            rc = download_uup._handle_info_mode(args)
+            self.assertEqual(rc, 0)
+            mock_success.assert_called()
+
+    @patch("download_uup.log_error")
+    @patch("download_uup.get_build_info_cached", return_value=None)
+    def test_save_delta_manifest_no_build_info(self, mock_get, mock_log):
+        args = download_uup.parse_args(["--save-delta-manifest", "missing"])
+        rc = download_uup._handle_info_mode(args)
+        self.assertEqual(rc, 1)
+        mock_log.assert_called()
+
+    @patch("download_uup.get_build_info_cached")
+    def test_save_delta_manifest_empty_files(self, mock_get):
+        mock_get.return_value = {"files": {}}
+        args = download_uup.parse_args(["--save-delta-manifest", "abc"])
+        rc = download_uup._handle_info_mode(args)
+        self.assertEqual(rc, 1)
+
+    @patch("download_uup.load_delta_manifest", return_value={"a.esd": {"size": 1}})
+    def test_delta_info_success(self, mock_load):
+        args = download_uup.parse_args(["--delta-info", "abc"])
+        rc = download_uup._handle_info_mode(args)
+        self.assertEqual(rc, 0)
+
+    @patch("download_uup.log_warn")
+    @patch("download_uup.load_delta_manifest", return_value=None)
+    def test_delta_info_missing(self, mock_load, mock_warn):
+        args = download_uup.parse_args(["--delta-info", "missing"])
+        rc = download_uup._handle_info_mode(args)
+        self.assertEqual(rc, 1)
+        mock_warn.assert_called()
+
+
+class TestMainDeltaModes(unittest.TestCase):
+    @patch("download_uup.check_dependencies")
+    def test_save_delta_manifest_in_info_only(self, mock_check):
+        """--save-delta-manifest must be treated as info-only (no dep check)."""
+        with patch("download_uup._handle_info_mode", return_value=0) as mock_handle:
+            with patch("download_uup.parse_args", return_value=argparse.Namespace(
+                build_id=None,
+                editions=None,
+                languages=None,
+                latest=False,
+                save_delta_manifest="abc",
+                delta_info=None,
+                delta_from=None,
+                delta_store=None,
+                list_presets=False,
+                show_pin=False,
+                pin_build=False,
+                use_pin=False,
+                list_groups=False,
+                write_groups=None,
+                list=False,
+                clear_cache=False,
+                output="uup_files",
+                cache_ttl=3600,
+                no_cache=False,
+                preset=None,
+                groups=None,
+                resume=True,
+                verbose=False,
+                edition=None,
+                update_info=None,
+                language=None,
+                languages_download=None,
+                arch="amd64",
+                ring="Retail",
+                max_results=10,
+                preset_mode=False,
+                mirrors=None,
+            )):
+                rc = download_uup.main()
+                self.assertEqual(rc, 0)
+                mock_handle.assert_called_once()
+                mock_check.assert_not_called()
 
 
 if __name__ == "__main__":

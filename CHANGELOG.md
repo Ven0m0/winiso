@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Added delta downloads support (T008): `--delta-from <build_id>` and `--delta-store <dir>` CLI flags for downloading only files added or modified compared to a previous build, plus `--save-delta-manifest` and `--delta-info` info modes. Per-build file lists are persisted to the local delta store after a successful download so subsequent delta runs have a baseline. New helpers: `get_build_files`, `calculate_delta`, `compute_changed_files`, `save_delta_manifest`, `load_delta_manifest`, `format_delta_summary`.
+- Added language packs support (T014): `--language` and `--languages-download` CLI flags, `download_language_packs()` function for multi-language ISO creation, and language-aware `get_build_info()`.
+- Added unit tests for `download_language_packs()` in `tests/test_download_uup.py`.
+- Added `get_update_info()` function for `updateinfo.php` endpoint (T007).
+- Added `--update-info` CLI flag for fetching update information.
+- Added unit tests for `get_update_info()` in `tests/test_download_uup.py`.
+- Added aria2c session persistence for download resume (T009): `--save-session` and `--save-session-interval 60` flags, session file at `uup_files/aria2_session.txt`, `--log` capture when `--verbose`, and `--no-resume` CLI flag to disable.
+- Added mirror sources support (T010): `--mirrors` CLI option for custom download URLs, `.uup-mirrors` config file support, and fallback source configuration.
 - Added unit tests for `get_available_languages` in `tests/test_download_uup.py` to improve coverage of API functions.
 - Added a dedicated `test-matrix.yml` workflow for Python tests on uv-managed Python runtimes.
 - Added `.github/instructions/windows-servicing.instructions.md` to keep Windows-only servicing changes separate from the default Linux build path.

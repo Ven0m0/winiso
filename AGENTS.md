@@ -40,6 +40,7 @@ scripts/download_uup.py             # UUP API client (Python 3, stdlib-first)
 scripts/setup_env.sh                # Installs system dependencies
 scripts/utils.sh                    # Shared logging helpers (source this, never copy)
 scripts/validate_prereqs.sh         # Pre-build checks (tools, disk space, UUP files)
+scripts/sign_iso.sh                 # SHA256/SHA512 checksums + optional GPG signature for the built ISO
 scripts/windows_service.cmd         # Optional Windows-side DISM servicing
 scripts/Apply-ImageSettings.ps1     # PowerShell image settings (Windows-side)
 scripts/config.ps1                  # PowerShell config helper (Windows-side)
@@ -50,7 +51,7 @@ config/autounattend.xml             # Unattended Windows setup answers (UTF-8, n
 config/debloat_list.txt             # Bloatware glob patterns (grouped by category)
 config/oem/SetupComplete.cmd        # First-boot CMD script (CRLF required)
 
-ventoy/answer/                      # Alternative autounattend variants (safe, debloat)
+ventoy/answer/                      # Canonical autounattend.xml source; config/autounattend.xml is a copy of it
 
 tests/test_download_uup.py          # Unit tests (40+ cases, unittest + mock)
 tests/test_security.py              # Path traversal validation tests
@@ -77,7 +78,12 @@ make deps       # Install: aria2c, cabextract, wimlib-imagex, chntpw, genisoimag
 make download   # Fetch UUP packages (written to uup_files/ — runtime dir, not committed)
 make validate   # Check tools, disk space, UUP files, config
 make build      # Full pipeline (ISO written to output/ — runtime dir, not committed)
+make sign ISO=output/Win11.iso [GPG=1 KEY=<key-id>]  # SHA256/SHA512 (+ optional GPG) for a built ISO
+make clean      # Remove build artifacts
+make validate-xml  # xmllint check of config/autounattend.xml only
 ```
+
+Equivalent `mise` tasks exist in `mise.toml` (`mise run install-deps`, `mise run test`, `mise run lint`, `mise run lint-xml`, `mise run lint-biome`, `mise run pwsh-install`) — use whichever entrypoint fits; both call the same underlying scripts/tools.
 
 ### Build Variants
 

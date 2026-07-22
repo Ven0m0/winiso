@@ -1,0 +1,810 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Preset xmlns="urn:schemas-nliteos-com:pn.v1">
+	<Date>01/30/2025 04:15:36</Date>
+	<AppInfo>
+		<Version>2025.1.10275</Version>
+		<Licensed>Yes</Licensed>
+		<Protections>Yes</Protections>
+		<Host>Windows 10 Professional 22H2 x64 - 10.0.19045.5371 (en-US)</Host>
+	</AppInfo>
+	<ImageInfo>
+		<Version mode="offline">Windows 10 Professional 22H2 x64 - 10.0.19045.3803 (en-US)</Version>
+		<GUID>{E9308D5C-21B6-4F8B-8B9B-A189043FD4C7}</GUID>
+	</ImageInfo>
+	<RemoveComponents AppRemovalMode="DISM">
+		<c>aarsvc 'Agent Activation Runtime'</c>
+		<c>accessibility_cursors 'Mouse Pointers (Accessibility tools)'</c>
+		<c>accessibility_magnifier 'Screen Magnifier'</c>
+		<c>accessibility_narrator 'Narrator'</c>
+		<c>alljoyn 'AllJoyn Router Service'</c>
+		<c>assignedaccess 'Assigned Access'</c>
+		<c>audit 'Windows Audit'</c>
+		<c>bingsearch 'Bing Search (InboxApp)'</c>
+		<c>branchcacheclient 'BranchCache Client'</c>
+		<c>ceip 'CEIP (SQM)'</c>
+		<c>cloudnotifications 'Cloud Notifications'</c>
+		<c>desktopactivitymoderator 'Desktop Activity Moderator (DAM)'</c>
+		<c>deviceexperience 'Device Experience'</c>
+		<c>devicesync 'Microsoft Sync Framework'</c>
+		<c>deviceupdatecenter 'Device Update Center'</c>
+		<c>driver_kdnic.inf</c>
+		<c>driver_perceptionsimulationheadset.inf</c>
+		<c>easeofaccessthemes 'Ease Of Access Themes'</c>
+		<c>embeddedexperience 'Device Lockdown (Embedded Experience)'</c>
+		<c>embeddedmode 'Embedded Mode'</c>
+		<c>enterpriseclientsync 'Work Folders Client'</c>
+		<c>font_holomd2 'Holo MDL2 Assets'</c>
+		<c>font_malgungothicbold 'Malgun Gothic Bold'</c>
+		<c>font_malgungothicsemilight 'Malgun Gothic SemiLight'</c>
+		<c>font_mingliub 'MingLiU-ExtB &amp; PMingLiU-ExtB &amp; MingLiU_HKSCS-ExtB'</c>
+		<c>font_yugothic 'Yu Gothic Regular &amp; Yu Gothic UI Semilight'</c>
+		<c>font_yugothicbold 'Yu Gothic Bold &amp; Yu Gothic UI Semibold &amp; Yu Gothic UI Bold'</c>
+		<c>font_yugothiclight 'Yu Gothic Light &amp; Yu Gothic UI Light'</c>
+		<c>font_yugothicmedium 'Yu Gothic Medium &amp; Yu Gothic UI Regular'</c>
+		<c>ipt 'Identity Protection Technology (Intel IPT)'</c>
+		<c>kerneldebug 'Kernel Debugging'</c>
+		<c>kl-00000401 'Arabic (101)'</c>
+		<c>kl-00000402 'Bulgarian (Typewriter)'</c>
+		<c>kl-00000404 'Chinese (Traditional) - US'</c>
+		<c>kl-00000405 'Czech'</c>
+		<c>kl-00000406 'Danish'</c>
+		<c>kl-00000408 'Greek'</c>
+		<c>kl-0000040a 'Spanish'</c>
+		<c>kl-0000040b 'Finnish'</c>
+		<c>kl-0000040c 'French'</c>
+		<c>kl-0000040d 'Hebrew'</c>
+		<c>kl-0000040e 'Hungarian'</c>
+		<c>kl-0000040f 'Icelandic'</c>
+		<c>kl-00000410 'Italian'</c>
+		<c>kl-00000411 'Japanese'</c>
+		<c>kl-00000412 'Korean'</c>
+		<c>kl-00000413 'Dutch'</c>
+		<c>kl-00000414 'Norwegian'</c>
+		<c>kl-00000415 'Polish (Programmers)'</c>
+		<c>kl-00000416 'Portuguese (Brazil ABNT)'</c>
+		<c>kl-00000418 'Romanian (Legacy)'</c>
+		<c>kl-00000419 'Russian'</c>
+		<c>kl-0000041a 'Standard'</c>
+		<c>kl-0000041b 'Slovak'</c>
+		<c>kl-0000041c 'Albanian'</c>
+		<c>kl-0000041d 'Swedish'</c>
+		<c>kl-0000041e 'Thai Kedmanee'</c>
+		<c>kl-0000041f 'Turkish Q'</c>
+		<c>kl-00000420 'Urdu'</c>
+		<c>kl-00000422 'Ukrainian'</c>
+		<c>kl-00000423 'Belarusian'</c>
+		<c>kl-00000424 'Slovenian'</c>
+		<c>kl-00000425 'Estonian'</c>
+		<c>kl-00000426 'Latvian'</c>
+		<c>kl-00000427 'Lithuanian IBM'</c>
+		<c>kl-00000428 'Tajik'</c>
+		<c>kl-00000429 'Persian'</c>
+		<c>kl-0000042a 'Vietnamese'</c>
+		<c>kl-0000042b 'Armenian Eastern (Legacy)'</c>
+		<c>kl-0000042c 'Azerbaijani Latin'</c>
+		<c>kl-0000042e 'Sorbian Standard (Legacy)'</c>
+		<c>kl-0000042f 'Macedonian (North Macedonia)'</c>
+		<c>kl-00000432 'Setswana'</c>
+		<c>kl-00000437 'Georgian (Legacy)'</c>
+		<c>kl-00000438 'Faeroese'</c>
+		<c>kl-00000439 'Devanagari - INSCRIPT'</c>
+		<c>kl-0000043a 'Maltese 47-Key'</c>
+		<c>kl-0000043b 'Norwegian with Sami'</c>
+		<c>kl-0000043f 'Kazakh'</c>
+		<c>kl-00000440 'Kyrgyz Cyrillic'</c>
+		<c>kl-00000442 'Turkmen'</c>
+		<c>kl-00000444 'Tatar (Legacy)'</c>
+		<c>kl-00000445 'Bangla'</c>
+		<c>kl-00000446 'Punjabi'</c>
+		<c>kl-00000447 'Gujarati'</c>
+		<c>kl-00000448 'Odia'</c>
+		<c>kl-00000449 'Tamil'</c>
+		<c>kl-0000044a 'Telugu'</c>
+		<c>kl-0000044b 'Kannada'</c>
+		<c>kl-0000044c 'Malayalam'</c>
+		<c>kl-0000044d 'Assamese - INSCRIPT'</c>
+		<c>kl-0000044e 'Marathi'</c>
+		<c>kl-00000450 'Mongolian Cyrillic'</c>
+		<c>kl-00000451 'Tibetan (PRC)'</c>
+		<c>kl-00000453 'Khmer'</c>
+		<c>kl-00000454 'Lao'</c>
+		<c>kl-0000045a 'Syriac'</c>
+		<c>kl-0000045b 'Sinhala'</c>
+		<c>kl-0000045c 'Cherokee Nation'</c>
+		<c>kl-00000461 'Nepali'</c>
+		<c>kl-00000463 'Pashto (Afghanistan)'</c>
+		<c>kl-00000465 'Divehi Phonetic'</c>
+		<c>kl-00000468 'Hausa'</c>
+		<c>kl-0000046a 'Yoruba'</c>
+		<c>kl-0000046c 'Sesotho sa Leboa'</c>
+		<c>kl-0000046d 'Bashkir'</c>
+		<c>kl-0000046e 'Luxembourgish'</c>
+		<c>kl-0000046f 'Greenlandic'</c>
+		<c>kl-00000470 'Igbo'</c>
+		<c>kl-00000474 'Guarani'</c>
+		<c>kl-00000475 'Hawaiian'</c>
+		<c>kl-00000480 'Uyghur (Legacy)'</c>
+		<c>kl-00000481 'Maori'</c>
+		<c>kl-00000485 'Sakha'</c>
+		<c>kl-00000488 'Wolof'</c>
+		<c>kl-00000492 'Central Kurdish'</c>
+		<c>kl-00000804 'Chinese (Simplified) - US'</c>
+		<c>kl-00000807 'Swiss German'</c>
+		<c>kl-0000080a 'Latin American'</c>
+		<c>kl-0000080c 'Belgian French'</c>
+		<c>kl-00000813 'Belgian (Period)'</c>
+		<c>kl-00000816 'Portuguese'</c>
+		<c>kl-0000081a 'Serbian (Latin)'</c>
+		<c>kl-0000082c 'Azerbaijani Cyrillic'</c>
+		<c>kl-0000083b 'Swedish with Sami'</c>
+		<c>kl-00000843 'Uzbek Cyrillic'</c>
+		<c>kl-00000850 'Mongolian (Mongolian Script)'</c>
+		<c>kl-0000085d 'Inuktitut - Latin'</c>
+		<c>kl-0000085f 'Central Atlas Tamazight'</c>
+		<c>kl-00000c04 'Chinese (Traditional, Hong Kong S.A.R.) - US'</c>
+		<c>kl-00000c0c 'Canadian French (Legacy)'</c>
+		<c>kl-00000c1a 'Serbian (Cyrillic)'</c>
+		<c>kl-00000c51 'Dzongkha'</c>
+		<c>kl-00001004 'Chinese (Simplified, Singapore) - US'</c>
+		<c>kl-00001009 'Canadian French'</c>
+		<c>kl-0000100c 'Swiss French'</c>
+		<c>kl-0000105f 'Tifinagh (Basic)'</c>
+		<c>kl-00001404 'Chinese (Traditional, Macao S.A.R.) - US'</c>
+		<c>kl-00001809 'Irish'</c>
+		<c>kl-0000201a 'Bosnian (Cyrillic)'</c>
+		<c>kl-00004009 'English (India)'</c>
+		<c>kl-00010401 'Arabic (102)'</c>
+		<c>kl-00010402 'Bulgarian (Latin)'</c>
+		<c>kl-00010405 'Czech (QWERTY)'</c>
+		<c>kl-00010408 'Greek (220)'</c>
+		<c>kl-0001040a 'Spanish Variation'</c>
+		<c>kl-0001040e 'Hungarian 101-key'</c>
+		<c>kl-00010410 'Italian (142)'</c>
+		<c>kl-00010415 'Polish (214)'</c>
+		<c>kl-00010416 'Portuguese (Brazil ABNT2)'</c>
+		<c>kl-00010418 'Romanian (Standard)'</c>
+		<c>kl-00010419 'Russian (Typewriter)'</c>
+		<c>kl-0001041b 'Slovak (QWERTY)'</c>
+		<c>kl-0001041e 'Thai Pattachote'</c>
+		<c>kl-0001041f 'Turkish F'</c>
+		<c>kl-00010426 'Latvian (QWERTY)'</c>
+		<c>kl-00010427 'Lithuanian'</c>
+		<c>kl-0001042b 'Armenian Western (Legacy)'</c>
+		<c>kl-0001042c 'Azerbaijani (Standard)'</c>
+		<c>kl-0001042e 'Sorbian Extended'</c>
+		<c>kl-0001042f 'Macedonian (North Macedonia) - Standard'</c>
+		<c>kl-00010437 'Georgian (QWERTY)'</c>
+		<c>kl-00010439 'Hindi Traditional'</c>
+		<c>kl-0001043a 'Maltese 48-Key'</c>
+		<c>kl-0001043b 'Sami Extended Norway'</c>
+		<c>kl-00010444 'Tatar'</c>
+		<c>kl-00010445 'Bangla - INSCRIPT (Legacy)'</c>
+		<c>kl-00010451 'Tibetan (PRC) - Updated'</c>
+		<c>kl-00010453 'Khmer (NIDA)'</c>
+		<c>kl-0001045a 'Syriac Phonetic'</c>
+		<c>kl-0001045b 'Sinhala - Wij 9'</c>
+		<c>kl-0001045c 'Cherokee Phonetic'</c>
+		<c>kl-0001045d 'Inuktitut - Naqittaut'</c>
+		<c>kl-00010465 'Divehi Typewriter'</c>
+		<c>kl-00010480 'Uyghur'</c>
+		<c>kl-0001080c 'Belgian (Comma)'</c>
+		<c>kl-0001083b 'Finnish with Sami'</c>
+		<c>kl-00010850 'Traditional Mongolian (Standard)'</c>
+		<c>kl-00010c00 'Myanmar (Phonetic order)'</c>
+		<c>kl-00011009 'Canadian Multilingual Standard'</c>
+		<c>kl-0001105f 'Tifinagh (Extended)'</c>
+		<c>kl-00011809 'Scottish Gaelic'</c>
+		<c>kl-00020401 'Arabic (102) AZERTY'</c>
+		<c>kl-00020402 'Bulgarian (Phonetic)'</c>
+		<c>kl-00020405 'Czech Programmers'</c>
+		<c>kl-00020408 'Greek (319)'</c>
+		<c>kl-0002040d 'Hebrew (Standard)'</c>
+		<c>kl-00020418 'Romanian (Programmers)'</c>
+		<c>kl-00020419 'Russian - Mnemonic'</c>
+		<c>kl-0002041e 'Thai Kedmanee (non-ShiftLock)'</c>
+		<c>kl-00020422 'Ukrainian (Enhanced)'</c>
+		<c>kl-00020426 'Latvian (Standard)'</c>
+		<c>kl-00020427 'Lithuanian Standard'</c>
+		<c>kl-0002042b 'Armenian Phonetic'</c>
+		<c>kl-0002042e 'Sorbian Standard'</c>
+		<c>kl-00020437 'Georgian (Ergonomic)'</c>
+		<c>kl-00020445 'Bangla - INSCRIPT'</c>
+		<c>kl-00020449 'Tamil 99'</c>
+		<c>kl-0002083b 'Sami Extended Finland-Sweden'</c>
+		<c>kl-00020c00 'New Tai Lue'</c>
+		<c>kl-00030402 'Bulgarian'</c>
+		<c>kl-00030408 'Greek (220) Latin'</c>
+		<c>kl-0003041e 'Thai Pattachote (non-ShiftLock)'</c>
+		<c>kl-0003042b 'Armenian Typewriter'</c>
+		<c>kl-00030437 'Georgian (MES)'</c>
+		<c>kl-00030c00 'Tai Le'</c>
+		<c>kl-00040402 'Bulgarian (Phonetic Traditional)'</c>
+		<c>kl-00040408 'Greek (319) Latin'</c>
+		<c>kl-00040437 'Georgian (Old Alphabets)'</c>
+		<c>kl-00040c00 'Ogham'</c>
+		<c>kl-00050408 'Greek Latin'</c>
+		<c>kl-00050429 'Persian (Standard)'</c>
+		<c>kl-00060408 'Greek Polytonic'</c>
+		<c>kl-00070c00 'Lisu (Basic)'</c>
+		<c>kl-00080c00 'Lisu (Standard)'</c>
+		<c>kl-00090c00 'N’Ko'</c>
+		<c>kl-000a0c00 'Phags-pa'</c>
+		<c>kl-000b0c00 'Buginese'</c>
+		<c>kl-000c0c00 'Gothic'</c>
+		<c>kl-000d0c00 'Ol Chiki'</c>
+		<c>kl-000e0c00 'Osmanya'</c>
+		<c>kl-000f0c00 'Old Italic'</c>
+		<c>kl-00100c00 'Sora'</c>
+		<c>kl-00110c00 'Javanese'</c>
+		<c>kl-00120c00 'Futhark'</c>
+		<c>kl-00130c00 'Myanmar (Visual order)'</c>
+		<c>kl-00140c00 'ADLaM'</c>
+		<c>kl-00150c00 'Osage'</c>
+		<c>langamharic 'Amharic'</c>
+		<c>langarabic 'Arabic'</c>
+		<c>langbulgarian 'Bulgarian'</c>
+		<c>langchineses 'Chinese Simplified'</c>
+		<c>langchineset 'Chinese Traditional'</c>
+		<c>langcroatian 'Croatian'</c>
+		<c>langczech 'Czech'</c>
+		<c>langdanish 'Danish'</c>
+		<c>langdutch 'Dutch'</c>
+		<c>langestonian 'Estonian'</c>
+		<c>langfinnish 'Finnish'</c>
+		<c>langfrench 'French'</c>
+		<c>langfrenchcanadian 'French (Canadian)'</c>
+		<c>langgreek 'Greek'</c>
+		<c>langhebrew 'Hebrew'</c>
+		<c>langhungarian 'Hungarian'</c>
+		<c>langime 'Input Method Editor (IME)'</c>
+		<c>langimejp 'Japanese (IME)'</c>
+		<c>langimeko 'Korean (IME)'</c>
+		<c>langimetc 'Chinese Traditional (IME)'</c>
+		<c>langitalian 'Italian'</c>
+		<c>langjapanese 'Japanese'</c>
+		<c>langkorean 'Korean'</c>
+		<c>langlatvian 'Latvian'</c>
+		<c>langlithuanian 'Lithuanian'</c>
+		<c>langnorwegian 'Norwegian'</c>
+		<c>langpolish 'Polish'</c>
+		<c>langportuguesebr 'Portuguese (Brazilian)'</c>
+		<c>langportuguesept 'Portuguese'</c>
+		<c>langromanian 'Romanian'</c>
+		<c>langrussian 'Russian'</c>
+		<c>langserbian 'Serbian'</c>
+		<c>langslovak 'Slovak'</c>
+		<c>langslovenian 'Slovenian'</c>
+		<c>langspanish 'Spanish'</c>
+		<c>langswedish 'Swedish'</c>
+		<c>langtamil 'Tamil'</c>
+		<c>langthai 'Thai'</c>
+		<c>langturkish 'Turkish'</c>
+		<c>langukrainian 'Ukrainian'</c>
+		<c>laps 'Windows Local Administrator Password Solution(LAPS)'</c>
+		<c>location 'Location Service'</c>
+		<c>mail 'Windows Mail'</c>
+		<c>mailcommdll 'Windows Mail Communications Library'</c>
+		<c>mapcontrol 'Map Control'</c>
+		<c>microsoft.549981c3f5f10 'Cortana'</c>
+		<c>microsoft.bingweather 'MSN Weather'</c>
+		<c>microsoft.bioenrollment 'Windows Hello Setup'</c>
+		<c>microsoft.ecapp 'Eye Control'</c>
+		<c>microsoft.gethelp 'Get Help'</c>
+		<c>microsoft.getstarted 'Tips (Get Started)'</c>
+		<c>microsoft.microsoft3dviewer '3D Viewer'</c>
+		<c>microsoft.microsoftofficehub 'Office'</c>
+		<c>microsoft.microsoftsolitairecollection 'Microsoft Solitaire Collection'</c>
+		<c>microsoft.microsoftstickynotes 'Microsoft Sticky Notes'</c>
+		<c>microsoft.mixedreality.portal 'Mixed Reality Portal'</c>
+		<c>microsoft.mspaint 'Paint 3D'</c>
+		<c>microsoft.office.onenote 'OneNote'</c>
+		<c>microsoft.people 'Microsoft People'</c>
+		<c>microsoft.screensketch 'Snip &amp; Sketch'</c>
+		<c>microsoft.skypeapp 'Skype'</c>
+		<c>microsoft.wallet 'Microsoft Pay'</c>
+		<c>microsoft.windows.assignedaccesslockapp 'Assigned Access Lock app'</c>
+		<c>microsoft.windows.contentdeliverymanager 'Content Delivery Manager'</c>
+		<c>microsoft.windows.narratorquickstart 'Narrator'</c>
+		<c>microsoft.windows.parentalcontrols 'Microsoft family features'</c>
+		<c>microsoft.windows.secureassessmentbrowser 'Take a Test'</c>
+		<c>microsoft.windowsalarms 'Windows Alarms &amp; Clock'</c>
+		<c>microsoft.windowscamera 'Windows Camera'</c>
+		<c>microsoft.windowscommunicationsapps 'Mail and Calendar'</c>
+		<c>microsoft.windowsfeedbackhub 'Feedback Hub'</c>
+		<c>microsoft.windowsmaps 'Windows Maps'</c>
+		<c>microsoft.windowssoundrecorder 'Windows Voice Recorder'</c>
+		<c>microsoft.xbox.tcui 'Xbox TCUI'</c>
+		<c>microsoft.xboxapp 'Xbox'</c>
+		<c>microsoft.xboxgamecallableui 'Xbox Game UI'</c>
+		<c>microsoft.xboxgameoverlay 'Xbox Game Bar Plugin'</c>
+		<c>microsoft.xboxgamingoverlay 'Xbox Game Bar'</c>
+		<c>microsoft.xboxspeechtotextoverlay 'Xbox Game Speech Window'</c>
+		<c>microsoft.yourphone 'Your Phone'</c>
+		<c>microsoft.zunemusic 'Groove Music'</c>
+		<c>microsoft.zunevideo 'Movies &amp; TV'</c>
+		<c>mixedreality 'Windows Mixed Reality'</c>
+		<c>multipointconnector 'MultiPoint Connector'</c>
+		<c>naturalauthentication 'Natural Authentication'</c>
+		<c>ndiscap 'NDIS Packet Capturing (NDISCAP)'</c>
+		<c>payments</c>
+		<c>picturepassword 'Picture password'</c>
+		<c>pushnotificationssvc 'Windows Push Notifications Service (System)'</c>
+		<c>remoteassistance 'Remote Assistance'</c>
+		<c>remoteregistry 'Remote Registry'</c>
+		<c>retaildemo 'Retail Demo Content'</c>
+		<c>rightsmanagement 'Rights Management support'</c>
+		<c>rpclocator 'Remote Procedure Call (RPC) Locator'</c>
+		<c>sharedpc 'Shared PC mode'</c>
+		<c>simpletcp 'Simple TCP/IP services'</c>
+		<c>skypeortc 'Skype ORTC'</c>
+		<c>snmp 'Simple Network Management Protocol (SNMP)'</c>
+		<c>stepsrecorder 'Steps Recorder'</c>
+		<c>tempcache 'Cache and temp files'</c>
+		<c>troubleshootingsvc 'Recommended Troubleshooting service'</c>
+		<c>wallet 'Wallet Service'</c>
+		<c>webcamexperience 'Webcam Experience'</c>
+		<c>wifinetworkmanager 'Wi-Fi Network Manager (Wi-Fi Sense)'</c>
+		<c>windows.cbspreview 'Windows Barcode Preview'</c>
+		<c>windows.printdialog 'Windows Print'</c>
+	</RemoveComponents>
+	<Compatibility protectHidden="true">
+		<ComponentFeatures>
+			<Feature enabled="no">AppGuard</Feature>
+			<Feature enabled="yes">Battle.net</Feature>
+			<Feature enabled="no">YubiKey</Feature>
+			<Feature enabled="yes">Bluetooth</Feature>
+			<Feature enabled="no">USBCamera</Feature>
+			<Feature enabled="yes">CapFrameX</Feature>
+			<Feature enabled="yes">Discord</Feature>
+			<Feature enabled="no">Docker</Feature>
+			<Feature enabled="yes">EA Anti-Cheat</Feature>
+			<Feature enabled="yes">FileSharing</Feature>
+			<Feature enabled="no">Hyper-V</Feature>
+			<Feature enabled="no">iCloud</Feature>
+			<Feature enabled="no">Kaspersky</Feature>
+			<Feature enabled="yes">ManualSetup</Feature>
+			<Feature enabled="yes">OfficeSupport</Feature>
+			<Feature enabled="yes">AppxSupport</Feature>
+			<Feature enabled="yes">Netflix</Feature>
+			<Feature enabled="no">NetworkDiscovery</Feature>
+			<Feature enabled="no">NightLight</Feature>
+			<Feature enabled="yes">NvidiaSetup</Feature>
+			<Feature enabled="yes">OOBE</Feature>
+			<Feature enabled="no">Printing</Feature>
+			<Feature enabled="yes">Recommended-All</Feature>
+			<Feature enabled="no">RDPServer</Feature>
+			<Feature enabled="no">SamsungSwitch</Feature>
+			<Feature enabled="no">Scanning</Feature>
+			<Feature enabled="yes">ServicingStack</Feature>
+			<Feature enabled="yes">ShellSearchSupport</Feature>
+			<Feature enabled="yes">Spotify</Feature>
+			<Feature enabled="yes">SFC</Feature>
+			<Feature enabled="yes">DefaultFonts</Feature>
+			<Feature enabled="yes">SafeMode</Feature>
+			<Feature enabled="no">TeamViewer</Feature>
+			<Feature enabled="no">Recommended-Tablet</Feature>
+			<Feature enabled="yes">HostRefresh</Feature>
+			<Feature enabled="no">USBModem</Feature>
+			<Feature enabled="yes">USB</Feature>
+			<Feature enabled="yes">VideoPlayback</Feature>
+			<Feature enabled="no">VPN</Feature>
+			<Feature enabled="yes">VisualStudio</Feature>
+			<Feature enabled="no">VSS</Feature>
+			<Feature enabled="yes">ActivationKMS</Feature>
+			<Feature enabled="yes">Activation</Feature>
+			<Feature enabled="yes">WinSetup</Feature>
+			<Feature enabled="yes">WindowsStore</Feature>
+			<Feature enabled="yes">WindowsUpdate</Feature>
+			<Feature enabled="yes">WLAN</Feature>
+		</ComponentFeatures>
+		<MachineDrivers>
+			<Machine enabled="yes">HostMachine</Machine>
+			<Machine enabled="no">hwlist_Jannik-PC(0)</Machine>
+			<Machine enabled="no">Hyper-V VM</Machine>
+			<Machine enabled="no">Parallels VM</Machine>
+			<Machine enabled="no">Virtual Box VM</Machine>
+			<Machine enabled="no">VMware VM</Machine>
+		</MachineDrivers>
+	</Compatibility>
+	<Features>
+		<Feature name="NetFX3~~~~">true</Feature>
+		<Feature name="NetFx4Extended-ASPNET45">true</Feature>
+		<Feature name="DirectPlay">true</Feature>
+		<Feature name="Language.Handwriting~~~en-us~0.0.1.0">false</Feature>
+		<Feature name="Language.OCR~~~en-us~0.0.1.0">false</Feature>
+		<Feature name="Language.Speech~~~en-us~0.0.1.0">false</Feature>
+		<Feature name="Language.TextToSpeech~~~en-us~0.0.1.0">false</Feature>
+		<Feature name="OneCoreUAP.OneSync~~~~0.0.1.0">false</Feature>
+		<Feature name="WCF-HTTP-Activation45">true</Feature>
+		<Feature name="LegacyComponents">true</Feature>
+		<Feature name="MathRecognizer~~~~0.0.1.0">false</Feature>
+		<Feature name="WCF-MSMQ-Activation45">true</Feature>
+		<Feature name="MSMQ-Server">true</Feature>
+		<Feature name="MSMQ-Container">true</Feature>
+		<Feature name="Microsoft.Windows.MSPaint~~~~0.0.1.0">false</Feature>
+		<Feature name="Printing-PrintToPDFServices-Features">false</Feature>
+		<Feature name="App.Support.QuickAssist~~~~0.0.1.0">false</Feature>
+		<Feature name="Printing-XPSServices-Features">false</Feature>
+		<Feature name="MSMQ-HTTP">true</Feature>
+		<Feature name="MSMQ-Triggers">true</Feature>
+		<Feature name="WCF-Pipe-Activation45">true</Feature>
+		<Feature name="Print.Management.Console~~~~0.0.1.0">false</Feature>
+		<Feature name="Microsoft-SnippingTool">false</Feature>
+		<Feature name="WCF-TCP-Activation45">true</Feature>
+		<Feature name="Print.Fax.Scan~~~~0.0.1.0">false</Feature>
+		<Feature name="Hello.Face.Migration.18967~~~~0.0.1.0">false</Feature>
+		<Feature name="Hello.Face.18967~~~~0.0.1.0">false</Feature>
+		<Feature name="SearchEngine-Client-Package">false</Feature>
+	</Features>
+	<Packages>
+		<Options>
+			<CleanHotfixedLeftovers>0</CleanHotfixedLeftovers>
+			<OptimizeAppX>true</OptimizeAppX>
+			<UpdateBootManager>false</UpdateBootManager>
+		</Options>
+		<File>C:\Users\Ven0m0\OneDrive\Backup\Program\Win\Tools\NTLite\Cache\Updates\10.22H2.x64\windows10.0-kb5019180-x64_90a066b0e5fca50d9c75d990fdb89c0e12b987ac.msu</File>
+		<File>C:\Users\Ven0m0\OneDrive\Backup\Program\Win\Tools\NTLite\Cache\Updates\10.22H2.x64\windows10.0-kb5050081-x64_33cfeb4c98c409642bfe7516e9ed1bcaada6d252.msu</File>
+		<File>C:\Users\Ven0m0\OneDrive\Backup\Program\Win\Tools\NTLite\Cache\Updates\10.22H2.x64\windows10.0-kb5011048-x64.cab</File>
+		<File>C:\Users\Ven0m0\OneDrive\Backup\Program\Win\Tools\NTLite\Cache\Updates\10.22H2.x64\updateplatform.amd64fre_d3f6f8300855e56b8ed00da6dac55a3c4cbf8c20.exe</File>
+		<File>C:\Users\Ven0m0\OneDrive\Backup\Program\Win\Tools\NTLite\Cache\Updates\10.22H2.x64\windows10.0-kb5046905-x64_caad951e96a4d7ef4da1a8e45055e7b96a19d1bc.cab</File>
+		<File>C:\Users\Ven0m0\OneDrive\Backup\Program\Win\Tools\NTLite\Cache\Updates\10.22H2.x64\mpam-fe.exe</File>
+		<File>C:\Users\Ven0m0\OneDrive\Backup\Program\Win\Tools\NTLite\Cache\Updates\10.22H2.x64\windows10.0-kb5049621-x64-ndp481_8cf3ab9195ec940d2da51894fb690b2d21404e8e.msu</File>
+		<File>C:\Users\Ven0m0\OneDrive\Backup\Program\Win\Tools\NTLite\Cache\Updates\10.22H2.x64\Microsoft.UI.Xaml.2.8.x64.appx</File>
+		<File>C:\Users\Ven0m0\OneDrive\Backup\Program\Win\Tools\NTLite\Cache\Updates\10.22H2.x64\Microsoft.VCLibs.x64.14.00.Desktop.appx</File>
+		<File>C:\Users\Ven0m0\OneDrive\Backup\Program\Win\Tools\NTLite\Cache\Updates\10.22H2.x64\Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle</File>
+	</Packages>
+	<Commands>
+		<PostUpdates>
+			<!--<Command>cmd /c echo Example from [MOUNTDIR]\Windows &amp; pause</Command>-->
+			<!--<Command>dism /image:[MOUNTDIR] /get-intl</Command>-->
+		</PostUpdates>
+	</Commands>
+	<Drivers>
+		<Options>
+			<ReuseDriverCache>false</ReuseDriverCache>
+			<ShowHidden>true</ShowHidden>
+		</Options>
+	</Drivers>
+	<Unattended mode="2">
+		<AnswerFileLocationPanther>false</AnswerFileLocationPanther>
+		<AnswerFileLocationBoot>false</AnswerFileLocationBoot>
+		<SaveBothArch>false</SaveBothArch>
+		<EditionPrompt>false</EditionPrompt>
+		<settings pass="windowsPE">
+			<component name="Microsoft-Windows-Setup">
+				<DynamicUpdate>
+					<WillShowUI>OnError</WillShowUI>
+				</DynamicUpdate>
+				<ImageInstall>
+					<OSImage>
+						<WillShowUI>OnError</WillShowUI>
+						<InstallFrom>
+							<MetaData>
+								<Key>/IMAGE/INDEX</Key>
+								<Value>1</Value>
+							</MetaData>
+						</InstallFrom>
+					</OSImage>
+				</ImageInstall>
+				<UserData>
+					<ProductKey>
+						<Key></Key>
+					</ProductKey>
+				</UserData>
+			</component>
+		</settings>
+	</Unattended>
+	<Tweaks>
+		<Settings>
+			<TweakGroup name="AutoLogger">
+				<Tweak name="Circular Kernel Context Logger\Start">0</Tweak>
+				<Tweak name="DiagLog\Start">0</Tweak>
+				<Tweak name="Diagtrack-Listener\Start">0</Tweak>
+				<Tweak name="RadioMgr\Start">0</Tweak>
+				<Tweak name="SpoolerLogger\Start">0</Tweak>
+				<Tweak name="WiFiSession\Start">0</Tweak>
+			</TweakGroup>
+			<TweakGroup name="DesktopTweaks">
+				<Tweak name="Explorer\NoPinningStoreToTaskbar">0</Tweak>
+				<Tweak name="WindowMetrics\MinAnimate">0</Tweak>
+				<Tweak name="Personalize\AppsUseLightTheme">0</Tweak>
+				<Tweak name="Personalize\SystemUsesLightTheme">0</Tweak>
+				<Tweak name="Desktop\IconSize">32</Tweak>
+				<Tweak name="Winlogon\EnableGoodbye">0</Tweak>
+				<Tweak name="Explorer\HideSCAMeetNow">1</Tweak>
+				<Tweak name="Feeds\ShellFeedsTaskbarViewMode">2</Tweak>
+				<Tweak name="Explorer\DisableNotificationCenter">1</Tweak>
+				<Tweak name="PushNotifications\NoCloudApplicationNotification">1</Tweak>
+				<Tweak name="Mouse\MouseSpeed">0</Tweak>
+				<Tweak name="Start\HideRecentJumplists">1</Tweak>
+				<Tweak name="Search\SearchboxTaskbarMode">1</Tweak>
+				<Tweak name="Advanced\DisablePreviewDesktop">1</Tweak>
+				<Tweak name="People\PeopleBand">0</Tweak>
+				<Tweak name="Advanced\MMTaskbarEnabled">1</Tweak>
+				<Tweak name="Keyboard\PrintScreenKeyForSnippingEnabled">0</Tweak>
+			</TweakGroup>
+			<TweakGroup name="Explorer">
+				<Tweak name="OperationStatusManager\EnthusiastMode">1</Tweak>
+				<Tweak name="AutoplayHandlers\DisableAutoplay">1</Tweak>
+				<Tweak name="Explorer\EnableLegacyBalloonNotifications">0</Tweak>
+				<Tweak name="Explorer\DisableThumbnailsOnNetworkFolders">0</Tweak>
+				<Tweak name="Explorer\NoRecentDocsHistory">1</Tweak>
+				<Tweak name="Advanced\NavPaneExpandToCurrentFolder">0</Tweak>
+				<Tweak name="Advanced\LaunchTo">2</Tweak>
+				<Tweak name="Explorer\ConfirmFileDelete">0</Tweak>
+				<Tweak name="Advanced\ShowSyncProviderNotifications">0</Tweak>
+				<Tweak name="Advanced\ShowTaskViewButton">0</Tweak>
+				<Tweak name="Advanced\HideFileExt">0</Tweak>
+				<Tweak name="Advanced\Hidden">1</Tweak>
+			</TweakGroup>
+			<TweakGroup name="PowerAndShutdown">
+				<Tweak name="Power\HiberbootEnabled">0</Tweak>
+				<Tweak name="FlyoutMenuSettings\ShowHibernateOption">0</Tweak>
+				<Tweak name="FlyoutMenuSettings\ShowLockOption">0</Tweak>
+				<Tweak name="FlyoutMenuSettings\ShowSleepOption">0</Tweak>
+			</TweakGroup>
+			<TweakGroup name="Privacy">
+				<Tweak name="appointments\Value">Deny</Tweak>
+				<Tweak name="phoneCallHistory\Value">Deny</Tweak>
+				<Tweak name="webcam\Value">Deny</Tweak>
+				<Tweak name="contacts\Value">Deny</Tweak>
+				<Tweak name="appDiagnostics\Value">Deny</Tweak>
+				<Tweak name="documentsLibrary\Value">Deny</Tweak>
+				<Tweak name="email\Value">Deny</Tweak>
+				<Tweak name="broadFileSystemAccess\Value">Deny</Tweak>
+				<Tweak name="chat\Value">Deny</Tweak>
+				<Tweak name="microphone\Value">Allow</Tweak>
+				<Tweak name="userNotificationListener\Value">Deny</Tweak>
+				<Tweak name="phoneCall\Value">Deny</Tweak>
+				<Tweak name="picturesLibrary\Value">Deny</Tweak>
+				<Tweak name="radios\Value">Deny</Tweak>
+				<Tweak name="LooselyCoupled\Value">Deny</Tweak>
+				<Tweak name="userDataTasks\Value">Deny</Tweak>
+				<Tweak name="userAccountInformation\Value">Deny</Tweak>
+				<Tweak name="videosLibrary\Value">Deny</Tweak>
+				<Tweak name="Client\OptInOrOutPreference">0</Tweak>
+				<Tweak name="System\AllowExperimentation">0</Tweak>
+				<Tweak name="System\AllowLocation">0</Tweak>
+				<Tweak name="DataCollection\AllowTelemetry">0</Tweak>
+				<Tweak name="1.7\EnableAutocorrection">0</Tweak>
+				<Tweak name="CloudContent\DisableWindowsConsumerFeatures">1</Tweak>
+				<Tweak name="features\PaidWifi">0</Tweak>
+				<Tweak name="features\WiFiSenseOpen">0</Tweak>
+				<Tweak name="ContentDeliveryManager\SilentInstalledAppsEnabled">0</Tweak>
+				<Tweak name="System\AllowClipboardHistory">1</Tweak>
+				<Tweak name="CloudContent\DisableCloudOptimizedContent">1</Tweak>
+				<Tweak name="AppCompat\DisableInventory">1</Tweak>
+				<Tweak name="TrainedDataStore\HarvestContacts">0</Tweak>
+				<Tweak name="InputPersonalization\RestrictImplicitTextCollection">1</Tweak>
+				<Tweak name="InputPersonalization\RestrictImplicitInkCollection">1</Tweak>
+				<Tweak name="Windows Search\AllowCortana">0</Tweak>
+				<Tweak name="Search\HistoryViewEnabled">0</Tweak>
+				<Tweak name="Search\DeviceHistoryEnabled">0</Tweak>
+				<Tweak name="Advanced\ShowCortanaButton">0</Tweak>
+				<Tweak name="Explorer\DisableSearchBoxSuggestions">1</Tweak>
+				<Tweak name="Rules\NumberOfSIUFInPeriod">0</Tweak>
+				<Tweak name="1.7\EnableSpellchecking">0</Tweak>
+				<Tweak name="SmartGlass\UserAuthPolicy">0</Tweak>
+				<Tweak name="SmartGlass\BluetoothPolicy">0</Tweak>
+				<Tweak name="BackgroundAccessApplications\GlobalUserDisabled">1</Tweak>
+				<Tweak name="AdvertisingInfo\Enabled">0</Tweak>
+				<Tweak name="Privacy\TailoredExperiencesWithDiagnosticDataEnabled">0</Tweak>
+				<Tweak name="AppSettings\Skype-UserConsentAccepted">0</Tweak>
+				<Tweak name="User Profile\HttpAcceptLanguageOptOut">1</Tweak>
+				<Tweak name="System\EnableActivityFeed">0</Tweak>
+				<Tweak name="Advanced\Start_TrackProgs">0</Tweak>
+				<Tweak name="Advanced\Start_TrackDocs">0</Tweak>
+				<Tweak name="ContentDeliveryManager\SystemPaneSuggestionsEnabled">0</Tweak>
+				<Tweak name="InputPersonalization\AllowInputPersonalization">0</Tweak>
+				<Tweak name="Settings\AcceptedPrivacyPolicy">0</Tweak>
+				<Tweak name="ContentDeliveryManager\PreInstalledAppsEnabled">0</Tweak>
+				<Tweak name="ContentDeliveryManager\OemPreInstalledAppsEnabled">0</Tweak>
+				<Tweak name="AppCompat\DisablePCA">1</Tweak>
+				<Tweak name="Windows Search\AllowCloudSearch">0</Tweak>
+				<Tweak name="SystemIndex\EnableFindMyFiles">0</Tweak>
+				<Tweak name="Search\BingSearchEnabled">0</Tweak>
+				<Tweak name="SearchSettings\IsDeviceSearchHistoryEnabled">0</Tweak>
+				<Tweak name="TIPC\Enabled">0</Tweak>
+				<Tweak name="Explorer\ShowFrequent">0</Tweak>
+				<Tweak name="AccountNotifications\EnableAccountNotifications">0</Tweak>
+				<Tweak name="ContentDeliveryManager\SubscribedContent-338393Enabled">0</Tweak>
+				<Tweak name="ContentDeliveryManager\SubscribedContent-310093Enabled">0</Tweak>
+				<Tweak name="UserProfileEngagement\ScoobeSystemSettingEnabled">0</Tweak>
+				<Tweak name="AppHost\EnableWebContentEvaluation">0</Tweak>
+				<Tweak name="Settings\InsightsEnabled">0</Tweak>
+				<Tweak name="AnqpCache\OsuRegistrationStatus">0</Tweak>
+				<Tweak name="FlipAhead\FPEnabled">0</Tweak>
+				<Tweak name="MicrosoftEdge\PhishingFilter\Enabledv9">0</Tweak>
+				<Tweak name="Internet Explorer\PhishingFilter\Enabledv9">0</Tweak>
+				<Tweak name="WindowsCopilot\TurnOffWindowsCopilot">1</Tweak>
+				<Tweak name="CloudContent\DisableWindowsSpotlightFeatures">1</Tweak>
+			</TweakGroup>
+			<TweakGroup name="StartTweaks">
+				<Tweak name="Start\HideHibernate">1</Tweak>
+				<Tweak name="Start\HideSleep">1</Tweak>
+				<Tweak name="Start\HideLock">1</Tweak>
+			</TweakGroup>
+			<TweakGroup name="System">
+				<Tweak name="Windows\DisableATMFD">1</Tweak>
+				<Tweak name="GameBar\UseNexusForGameBarEnabled">0</Tweak>
+				<Tweak name="BitLocker\PreventDeviceEncryption">1</Tweak>
+				<Tweak name="Configuration\DisableResetbase">0</Tweak>
+				<Tweak name="System\EnableFirstLogonAnimation">0</Tweak>
+				<Tweak name="GameConfigStore\GameDVR_FSEBehavior">0</Tweak>
+				<Tweak name="GraphicsDrivers\HwSchMode">2</Tweak>
+				<Tweak name="OneDrive\DisableFileSyncNGSC">0</Tweak>
+				<Tweak name="3\1806">0</Tweak>
+				<Tweak name="EMDMgmt\GroupPolicyDisallowCaches">1</Tweak>
+				<Tweak name="StickyKeys\Flags">506</Tweak>
+				<Tweak name="StoragePolicy\01">0</Tweak>
+				<Tweak name="StoragePolicy\512">0</Tweak>
+				<Tweak name=".NETFramework\OnlyUseLatestCLR">1</Tweak>
+				<Tweak name="UserGpuPreferences\DirectXUserGlobalSettings">VRROptimizeEnable=0</Tweak>
+				<Tweak name="DeviceGuard\EnableVirtualizationBasedSecurity">0</Tweak>
+			</TweakGroup>
+			<TweakGroup name="UAC">
+				<Tweak name="System\ConsentPromptBehaviorAdmin">0</Tweak>
+			</TweakGroup>
+			<TweakGroup name="WindowsDefender">
+				<Tweak name="Notifications\DisableNotifications">1</Tweak>
+				<Tweak name="Notifications\DisableEnhancedNotifications">1</Tweak>
+			</TweakGroup>
+			<TweakGroup name="WindowsUpdate">
+				<Tweak name="DriverSearching\SearchOrderConfig">0</Tweak>
+				<Tweak name="Preferences\ModelDownloadAllowed">0</Tweak>
+				<Tweak name="Device Metadata\PreventDeviceMetadataFromNetwork">1</Tweak>
+				<Tweak name="DeliveryOptimization\DODownloadMode">0</Tweak>
+				<Tweak name="Settings\AllowAutoWindowsUpdateDownloadOverMeteredNetwork">1</Tweak>
+				<Tweak name="WindowsUpdate\DisableWUfBSafeguards">1</Tweak>
+				<Tweak name="WindowsUpdate\ExcludeWUDriversInQualityUpdate">1</Tweak>
+				<Tweak name="MRT\DontOfferThroughWUAU">1</Tweak>
+				<Tweak name="WindowsUpdate\TargetReleaseVersionInfo">22H2</Tweak>
+				<Tweak name="AU\AUOptions">2</Tweak>
+			</TweakGroup>
+		</Settings>
+		<Services>
+			<TweakGroup name="services">
+				<Tweak name="AppIDSvc\AppIDSvc">4</Tweak>
+				<Tweak name="BDESVC\BDESVC">4</Tweak>
+				<Tweak name="BTAGService\BTAGService">4</Tweak>
+				<Tweak name="bthserv\bthserv">4</Tweak>
+				<Tweak name="BluetoothUserService\BluetoothUserService">4</Tweak>
+				<Tweak name="CaptureService\CaptureService">4</Tweak>
+				<Tweak name="autotimesvc\autotimesvc">4</Tweak>
+				<Tweak name="CDPSvc\CDPSvc">4</Tweak>
+				<Tweak name="DiagTrack\DiagTrack">4</Tweak>
+				<Tweak name="ConsentUxUserSvc\ConsentUxUserSvc">4</Tweak>
+				<Tweak name="PimIndexMaintenanceSvc\PimIndexMaintenanceSvc">4</Tweak>
+				<Tweak name="dcsvc\dcsvc">4</Tweak>
+				<Tweak name="DevicePickerUserSvc\DevicePickerUserSvc">4</Tweak>
+				<Tweak name="DevicesFlowUserSvc\DevicesFlowUserSvc">4</Tweak>
+				<Tweak name="diagsvc\diagsvc">4</Tweak>
+				<Tweak name="DPS\DPS">4</Tweak>
+				<Tweak name="WdiServiceHost\WdiServiceHost">4</Tweak>
+				<Tweak name="WdiSystemHost\WdiSystemHost">4</Tweak>
+				<Tweak name="Fax\Fax">4</Tweak>
+				<Tweak name="fhsvc\fhsvc">4</Tweak>
+				<Tweak name="BcastDVRUserService\BcastDVRUserService">4</Tweak>
+				<Tweak name="HvHost\HvHost">4</Tweak>
+				<Tweak name="vmickvpexchange\vmickvpexchange">4</Tweak>
+				<Tweak name="vmicguestinterface\vmicguestinterface">4</Tweak>
+				<Tweak name="vmicshutdown\vmicshutdown">4</Tweak>
+				<Tweak name="vmicheartbeat\vmicheartbeat">4</Tweak>
+				<Tweak name="vmicvmsession\vmicvmsession">4</Tweak>
+				<Tweak name="vmicrdv\vmicrdv">4</Tweak>
+				<Tweak name="vmictimesync\vmictimesync">4</Tweak>
+				<Tweak name="vmicvss\vmicvss">4</Tweak>
+				<Tweak name="MessagingService\MessagingService">4</Tweak>
+				<Tweak name="diagnosticshub.standardcollector.service\diagnosticshub.standardcollector.service">4</Tweak>
+				<Tweak name="CscService\CscService">4</Tweak>
+				<Tweak name="SEMgrSvc\SEMgrSvc">4</Tweak>
+				<Tweak name="PhoneSvc\PhoneSvc">4</Tweak>
+				<Tweak name="Spooler\Spooler">4</Tweak>
+				<Tweak name="PrintWorkflowUserSvc\PrintWorkflowUserSvc">4</Tweak>
+				<Tweak name="wercplsupport\wercplsupport">4</Tweak>
+				<Tweak name="PcaSvc\PcaSvc">4</Tweak>
+				<Tweak name="RmSvc\RmSvc">4</Tweak>
+				<Tweak name="SensorDataService\SensorDataService">4</Tweak>
+				<Tweak name="SensrSvc\SensrSvc">4</Tweak>
+				<Tweak name="SensorService\SensorService">4</Tweak>
+				<Tweak name="LanmanServer\LanmanServer">4</Tweak>
+				<Tweak name="ShellHWDetection\ShellHWDetection">4</Tweak>
+				<Tweak name="SCardSvr\SCardSvr">4</Tweak>
+				<Tweak name="ScDeviceEnum\ScDeviceEnum">4</Tweak>
+				<Tweak name="SCPolicySvc\SCPolicySvc">4</Tweak>
+				<Tweak name="OneSyncSvc\OneSyncSvc">4</Tweak>
+				<Tweak name="SysMain\SysMain">4</Tweak>
+				<Tweak name="TapiSrv\TapiSrv">4</Tweak>
+				<Tweak name="WFDSConMgrSvc\WFDSConMgrSvc">4</Tweak>
+				<Tweak name="SDRSVC\SDRSVC">4</Tweak>
+				<Tweak name="WbioSrvc\WbioSrvc">4</Tweak>
+				<Tweak name="FrameServer\FrameServer">4</Tweak>
+				<Tweak name="WerSvc\WerSvc">4</Tweak>
+				<Tweak name="Wecsvc\Wecsvc">4</Tweak>
+				<Tweak name="stisvc\stisvc">4</Tweak>
+				<Tweak name="wisvc\wisvc">4</Tweak>
+				<Tweak name="icssvc\icssvc">4</Tweak>
+				<Tweak name="WpnUserService\WpnUserService">4</Tweak>
+				<Tweak name="WSearch\WSearch">4</Tweak>
+				<Tweak name="WlanSvc\WlanSvc">4</Tweak>
+				<Tweak name="WMPNetworkSvc\WMPNetworkSvc">4</Tweak>
+				<Tweak name="LanmanWorkstation\LanmanWorkstation">4</Tweak>
+				<Tweak name="XboxGipSvc\XboxGipSvc">4</Tweak>
+				<Tweak name="XblGameSave\XblGameSave">4</Tweak>
+			</TweakGroup>
+		</Services>
+		<ExtraServices>
+			<TweakGroup name="drivers">
+				<Tweak name="Telemetry\Telemetry">4</Tweak>
+				<Tweak name="scfilter\scfilter">4</Tweak>
+				<Tweak name="applockerfltr\applockerfltr">4</Tweak>
+				<Tweak name="vwififlt\vwififlt">3</Tweak>
+			</TweakGroup>
+		</ExtraServices>
+		<ScheduledTasks>
+			<TweakGroup name="Tree\Microsoft\Windows\BitLocker">
+				<Tweak name="BitLocker Encrypt All Drives\BitLocker Encrypt All Drives">remove</Tweak>
+				<Tweak name="BitLocker MDM policy Refresh\BitLocker MDM policy Refresh">remove</Tweak>
+			</TweakGroup>
+			<TweakGroup name="Tree\Microsoft\Windows\Diagnosis">
+				<Tweak name="Scheduled\Scheduled">remove</Tweak>
+			</TweakGroup>
+			<TweakGroup name="Tree\Microsoft\Windows\DiskDiagnostic">
+				<Tweak name="Microsoft-Windows-DiskDiagnosticDataCollector\Microsoft-Windows-DiskDiagnosticDataCollector">remove</Tweak>
+			</TweakGroup>
+			<TweakGroup name="Tree\Microsoft\Windows\Input">
+				<Tweak name="PenSyncDataAvailable\PenSyncDataAvailable">remove</Tweak>
+				<Tweak name="TouchpadSyncDataAvailable\TouchpadSyncDataAvailable">remove</Tweak>
+			</TweakGroup>
+			<TweakGroup name="Tree\Microsoft\Windows\Mobile Broadband Accounts">
+				<Tweak name="MNO Metadata Parser\MNO Metadata Parser">remove</Tweak>
+			</TweakGroup>
+			<TweakGroup name="Tree\Microsoft\Windows\Power Efficiency Diagnostics">
+				<Tweak name="AnalyzeSystem\AnalyzeSystem">remove</Tweak>
+			</TweakGroup>
+			<TweakGroup name="Tree\Microsoft\Windows\Printing">
+				<Tweak name="EduPrintProv\EduPrintProv">remove</Tweak>
+				<Tweak name="PrinterCleanupTask\PrinterCleanupTask">remove</Tweak>
+			</TweakGroup>
+			<TweakGroup name="Tree\Microsoft\Windows\Speech">
+				<Tweak name="SpeechModelDownloadTask\SpeechModelDownloadTask">remove</Tweak>
+			</TweakGroup>
+			<TweakGroup name="Tree\Microsoft\Windows\Windows Error Reporting">
+				<Tweak name="QueueReporting\QueueReporting">remove</Tweak>
+			</TweakGroup>
+		</ScheduledTasks>
+	</Tweaks>
+	<ApplyOptions>
+		<ImageTasks>
+			<Task>imageSaveTrim</Task>
+			<Task>deledition_boot.wim_01_9_64</Task>
+			<Task>imageFormatEsd</Task>
+			<Task>imageOptionsCreateIso</Task>
+		</ImageTasks>
+		<AutoIsoFile>C:\Users\Ven0m0\Downloads\NTLite.iso</AutoIsoFile>
+		<AutoIsoLabel>NTLite</AutoIsoLabel>
+		<AutoSplitSize>4000</AutoSplitSize>
+	</ApplyOptions>
+	<Execution BeforeLogonMode="0">
+		<Remove></Remove>
+		<Change></Change>
+		<Add>
+			<Item type="17">
+				<Path>C:\Users\Ven0m0\Downloads\Data\Before.cmd</Path>
+				<Params></Params>
+				<DestMode>1</DestMode>
+				<Index>0</Index>
+			</Item>
+			<Item type="23">
+				<Path>C:\Users\Ven0m0\Downloads\Data</Path>
+				<DestMode>1</DestMode>
+				<DestPath>\Windows\Setup\Data\</DestPath>
+				<Index>1</Index>
+			</Item>
+		</Add>
+	</Execution>
+	<Registry>
+		<File>C:\Users\Ven0m0\OneDrive\Backup\Program\Win\Win 11\Data\Debloat.reg</File>
+		<File>C:\Users\Ven0m0\OneDrive\Backup\Program\Win\Win 11\Data\Firefox.reg</File>
+	</Registry>
+</Preset>

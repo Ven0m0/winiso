@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- Consolidated the five `ventoy/answer/*.xml` autounattend variants (main, `-simple`, and three `old/` ancestors) into a single corrected `ventoy/answer/autounattend.xml`: dropped the conflicting Winhance debloat layer in favor of the schneegans-style script suite + winget install list, removed dead x86/arm64 Setup stubs, fixed a duplicate `FirstLogon.ps1` file entry that silently overwrote itself, fixed a duplicate `RunSynchronous` reboot order, removed an invalid placeholder `ProductKey`, and corrected `AutoLogon` `LogonCount` for the actual post-install reboot chain. `config/autounattend.xml` is now a copy of this file so the Linux UUP-dump build pipeline injects it too.
+- Converted `iso-cmd/*.cmd` WIM-servicing scripts to PowerShell. Merged the three near-duplicate 8.3-shortname-stripping scripts into one parameterized `iso-cmd/Remove-ShortNames.ps1` (`-InstallOnly`, `-IncludeWinre` switches); converted `Repair Wim.cmd` -> `Repair-Wim.ps1`, `ISO.cmd` -> `New-Iso.ps1`, and `Cleanup.cmd` -> `Invoke-SystemCleanup.ps1` (fixing undefined `%REG%`/`%LOGPATH%`/`%WIN_VER%` variables the original never defined). Removed `Commands.cmd` (unrunnable wimlib scratch notes).
+- Synced `config/component_groups.json` groups with `config/debloat_list.txt` patterns that had drifted out of the JSON groups (Utilities, Dev Tools, Extensions/Codecs sections folded into the `system`/`media` groups).
+- Folded the placeholder `config/TODO.md` reference link into the root `TODO.md`.
+
 ### Added
 - Added delta downloads support (T008): `--delta-from <build_id>` and `--delta-store <dir>` CLI flags for downloading only files added or modified compared to a previous build, plus `--save-delta-manifest` and `--delta-info` info modes. Per-build file lists are persisted to the local delta store after a successful download so subsequent delta runs have a baseline. New helpers: `get_build_files`, `calculate_delta`, `compute_changed_files`, `save_delta_manifest`, `load_delta_manifest`, `format_delta_summary`.
 - Added language packs support (T014): `--language` and `--languages-download` CLI flags, `download_language_packs()` function for multi-language ISO creation, and language-aware `get_build_info()`.

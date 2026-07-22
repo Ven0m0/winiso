@@ -1,24 +1,42 @@
 {
-	"control": [{ "VTOY_MAX_SEARCH_LEVEL": "1" }],
-	"theme": {
-		"file": [
-			"/ventoy/themes/miku/theme.txt",
-			"/ventoy/themes/cachyos/theme.txt",
-			"/ventoy/themes/celeste/theme.txt",
-			"/ventoy/themes/cyberpunk/theme.txt"
-		],
-		"gfxmode": "1920x1080",
-		"fonts": [
-			"/ventoy/themes/cachyos/ubuntu_regular_20.pf2",
-			"/ventoy/themes/cachyos/terminus-18.pf2",
-			"/ventoy/themes/celeste/RenogareRegular20.pf2",
-			"/ventoy/themes/cyberpunk/Rajdhani_Regular_18.pf2"
-		]
-	},
-	"auto_install": [
-		{
-			"image": "/iso/win11-uudump.iso",
-			"template": ["/answer/autounattend-safe.xml"]
-		}
-	]
+  "control": [
+    { "VTOY_MAX_SEARCH_LEVEL": "1" },
+    { "VTOY_DEFAULT_SEARCH_ROOT": "/iso" }
+  ],
+  "gfxmode": "1920x1080",
+  "theme": {
+    "file": [
+      "/themes/miku/theme.txt",
+      "/themes/celeste/theme.txt",
+      "/themes/cachyos/theme.txt"
+    ],
+    "fonts": [
+      "/themes/celeste/terminus-14.pf2",
+      "/themes/celeste/RenogareRegular20.pf2",
+      "/themes/cachyos/terminus-18.pf2",
+      "/themes/cachyos/ubuntu_regular_20.pf2"
+    ]
+  },
+  "theme_uefi": {
+    "file": [
+      "/themes/miku/theme.txt",
+      "/themes/celeste/theme.txt",
+      "/themes/cachyos/theme.txt"
+    ],
+    "fonts": [
+      "/themes/celeste/terminus-14.pf2",
+      "/themes/celeste/RenogareRegular20.pf2",
+      "/themes/cachyos/terminus-18.pf2",
+      "/themes/cachyos/ubuntu_regular_20.pf2"
+    ]
+  },
+  "auto_install": [
+    {
+      "image": "/iso/win11-stock.iso",
+      "template": [
+        "/answer/autounattend.xml",
+        "/answer/autounattend-simple.xml"
+      ]
+    }
+  ]
 }

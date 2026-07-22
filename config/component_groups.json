@@ -1,5 +1,5 @@
 {
-	"_about": "Component groups for toggleable debloating. Each group lists glob patterns from debloat_list.txt-style format. Pass group names to build via the GROUPS env var (space-separated) or to the Makefile target.",
+	"_about": "Component groups for toggleable debloating. Each group lists glob patterns from debloat_list.txt-style format. Pass group names to build via the GROUPS env var (space-separated) or to the Makefile target. Every pattern here also appears in debloat_list.txt (the flat list debloat_wim.sh always applies); keep both files in sync when adding patterns.",
 	"groups": {
 		"gaming": {
 			"description": "Game launchers and entertainment apps (gaming-friendly profile keeps Xbox Game Pass; this is a more aggressive removal)",
@@ -71,7 +71,7 @@
 			]
 		},
 		"media": {
-			"description": "Media apps: music, video, 3D, mixed reality",
+			"description": "Media apps and codec extensions: music, video, 3D, mixed reality",
 			"patterns": [
 				"*ZuneMusic*",
 				"*ZuneVideo*",
@@ -79,11 +79,18 @@
 				"*MixedReality*",
 				"*3DViewer*",
 				"*3DBuilder*",
-				"*Print3D*"
+				"*Print3D*",
+				"*AV1VideoExtension*",
+				"*AVCEncoderVideoExtension*",
+				"*HEIFImageExtension*",
+				"*HEVCVideoExtension*",
+				"*RawImageExtension*",
+				"*VP9VideoExtensions*",
+				"*WebpImageExtension*"
 			]
 		},
 		"system": {
-			"description": "Windows system apps and bloat utilities",
+			"description": "Windows system apps, built-in utilities, and dev-tool bloat",
 			"patterns": [
 				"*GetHelp*",
 				"*FeedbackHub*",
@@ -94,7 +101,13 @@
 				"*Cortana*",
 				"*PinningConfirmationDialog*",
 				"*SecureAssessmentBrowser*",
-				"*CompatibilityEnhancements*"
+				"*CompatibilityEnhancements*",
+				"*WindowsMaps*",
+				"*WindowsAlarms*",
+				"*WindowsSoundRecorder*",
+				"*Paint*",
+				"*Notepad*",
+				"*DevHome*"
 			]
 		},
 		"news": {

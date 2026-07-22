@@ -1,22 +1,9 @@
 # Project TODO & Feature Roadmap
 <metadata><version>5.0</version><updated>2026-05-15T00:00:00Z</updated><items>50</items><categories>10</categories></metadata>
-<removed>
-- T001: Windows dependency install (outdated - winget now available)
-- T002: ShellCheck SC2034 suppression (partially done - already in utils.sh)
-- T036: Docker build (no Dockerfile exists)
-- T037: Windows PowerShell script (no build.ps1 exists)
-- T038: CI/CD integration (workflows already exist)
-- T054-T056 (old): Packer/Ansible/Chef (speculative, not aligned with project)
-- Stale PR references and Win11Debloat mentions
-- "implement https://github.com/ShivamXD6/Optimize-Windows" (informal note → promoted to DEBLOAT-010/T054)
-</removed>
-<done>
-- T004 shell criteria: 4 pipeline scripts confirmed using set -euo pipefail (build.sh, debloat_wim.sh, setup_env.sh, validate_prereqs.sh); custom_convert.sh is upstream-derived and excluded
-- T005 basic levels: log_info, log_success, log_warn, log_error already in utils.sh
-</done>
 
-
-- implement features of [zISOTweaker](https://github.com/zoicware/zISOTweaker) and [Optimize-Windows](https://github.com/ShivamXD6/Optimize-Windows)
+- [ ] move `.mise/tasks/` into `mise.toml`
+- [ ] implement features of [zISOTweaker](https://github.com/zoicware/zISOTweaker) and [Optimize-Windows](https://github.com/ShivamXD6/Optimize-Windows)
+- [ ] compare autounattend approach against [UnattendedWinstall](https://github.com/memstechtips/UnattendedWinstall)
 
 ##  API & Download
 <category name="api" items="6" priority="high">

@@ -33,6 +33,20 @@ __MACOSX/
 .idea/
 *.iml
 *.sublime-workspace
+.omc/
+.serena/
+!.serena/project.yml
+.codegraph/
+hipocampus.config.json
+MEMORY.md
+USER.md
+SCRATCHPAD*.md
+WORKING*.md
+TASK-QUEUE.md
+memory/
+knowledge/
+plans/
+tenants/
 
 # ─── Python cache ─────────────────────────────────────────────────────────────
 __pycache__/

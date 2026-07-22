@@ -34,10 +34,6 @@ prek = "latest"
 "pipx:basedpyright" = "latest"
 "pipx:py-psscriptanalyzer" = "latest"
 ripgrep = "latest"
-fd = "latest"
-"actionlint" = "latest"
-"shellcheck" = "latest"
-"shfmt" = "latest"
 # xmllint: system package (libxml2-utils on Debian/Ubuntu, libxml2 on Arch/Fedora)
 # biome: JS/TS/JSON/HTML/CSS linter - use bunx @biomejs/biome
 

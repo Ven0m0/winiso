@@ -52,11 +52,10 @@ scripts/invoke_system_cleanup.py    # Live-OS disk cleanup helper (Windows-side)
 scripts/new_iso.py                  # oscdimg ISO builder (Windows-side)
 scripts/remove_short_names.py       # 8.3 short-name stripping (Windows-side)
 scripts/repair_wim.py               # DISM RestoreHealth against a reference image (Windows-side)
-scripts/files/setup_post_install.py # First-boot Python script, injected into the image
 
 config/autounattend.xml             # Unattended Windows setup answers (UTF-8, no BOM)
 config/debloat_list.txt             # Bloatware glob patterns (grouped by category)
-config/oem/SetupComplete.cmd        # First-boot CMD script (CRLF required)
+config/oem/SetupComplete.cmd        # First-boot CMD script (CRLF required); injected via $OEM$ and directly by apply_image_settings.py
 
 ventoy/answer/                      # Canonical autounattend.xml source; config/autounattend.xml is a copy of it
 
@@ -122,8 +121,8 @@ Copy `install.wim` to a Windows machine, run `scripts/windows_service.cmd` again
 
 The Linux build pipeline (`build.py`, `setup_env.py`, `sign_iso.py`, `validate_prereqs.py`,
 `debloat_wim.py`) and the Windows servicing scripts (`apply_image_settings.py`,
-`invoke_system_cleanup.py`, `new_iso.py`, `remove_short_names.py`, `repair_wim.py`,
-`files/setup_post_install.py`) are Python 3, stdlib-first, cross-platform where the
+`invoke_system_cleanup.py`, `new_iso.py`, `remove_short_names.py`, `repair_wim.py`)
+are Python 3, stdlib-first, cross-platform where the
 underlying tools allow it. `scripts/custom_convert.sh` and `scripts/convert_config.sh`
 are the one exception — upstream-derived, patch-only, and stay bash. `scripts/utils.sh`
 also stays bash, solely because `custom_convert.sh` sources it (`REQUIRED_TOOLS`,

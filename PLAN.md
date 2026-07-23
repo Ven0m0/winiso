@@ -30,7 +30,10 @@ pipeline and speculative features; treat it as historical until refreshed.
 - Type hints — `download_uup.py` fully annotated (61 funcs, `@overload`/`Literal`/`cast`).
 - Pre-build XML validation — `scripts/validate_prereqs.py:87-96` + `make validate-xml`.
 - ISO signing — `scripts/sign_iso.py` + `make sign` (SHA256/512 + optional GPG).
-- First-run framework — `config/oem/SetupComplete.cmd` + `scripts/files/setup_post_install.py`.
+- First-run framework — `config/oem/SetupComplete.cmd` (hibernate-off + 8.3 short-name
+  stripping merged in as native batch; `scripts/files/setup_post_install.py` retired,
+  it required a Python runtime that doesn't exist on a freshly-installed target Windows).
+  `apply_image_settings.py` now injects this same canonical file into the WIM directly.
 - Download-path test coverage — `tests/test_download_uup.py` (230 tests, 46 classes).
 
 ## Now

@@ -120,7 +120,11 @@ help = [
 
 [tasks.install]
 description = 'Mise ci install'
-file = '.mise/tasks/install'
+run = [
+  "export DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes; apt-get update -qq && apt-get install -yqq --no-install-recommends genisoimage libfuse2 aria2 cabextract wimtools chntpw",
+  "[[ -f pyproject.toml ]] && uv sync --frozen || true",
+  "[[ -f .venv/bin/activate ]] && source .venv/bin/activate"
+]
 
 [tasks.linux]
 description = "Install build dependencies on Linux"

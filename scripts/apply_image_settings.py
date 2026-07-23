@@ -286,12 +286,9 @@ def main() -> int:
     scripts_dir = install_mount / "Windows" / "Setup" / "Scripts"
     scripts_dir.mkdir(parents=True, exist_ok=True)
 
-    post_install_src = script_dir / "files" / "setup_post_install.py"
-    if post_install_src.is_file():
-        _ = shutil.copy(post_install_src, scripts_dir / "setup_post_install.py")
-
-    setup_complete = '@echo off\r\npython "%~dp0setup_post_install.py"\r\ndel /q /f "%0"\r\n'
-    _ = (scripts_dir / "SetupComplete.cmd").write_text(setup_complete, encoding="ascii")
+    setup_complete_src = script_dir.parent / "config" / "oem" / "SetupComplete.cmd"
+    if setup_complete_src.is_file():
+        _ = shutil.copy(setup_complete_src, scripts_dir / "SetupComplete.cmd")
     write_success("Post-install scripts injected")
 
     invoke_dism(["/Unmount-Image", f"/MountDir:{install_mount}", "/Commit"])

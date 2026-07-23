@@ -1,6 +1,6 @@
 ---
 description: "Rules for Windows-only servicing scripts."
-applyTo: "scripts/windows_service.cmd,scripts/apply_image_settings.py,scripts/win_config.py,scripts/win_utils.py,scripts/invoke_system_cleanup.py,scripts/new_iso.py,scripts/remove_short_names.py,scripts/repair_wim.py,scripts/files/setup_post_install.py"
+applyTo: "scripts/windows_service.cmd,scripts/apply_image_settings.py,scripts/win_config.py,scripts/win_utils.py,scripts/invoke_system_cleanup.py,scripts/new_iso.py,scripts/remove_short_names.py,scripts/repair_wim.py"
 ---
 
 # Windows servicing rules

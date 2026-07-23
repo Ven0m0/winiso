@@ -8,7 +8,6 @@ paths:
   - "scripts/new_iso.py"
   - "scripts/remove_short_names.py"
   - "scripts/repair_wim.py"
-  - "scripts/files/setup_post_install.py"
 ---
 
 # Windows servicing rules

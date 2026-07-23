@@ -81,23 +81,30 @@
 					<Order>19</Order>
 					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:echo:FORMAT QUICK FS=NTFS LABEL=^^^"Recovery^^^"&amp;echo:echo:ASSIGN LETTER=R&amp;echo:echo:SET ID=^^^"de94bba4-06d1-4d40-a16a-bfd50179d6ac^^^"&amp;echo:echo:GPT ATTRIBUTES=0x8000000000000001&amp;echo:^))</Path>
 				</RunSynchronousCommand>
-<RunSynchronousCommand wcm:action="add">
+				<RunSynchronousCommand wcm:action="add">
 					<Order>20</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:@echo diskpart will now partition and format your disk&amp;echo:pause&amp;echo:diskpart.exe /s X:\diskpart.txt ^|^| ( echo Could not partition disk 0, aborting. ^&amp; pause ^&amp; exit /b 1 ^))</Path>
+					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:@echo diskpart will now partition and format your disk&amp;echo:pause&amp;echo:diskpart.exe /s X:\diskpart.txt&amp;echo:if not errorlevel 1 goto :diskpartok&amp;echo:echo WARNING: diskpart.exe failed, retrying in 5 seconds...&amp;echo:timeout /t 5 /nobreak ^&gt;nul)</Path>
+				</RunSynchronousCommand>
+				<RunSynchronousCommand wcm:action="add">
+					<Order>21</Order>
+					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:diskpart.exe /s X:\diskpart.txt&amp;echo:if not errorlevel 1 goto :diskpartok&amp;echo:echo ERROR: diskpart.exe failed after retry, aborting.&amp;echo:pause&amp;echo:exit /b 1&amp;echo::diskpartok)</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>22</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:dism.exe /Apply-Image /ImageFile:^%IMAGE_FILE^% ^%SWM_PARAM^% /Index:1 /ApplyDir:W:\ /CheckIntegrity /Verify ^|^| ( echo Could not apply image, aborting. ^&amp; pause ^&amp; exit /b 1 ^))</Path>
+					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:dism.exe /Apply-Image /ImageFile:^%IMAGE_FILE^% ^%SWM_PARAM^% /Index:1 /ApplyDir:W:\ /CheckIntegrity /Verify&amp;echo:if not errorlevel 1 goto :dismok&amp;echo:echo WARNING: dism.exe Apply-Image failed, retrying in 5 seconds...&amp;echo:timeout /t 5 /nobreak ^&gt;nul)</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>23</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:bcdboot.exe W:\Windows /s S: ^|^| ( echo WARNING: bcdboot.exe encountered an error but continuing... ^)&amp;echo:mkdir W:\Windows\Panther 2^&amp;^&gt;nul&amp;echo:copy ^%XML_FILE^% W:\Windows\Panther\unattend.xml 2^&amp;^&gt;nul&amp;echo:if defined PEDRIVERS_FOLDER ())</Path>
+					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:dism.exe /Apply-Image /ImageFile:^%IMAGE_FILE^% ^%SWM_PARAM^% /Index:1 /ApplyDir:W:\ /CheckIntegrity /Verify&amp;echo:if not errorlevel 1 goto :dismok&amp;echo:echo ERROR: dism.exe Apply-Image failed after retry, aborting.&amp;echo:pause&amp;echo:exit /b 1&amp;echo::dismok)</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>24</Order>
+					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:bcdboot.exe W:\Windows /s S: ^|^| ( echo WARNING: bcdboot.exe encountered an error but continuing... ^)&amp;echo:mkdir W:\Windows\Panther 2^&amp;^&gt;nul&amp;echo:copy ^%XML_FILE^% W:\Windows\Panther\unattend.xml 2^&amp;^&gt;nul&amp;echo:if defined PEDRIVERS_FOLDER ())</Path>
+				</RunSynchronousCommand>
+				<RunSynchronousCommand wcm:action="add">
+					<Order>25</Order>
 					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:dism.exe /Add-Driver /Image:W:\ /Driver:^"^%PEDRIVERS_FOLDER^%^" /Recurse&amp;echo:^)&amp;echo:dism.exe /Image:W:\ /Set-TimeZone:^"W. Europe Standard Time^"&amp;echo:rem Disable 8.3 on volume W:&amp;echo:fsutil.exe 8dot3name set W: 1&amp;echo:rem Disable 8.3 globally and strip existing&amp;echo:fsutil.exe behavior set disable8dot3 1&amp;echo:fsutil.exe 8dot3name strip /s /f W:\&amp;echo:rem Disable WPBT&amp;echo:reg.exe LOAD HKLM\mount W:\Windows\System32\config\SYSTEM)</Path>
 				</RunSynchronousCommand>
-				
 				<RunSynchronousCommand wcm:action="add">
 					<Order>26</Order>
 					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:reg.exe add ^"HKLM\mount\ControlSet001\Control\Session Manager^" /v DisableWpbtExecution /t REG_DWORD /d 1 /f&amp;echo:reg.exe UNLOAD HKLM\mount&amp;echo:rem Set device setup region to Germany (GeoID 94^))</Path>
@@ -1186,6 +1193,3 @@ Stop-Transcript
 		</File>
 	</Extensions>
 </unattend>
-
-
-

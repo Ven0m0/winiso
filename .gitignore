@@ -1,6 +1,8 @@
 # ─── Build artifacts ──────────────────────────────────────────────────────────
 scripts/ISODIR/
 *.iso
+*.exe
+*.dll
 output/*
 !output/.gitkeep
 

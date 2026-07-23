@@ -2,7 +2,7 @@
 <metadata><version>5.0</version><updated>2026-05-15T00:00:00Z</updated><items>50</items><categories>10</categories></metadata>
 
 - [ ] move `.mise/tasks/` into `mise.toml`
-- [ ] keep `scripts/files/setup_post_install.py` as cmd since that will be injected into an iso file to be automatically executed from the oemsetup folder
+- [ ] keep `scripts/files/setup_post_install.py` as cmd since that will be injected into an iso file to be automatically executed from the oemsetup folder. Merge it as cmd into `config/oem/SetupComplete.cmd`
 - [ ] implement features of [zISOTweaker](https://github.com/zoicware/zISOTweaker) and [Optimize-Windows](https://github.com/ShivamXD6/Optimize-Windows)
 - [ ] compare autounattend approach against [UnattendedWinstall](https://github.com/memstechtips/UnattendedWinstall)
 

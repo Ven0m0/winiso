@@ -19,13 +19,14 @@ all: build
 # Install system dependencies
 deps:
 	@echo "Installing dependencies..."
-	./scripts/setup_env.sh
+	chmod +x scripts/setup_env.py
+	./scripts/setup_env.py
 
 # Validate prerequisites
 validate:
 	@echo "Validating prerequisites..."
-	chmod +x scripts/*.sh
-	./scripts/validate_prereqs.sh
+	chmod +x scripts/validate_prereqs.py
+	./scripts/validate_prereqs.py
 
 # Validate autounattend.xml specifically
 validate-xml:
@@ -46,20 +47,20 @@ download:
 # Build debloated ISO (default: Pro for Workstations, fallback Pro)
 build:
 	@echo "Building debloated Windows 11 ISO..."
-	chmod +x scripts/*.sh
-	./scripts/build.sh
+	chmod +x scripts/build.py
+	./scripts/build.py
 
 # Build with Pro edition specifically
 build-pro:
 	@echo "Building Windows 11 Pro ISO..."
-	chmod +x scripts/*.sh
-	TARGET_EDITION=Professional FALLBACK_EDITION=Professional ./scripts/build.sh
+	chmod +x scripts/build.py
+	TARGET_EDITION=Professional FALLBACK_EDITION=Professional ./scripts/build.py
 
 # Build with Nano mode (extreme debloating)
 build-nano:
 	@echo "Building with Nano-style extreme debloating..."
-	chmod +x scripts/*.sh
-	NANO=1 ./scripts/build.sh
+	chmod +x scripts/build.py
+	NANO=1 ./scripts/build.py
 
 # Build and pause for Windows servicing stage
 # Use this when you want to run DISM cleanup, 8.3 stripping, etc. on Windows
@@ -67,8 +68,8 @@ build-pause:
 	@echo "Building with Windows servicing pause..."
 	@echo "When paused, copy ISODIR/sources/install.wim to a Windows machine"
 	@echo "and run scripts/windows_service.cmd against it."
-	chmod +x scripts/*.sh
-	PAUSE_FOR_WINDOWS_STAGE=1 ./scripts/build.sh
+	chmod +x scripts/build.py
+	PAUSE_FOR_WINDOWS_STAGE=1 ./scripts/build.py
 
 # Sign an ISO with SHA256/SHA512 checksums (and optionally GPG)
 # Usage: make sign ISO=output/Win11.iso [GPG=1 KEY=maintainer@example.com]
@@ -77,11 +78,11 @@ sign:
 		echo "Usage: make sign ISO=path/to/file.iso [GPG=1 KEY=gpg-key-id]"; \
 		exit 1; \
 	fi
-	chmod +x scripts/sign_iso.sh
+	chmod +x scripts/sign_iso.py
 	@if [[ "$(GPG)" == "1" ]]; then \
-		./scripts/sign_iso.sh --gpg --key "$(KEY)" "$(ISO)"; \
+		./scripts/sign_iso.py --gpg --key "$(KEY)" "$(ISO)"; \
 	else \
-		./scripts/sign_iso.sh "$(ISO)"; \
+		./scripts/sign_iso.py "$(ISO)"; \
 	fi
 
 # Clean build artifacts

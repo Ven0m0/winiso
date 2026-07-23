@@ -1,7 +1,10 @@
 #!/bin/bash
 # =============================================================================
-# utils.sh - Shared utility functions for shell scripts
+# utils.sh - Shared utility functions for scripts/custom_convert.sh
 # =============================================================================
+# custom_convert.sh is upstream-derived and stays bash (see AGENTS.md); this
+# file exists solely as its dependency. The rest of the pipeline now uses
+# scripts/pyutils.py — do not add new consumers of this file.
 
 # Colors
 export RED='\033[0;31m'

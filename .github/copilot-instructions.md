@@ -5,26 +5,28 @@ Use this file as the quick bootstrap, then read `AGENTS.md` for the canonical re
 ## Quick bootstrap
 - User entry point: `Makefile`
 - Main build flow: `make deps -> make download -> make validate -> make build`
-- Build orchestrator: `scripts/build.sh`
+- Build orchestrator: `scripts/build.py`
 - Downloader: `scripts/download_uup.py`
-- Optional Windows servicing handoff: `scripts/windows_service.cmd`
+- Optional Windows servicing handoff: `scripts/windows_service.cmd` (standalone batch) or `scripts/apply_image_settings.py` (Python, dism.exe-based)
 
 ## Rules to keep in mind
 - Keep the Linux build pipeline runnable as a regular user.
 - Place UUP `.cab` and `.esd` files directly in the repository input directory named `uup_files`.
 - Preserve these protected AppX patterns: `*Store*`, `*WebView*`, `*VCLibs*`, `*UI.Xaml*`, `*Defender*`, `*DesktopAppInstaller*`.
-- Treat `scripts/custom_convert.sh` as upstream-derived unless the task explicitly requires a change there.
+- Treat `scripts/custom_convert.sh` (and `scripts/convert_config.sh`, which it sources) as upstream-derived unless the task explicitly requires a change there — these are the only scripts that stay bash.
 - Keep existing CLI flags in `scripts/download_uup.py` stable.
 - Keep `CLAUDE.md` as a symlink to `AGENTS.md`.
 
 ## Use the focused guidance files
 - `.github/instructions/shell-build.instructions.md`
 - `.github/instructions/python-downloader.instructions.md`
+- `.github/instructions/windows-servicing.instructions.md`
 - `.github/instructions/workflow-and-guidance.instructions.md`
 
 ## Common validation
 ```bash
-for f in scripts/*.sh; do bash -n "$f"; done
+for f in scripts/*.py scripts/files/*.py; do python3 -m py_compile "$f"; done
+bash -n scripts/custom_convert.sh scripts/convert_config.sh scripts/utils.sh
 xmllint --noout config/autounattend.xml
 uvx --with pytest pytest tests/
 ```

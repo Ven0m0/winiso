@@ -64,29 +64,29 @@ download = [
 
 # Validate prerequisites
 validate = [
-  "@if linux: bash {{config_root}}/scripts/validate_prereqs.sh",
-  "@if windows: pwsh -nop -c \"Write-Error 'validate requires a POSIX shell. Run this task from WSL or Git Bash.'; exit 1\""
+  "@if linux: python3 {{config_root}}/scripts/validate_prereqs.py",
+  "@if windows: pwsh -nop -c \"Write-Error 'validate requires the Linux build toolchain. Run this task from WSL or Git Bash.'; exit 1\""
 ]
 
 # Full build
 build = [
-  "@if linux: bash {{config_root}}/scripts/build.sh",
-  "@if darwin: bash {{config_root}}/scripts/build.sh",
-  "@if windows: pwsh -nop -c \"Write-Error 'build requires a POSIX shell. Run this task from WSL or Git Bash.'; exit 1\""
+  "@if linux: python3 {{config_root}}/scripts/build.py",
+  "@if darwin: python3 {{config_root}}/scripts/build.py",
+  "@if windows: pwsh -nop -c \"Write-Error 'build requires the Linux build toolchain. Run this task from WSL or Git Bash.'; exit 1\""
 ]
 
 # Build Pro edition
 build-pro = [
-  "@if linux: TARGET_EDITION=Professional FALLBACK_EDITION=Professional bash {{config_root}}/scripts/build.sh",
-  "@if darwin: TARGET_EDITION=Professional FALLBACK_EDITION=Professional bash {{config_root}}/scripts/build.sh",
-  "@if windows: pwsh -nop -c \"Write-Error 'build-pro requires a POSIX shell. Run this task from WSL or Git Bash.'; exit 1\""
+  "@if linux: TARGET_EDITION=Professional FALLBACK_EDITION=Professional python3 {{config_root}}/scripts/build.py",
+  "@if darwin: TARGET_EDITION=Professional FALLBACK_EDITION=Professional python3 {{config_root}}/scripts/build.py",
+  "@if windows: pwsh -nop -c \"Write-Error 'build-pro requires the Linux build toolchain. Run this task from WSL or Git Bash.'; exit 1\""
 ]
 
 # Build with pause for Windows DISM stage
 build-pause = [
-  "@if linux: PAUSE_FOR_WINDOWS_STAGE=1 bash {{config_root}}/scripts/build.sh",
-  "@if darwin: PAUSE_FOR_WINDOWS_STAGE=1 bash {{config_root}}/scripts/build.sh",
-  "@if windows: pwsh -nop -c \"Write-Error 'build-pause requires a POSIX shell. Run this task from WSL or Git Bash.'; exit 1\""
+  "@if linux: PAUSE_FOR_WINDOWS_STAGE=1 python3 {{config_root}}/scripts/build.py",
+  "@if darwin: PAUSE_FOR_WINDOWS_STAGE=1 python3 {{config_root}}/scripts/build.py",
+  "@if windows: pwsh -nop -c \"Write-Error 'build-pause requires the Linux build toolchain. Run this task from WSL or Git Bash.'; exit 1\""
 ]
 
 # Clean artifacts (Linux/macOS)
@@ -168,12 +168,3 @@ run = [
 description = "Lint and format JS/TS/JSON/HTML/CSS with biome"
 run = ["bun x @biomejs/biome check --write . --diagnostic-level=error"]
 
-[task.dev]
-description = "Install powershell lint+format utils"
-run = ["curl -sSfL https://webi.sh/pwsh-essentials | bash && source ~/.config/envman/PATH.env"]
-
-[tasks.pwsh-install]
-description = "Install pwsh lint"
-run = '''
-pwsh -NoLogo -NoProfile -Command "Set-PSRepository PSGallery -InstallationPolicy Trusted; Install-Module PSScriptAnalyzer -Scope CurrentUser -Force -AllowClobber"
-'''

@@ -170,9 +170,9 @@ mise run clean-unix   # Clean artifacts
 ### Direct Scripts
 
 ```bash
-./scripts/setup_env.sh   # Install dependencies
+./scripts/setup_env.py   # Install dependencies
 ./scripts/download_uup.py --list  # List builds
-./scripts/build.sh       # Build ISO
+./scripts/build.py       # Build ISO
 ```
 
 ### Environment Variables
@@ -208,11 +208,12 @@ When paused:
 ├── docs/
 │   └── autounattend.md       # Guide for autounattend.xml customization
 ├── scripts/
-│   ├── build.sh              # Main build orchestrator
-│   ├── custom_convert.sh     # Modified UUP converter
-│   ├── convert_config.sh     # Shared converter config
-│   ├── debloat_wim.sh        # WIM debloating logic
-│   ├── setup_env.sh          # Dependency installer
+│   ├── build.py              # Main build orchestrator
+│   ├── custom_convert.sh     # Modified UUP converter (upstream-derived, stays bash)
+│   ├── convert_config.sh     # Shared converter config (sourced by custom_convert.sh)
+│   ├── debloat_wim.py        # WIM debloating logic
+│   ├── setup_env.py          # Dependency installer
+│   ├── apply_image_settings.py # Windows-side ISO extraction/debloat (dism.exe-based)
 │   └── windows_service.cmd   # Windows servicing script
 ├── uup_files/                # Place UUP files here (input)
 ├── output/                   # Final ISO appears here (output)

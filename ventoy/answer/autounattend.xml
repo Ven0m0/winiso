@@ -31,7 +31,7 @@
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>7</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:set ^"OS_VERSION=11^"&amp;echo:for /f ^"tokens=3 delims=.^" ^%^%v in ('ver'^) do (&amp;echo:if ^%^%v LSS 20000 set ^"OS_VERSION=10^"&amp;echo:^)&amp;echo:rem Install drivers from $WinPEDriver$ folder&amp;echo:if defined PEDRIVERS_FOLDER ()</Path>
+					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:rem Install drivers from $WinPEDriver$ folder&amp;echo:if defined PEDRIVERS_FOLDER ()</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>8</Order>
@@ -83,15 +83,11 @@
 				</RunSynchronousCommand>
 <RunSynchronousCommand wcm:action="add">
 					<Order>20</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:@echo diskpart will now partition and format your disk&amp;echo:pause&amp;echo:diskpart.exe /s X:\diskpart.txt ^|^| ( echo WARNING: diskpart.exe encountered an error but continuing... ^&amp;&amp;timeout /t 5 ^&amp;amp;&amp;amp;goto :continue1 ^)&amp;echo:goto :diskpartok&amp;echo:^:continue1&amp;echo:set "IMG_PARAM=/Name:Windows %OS_VERSION% Pro"&amp;echo:goto :doneimg&amp;echo:^:diskpartok&amp;echo:set ^"IMG_PARAM=/Name:^"Windows ^%OS_VERSION^% Pro^"^"&amp;echo:^:doneimg)</Path>
-				</RunSynchronousCommand>
-				<RunSynchronousCommand wcm:action="add">
-					<Order>21</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:goto :skipimgset&amp;echo:^:setimgifok&amp;echo:set ^"IMG_PARAM=/Name:^"Windows ^%OS_VERSION^% Pro^"^"&amp;echo:^:skipimgset)</Path>
+					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:@echo diskpart will now partition and format your disk&amp;echo:pause&amp;echo:diskpart.exe /s X:\diskpart.txt ^|^| ( echo Could not partition disk 0, aborting. ^&amp; pause ^&amp; exit /b 1 ^))</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>22</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:dism.exe /Apply-Image /ImageFile:^%IMAGE_FILE^% ^%SWM_PARAM^% ^%IMG_PARAM^% /ApplyDir:W:\ /CheckIntegrity /Verify ^|^| ( echo WARNING: dism.exe encountered an error but continuing... ^&amp;&amp;timeout /t 5 ^&amp;amp;&amp;amp;goto :dismdone ^)&amp;echo:goto :dismok&amp;echo:^:dismdone&amp;echo:goto :bcdboot&amp;echo:^:dismok)</Path>
+					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:dism.exe /Apply-Image /ImageFile:^%IMAGE_FILE^% ^%SWM_PARAM^% /Index:1 /ApplyDir:W:\ /CheckIntegrity /Verify ^|^| ( echo Could not apply image, aborting. ^&amp; pause ^&amp; exit /b 1 ^))</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>23</Order>

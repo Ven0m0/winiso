@@ -789,11 +789,11 @@ if [[ $build -ge 18890 ]]; then
 fi
 
 # DEBLOAT HOOK
-DEBLOAT_SCRIPT="$(dirname "$0")/debloat_wim.sh"
+DEBLOAT_SCRIPT="$(dirname "$0")/debloat_wim.py"
 WIM_FILE="ISODIR/sources/install.$type"
 if [[ -f "$DEBLOAT_SCRIPT" ]] && [[ -f "$WIM_FILE" ]]; then
   echo -e "${infoColor}""Running Debloater on $WIM_FILE...""$resetColor"
-  bash "$DEBLOAT_SCRIPT" "$WIM_FILE"
+  python3 "$DEBLOAT_SCRIPT" "$WIM_FILE"
   if [[ $? -ne 0 ]]; then
     echo -e "${errorColor}""Debloating failed!""$resetColor"
     exit 1

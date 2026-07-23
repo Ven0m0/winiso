@@ -25,6 +25,7 @@ No macOS support. No Windows required for the Linux build path.
 | **XML encoding** | `config/autounattend.xml` must be UTF-8 without BOM |
 | **SetupComplete.cmd** | `config/oem/SetupComplete.cmd` must use CRLF line endings |
 | **No hardcoded paths** | All scripts derive paths from `SCRIPT_DIR` / `PROJECT_ROOT` |
+| **Servicing DISM-only** | Windows servicing scripts shell out to `dism.exe`; no PowerShell DISM module cmdlets |
 
 ---
 
@@ -33,19 +34,25 @@ No macOS support. No Windows required for the Linux build path.
 Key source files (all paths relative to repo root):
 
 ```
-scripts/build.sh                    # Main orchestrator — runs the full pipeline
-scripts/custom_convert.sh           # UUP→WIM converter (upstream-derived, patch-only)
-scripts/debloat_wim.sh              # AppX removal + offline registry hardening
+scripts/build.py                    # Main orchestrator — runs the full pipeline
+scripts/custom_convert.sh           # UUP→WIM converter (upstream-derived, patch-only, stays bash)
+scripts/convert_config.sh           # Compression/editions config, sourced by custom_convert.sh (stays bash)
+scripts/utils.sh                    # Bash logging/tool-check helpers — kept only as custom_convert.sh's dependency
+scripts/debloat_wim.py              # AppX removal + offline registry hardening
 scripts/download_uup.py             # UUP API client (Python 3, stdlib-first)
-scripts/setup_env.sh                # Installs system dependencies
-scripts/utils.sh                    # Shared logging helpers (source this, never copy)
-scripts/validate_prereqs.sh         # Pre-build checks (tools, disk space, UUP files)
-scripts/sign_iso.sh                 # SHA256/SHA512 checksums + optional GPG signature for the built ISO
-scripts/windows_service.cmd         # Optional Windows-side DISM servicing
-scripts/Apply-ImageSettings.ps1     # PowerShell image settings (Windows-side)
-scripts/config.ps1                  # PowerShell config helper (Windows-side)
-scripts/convert_config.sh           # Config conversion helper
-scripts/files/Setup-PostInstall.ps1 # First-boot PowerShell script
+scripts/setup_env.py                # Installs system dependencies (Linux only)
+scripts/pyutils.py                  # Shared logging/tool-check helpers (import this, never copy)
+scripts/validate_prereqs.py         # Pre-build checks (tools, disk space, UUP files)
+scripts/sign_iso.py                 # SHA256/SHA512 checksums + optional GPG signature for the built ISO
+scripts/windows_service.cmd         # Optional Windows-side DISM servicing (standalone batch, no Python needed)
+scripts/apply_image_settings.py     # ISO extraction, unattend injection, debloat (Windows-side)
+scripts/win_config.py               # Windows servicing config (mount dir, oscdimg path, volume label)
+scripts/win_utils.py                # Shared Windows servicing helpers (dism.exe/oscdimg wrappers)
+scripts/invoke_system_cleanup.py    # Live-OS disk cleanup helper (Windows-side)
+scripts/new_iso.py                  # oscdimg ISO builder (Windows-side)
+scripts/remove_short_names.py       # 8.3 short-name stripping (Windows-side)
+scripts/repair_wim.py               # DISM RestoreHealth against a reference image (Windows-side)
+scripts/files/setup_post_install.py # First-boot Python script, injected into the image
 
 config/autounattend.xml             # Unattended Windows setup answers (UTF-8, no BOM)
 config/debloat_list.txt             # Bloatware glob patterns (grouped by category)
@@ -61,7 +68,6 @@ PLAN.md                             # 54 tasks, 4 priority tiers, ~660h total
 TODO.md                             # 50-item feature roadmap (v5.0)
 CHANGELOG.md                        # Contributor-facing change log
 mise.toml                           # Dev env (Python 3.14, ruff, uv, shellcheck)
-PSScriptAnalyzerSettings.psd1       # PSScriptAnalyzer lint config
 ```
 
 Runtime directories created during a build (not committed to git):
@@ -100,7 +106,7 @@ Equivalent `mise` tasks exist in `mise.toml` (`mise run install-deps`, `mise run
 |----------|---------|---------|
 | `TARGET_EDITION` | `ProfessionalWorkstation` | Preferred WIM edition name |
 | `FALLBACK_EDITION` | `Professional` | Used if target edition not found |
-| `PAUSE_FOR_WINDOWS_STAGE` | `0` | Pause after WIM export for Windows DISM servicing via `scripts/windows_service.cmd` |
+| `PAUSE_FOR_WINDOWS_STAGE` | `0` | Pause after WIM export for Windows DISM servicing via `scripts/windows_service.cmd` or `scripts/apply_image_settings.py` |
 | `NANO` | `0` | Enable aggressive debloating mode |
 | `WIMLIB_IMAGEX_IGNORE_CASE` | `1` | Set automatically by build pipeline |
 
@@ -112,55 +118,49 @@ Copy `install.wim` to a Windows machine, run `scripts/windows_service.cmd` again
 
 ---
 
-## Shell Script Rules
+## Pipeline Script Rules
 
-### Required Prologue
+The Linux build pipeline (`build.py`, `setup_env.py`, `sign_iso.py`, `validate_prereqs.py`,
+`debloat_wim.py`) and the Windows servicing scripts (`apply_image_settings.py`,
+`invoke_system_cleanup.py`, `new_iso.py`, `remove_short_names.py`, `repair_wim.py`,
+`files/setup_post_install.py`) are Python 3, stdlib-first, cross-platform where the
+underlying tools allow it. `scripts/custom_convert.sh` and `scripts/convert_config.sh`
+are the one exception — upstream-derived, patch-only, and stay bash. `scripts/utils.sh`
+also stays bash, solely because `custom_convert.sh` sources it (`REQUIRED_TOOLS`,
+`check_iso_tool`); do not add new Python consumers of it — use `pyutils.py` instead.
 
-Every script in `scripts/` must start with:
+### Required shape
 
-```bash
-#!/bin/bash
-set -euo pipefail
-SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-source "$SCRIPT_DIR/utils.sh"
+Every pipeline script:
+- Resolves `SCRIPT_DIR = Path(__file__).resolve().parent` and derives other paths from it — no absolute paths with usernames or machine-specific prefixes.
+- `import pyutils` (Linux pipeline) or `import win_utils` / `win_config` (Windows servicing) for logging and tool checks — never duplicate these helpers in a script.
+- Returns a process exit code from `main()` via `sys.exit(main())`; no bare `exit()` calls.
+
+### Logging (from `scripts/pyutils.py`)
+
+```python
+from pyutils import log_info, log_success, log_warn, log_error, log_debug
+check_tool(name)                 # returns True/False, logs result
+check_required_tools(tools)      # returns count of missing tools
+check_iso_tool()                 # checks for genisoimage or mkisofs
 ```
 
-### Logging (from `scripts/utils.sh`)
-
-```bash
-log_info "Informational message"
-log_success "Step completed"
-log_warn "Non-fatal issue"
-log_error "Fatal error"
-check_tool <name>                       # returns 0/1, logs result
-check_required_tools "${REQUIRED_TOOLS[@]}"  # checks all required tools
-check_iso_tool                          # checks for genisoimage or mkisofs
-```
-
-Do not add new logging functions or styles — use what `utils.sh` provides.
+Do not add new logging functions or styles — use what `pyutils.py` (or `win_utils.py` on
+the Windows-servicing side) provides.
 
 ### Rules
 
-- `set -euo pipefail` required in all pipeline scripts except `custom_convert.sh` (upstream-derived; uses `# shellcheck disable` instead): `build.sh`, `debloat_wim.sh`, `setup_env.sh`, `validate_prereqs.sh`
-- Derive all paths from `SCRIPT_DIR` / `PROJECT_ROOT` — no absolute paths with usernames or machine-specific prefixes
-- Never add `sudo` to `build.sh` or any Linux-pipeline script
-- ShellCheck must pass with zero warnings: `shellcheck scripts/*.sh`
-- Syntax-check after edits: `bash -n scripts/<changed>.sh`
-- When editing `scripts/debloat_wim.sh` or `config/debloat_list.txt`, verify the AppX keep-list is intact
-
----
-
-## Python Rules (`scripts/download_uup.py`)
-
-- Python 3.14+, stdlib-first — no third-party imports
-- `aria2c` is the only external binary it shells out to
-- CLI interface is stable — do not rename flags or change positional arguments
-- Path traversal protection is mandatory; all output paths must be validated against the intended output directory
+- Never add `sudo`/elevation to `build.py` or any Linux-pipeline script
+- Windows servicing scripts call `dism.exe` directly via `subprocess`; do not add a
+  PowerShell DISM module or `pywin32` dependency for something `dism.exe` already does
+- Syntax-check after edits: `python -m py_compile scripts/<changed>.py`
+- When editing `scripts/debloat_wim.py` or `config/debloat_list.txt`, verify the AppX keep-list is intact
+- CLI interface of `scripts/download_uup.py` is stable — do not rename flags or change positional arguments
+- Path traversal protection is mandatory in `download_uup.py`; all output paths must be validated against the intended output directory
 - Tests in `tests/test_security.py` cover path traversal — do not weaken them
-- Type hints required on all new functions (existing coverage: partial — T003 in PLAN.md)
-- Lint: `ruff check scripts/download_uup.py && ruff format --check scripts/download_uup.py`
-- Type-check: `basedpyright scripts/download_uup.py` (or `ty check`)
+- Type hints required on all new functions
+- Lint: `ruff check scripts/ tests/ && ruff format --check scripts/ tests/`
+- Type-check: `basedpyright scripts/download_uup.py` (or `ty check`) — other scripts are not yet gated on this
 
 ---
 
@@ -190,8 +190,8 @@ Do not add new logging functions or styles — use what `utils.sh` provides.
 ```bash
 python3 -m pytest tests/ -v                                # All tests
 python3 -m pytest tests/ --cov --cov-report=term-missing  # With coverage report
-bash -n scripts/*.sh                                       # Shell syntax check
-shellcheck scripts/*.sh                                    # Shell lint
+for f in scripts/*.py scripts/files/*.py; do python3 -m py_compile "$f"; done  # Python syntax check
+bash -n scripts/custom_convert.sh scripts/convert_config.sh scripts/utils.sh  # Remaining shell syntax check
 xmllint --noout config/autounattend.xml                    # XML validation
 ruff check scripts/ tests/                                 # Python lint
 ```
@@ -244,9 +244,11 @@ mise trust && mise install   # Install Python 3.14, ruff, shellcheck, ripgrep, e
 ```
 
 Tools managed by `mise.toml`: `python 3.14`, `uv`, `ruff`, `ty`, `basedpyright`,
-`shellcheck`, `shfmt`, `actionlint`, `ripgrep`, `fd`, `powershell`.
+`shellcheck`, `shfmt`, `actionlint`, `ripgrep`, `fd`, `powershell` (needed only for
+`Mount-DiskImage`/`Dismount-DiskImage` inside `apply_image_settings.py`; DISM itself is
+invoked via `dism.exe`, not the PowerShell DISM module).
 
-System packages (install via `make deps` / `setup_env.sh`):
+System packages (install via `make deps` / `setup_env.py`):
 `xmllint`, `aria2c`, `cabextract`, `wimlib-imagex`, `chntpw`, `genisoimage` or `mkisofs`.
 
 ---

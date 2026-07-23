@@ -28,21 +28,11 @@ jobs:
 
       - name: Run ShellCheck on maintained shell entrypoints
         run: |
-          shellcheck \
-            scripts/build.sh \
-            scripts/debloat_wim.sh \
-            scripts/setup_env.sh \
-            scripts/utils.sh \
-            scripts/validate_prereqs.sh
+          shellcheck scripts/convert_config.sh scripts/utils.sh
 
       - name: Check shell formatting
         run: |
-          shfmt -d \
-            scripts/build.sh \
-            scripts/debloat_wim.sh \
-            scripts/setup_env.sh \
-            scripts/utils.sh \
-            scripts/validate_prereqs.sh
+          shfmt -d scripts/convert_config.sh scripts/utils.sh
 
   lint-python:
     name: Lint Python Scripts
@@ -61,10 +51,10 @@ jobs:
           cache-python: true
 
       - name: Lint with Ruff
-        run: uvx ruff check scripts/download_uup.py tests
+        run: uvx ruff check scripts tests
 
       - name: Check Python formatting
-        run: uvx ruff format --check scripts/download_uup.py tests
+        run: uvx ruff format --check scripts tests
 
   lint-xml:
     name: Lint XML Config

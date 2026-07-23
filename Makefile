@@ -118,5 +118,6 @@ help:
 	@echo "Environment Variables:"
 	@echo "  TARGET_EDITION       - Preferred edition (default: ProfessionalWorkstation)"
 	@echo "  FALLBACK_EDITION     - Fallback if target not found (default: Professional)"
+	@echo "  PROFILE              - Named profile from config/profiles.json (sets edition)"
 	@echo "  PAUSE_FOR_WINDOWS_STAGE - Set to 1 to pause for DISM servicing"
 	@echo "  NANO                 - Set to 1 for extreme debloating"

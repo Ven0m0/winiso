@@ -92,6 +92,11 @@ def log_error(msg: str) -> None:
     print(f"{Colors.RED}[ERROR]{Colors.RESET} {msg}")
 
 
+def log_debug(msg: str) -> None:
+    if os.environ.get("LOG_LEVEL", "").lower() == "debug":
+        print(f"{Colors.CYAN}[DEBUG]{Colors.RESET} {msg}")
+
+
 def check_dependencies() -> bool:
     """Check if required tools are installed"""
     required = ["aria2c", "wimlib-imagex", "cabextract"]
@@ -970,11 +975,13 @@ def _run_aria2_download(
         return True
     except subprocess.CalledProcessError as e:
         log_error(f"Download failed with exit code {e.returncode}")
-        if verbose and (e.stdout or e.stderr):
-            if e.stdout:
-                print(f"stdout: {e.stdout}")
-            if e.stderr:
-                print(f"stderr: {e.stderr}")
+        if verbose and e.stdout:
+            print(f"stdout: {e.stdout}")
+        if e.stderr:
+            stderr_lines = e.stderr.splitlines()
+            tail = stderr_lines if verbose else stderr_lines[-20:]
+            for line in tail:
+                print(f"stderr: {line}")
         return False
     except KeyboardInterrupt:
         log_warn("\nDownload cancelled by user - session saved for resume")

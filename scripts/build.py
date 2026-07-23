@@ -6,18 +6,24 @@ This script orchestrates the UUP to ISO conversion with debloating.
 Environment Variables:
     TARGET_EDITION          - Preferred edition (default: ProfessionalWorkstation)
     FALLBACK_EDITION        - Fallback edition (default: Professional)
+    PROFILE                 - Named profile from config/profiles.json (sets edition)
     PAUSE_FOR_WINDOWS_STAGE - Set to 1 to pause for Windows servicing
 
 Usage:
     python scripts/build.py                    # Normal build
+    python scripts/build.py --profile minimal  # Build using a named profile
+    python scripts/build.py --edition Core     # Override the target edition directly
     PAUSE_FOR_WINDOWS_STAGE=1 python scripts/build.py  # Pause for Windows servicing
 """
 
+import argparse
+import json
 import os
 import shutil
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any
 
 from pyutils import log_error, log_info, log_success
 
@@ -25,6 +31,33 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
 UUP_DIR = PROJECT_ROOT / "uup_files"
 OUTPUT_DIR = PROJECT_ROOT / "output"
+PROFILES_FILE = PROJECT_ROOT / "config" / "profiles.json"
+
+
+def load_profile(name: str) -> dict[str, Any] | None:
+    if not PROFILES_FILE.is_file():
+        return None
+    try:
+        data = json.loads(PROFILES_FILE.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    profiles = data.get("profiles", {}) if isinstance(data, dict) else {}
+    return profiles.get(name) if isinstance(profiles, dict) else None
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Build a debloated Windows 11 ISO.")
+    parser.add_argument(
+        "--profile",
+        default=os.environ.get("PROFILE"),
+        help="Named build profile from config/profiles.json (sets the target edition)",
+    )
+    parser.add_argument(
+        "--edition",
+        default=None,
+        help="Override TARGET_EDITION (takes precedence over --profile and the env var)",
+    )
+    return parser.parse_args()
 
 
 def human_size(num_bytes: int) -> str:
@@ -37,6 +70,8 @@ def human_size(num_bytes: int) -> str:
 
 
 def main() -> int:
+    args = parse_args()
+
     log_info("Running prerequisite validation...")
     result = subprocess.run([sys.executable, str(SCRIPT_DIR / "validate_prereqs.py")])
     if result.returncode != 0:
@@ -60,6 +95,17 @@ def main() -> int:
 
     target_edition = os.environ.get("TARGET_EDITION", "ProfessionalWorkstation")
     fallback_edition = os.environ.get("FALLBACK_EDITION", "Professional")
+
+    if args.profile:
+        profile = load_profile(args.profile)
+        if profile is None:
+            log_error(f"Unknown profile: {args.profile}")
+            return 1
+        log_info(f"Using profile: {args.profile}")
+        target_edition = profile.get("edition", target_edition)
+
+    if args.edition:
+        target_edition = args.edition
 
     log_info("Starting Build Process...")
     log_info(f"Source: {UUP_DIR}")

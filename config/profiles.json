@@ -4,21 +4,18 @@
 			"description": "Stripped-down Windows 11 with maximum debloating",
 			"edition": "Core",
 			"language": "en-us",
-			"edition_filter": ["*Home*", "*Core*"],
 			"notes": "Smallest install size, removes all non-essential apps"
 		},
 		"standard": {
 			"description": "Default debloated Windows 11 (Professional)",
 			"edition": "Professional",
 			"language": "en-us",
-			"edition_filter": ["*Professional*"],
 			"notes": "Recommended for most users"
 		},
 		"gaming": {
 			"description": "Gaming-optimized Windows 11 with Game Mode enabled",
 			"edition": "Professional",
 			"language": "en-us",
-			"edition_filter": ["*Professional*", "*Enterprise*"],
 			"keep_gaming_apps": true,
 			"notes": "Keeps Xbox/Game-related components, disables telemetry"
 		},
@@ -26,14 +23,12 @@
 			"description": "Enterprise-ready Windows 11 with domain features",
 			"edition": "Enterprise",
 			"language": "en-us",
-			"edition_filter": ["*Enterprise*"],
 			"notes": "Includes BitLocker, Group Policy support"
 		},
 		"dev": {
 			"description": "Developer configuration with WSL and tools",
 			"edition": "Professional",
 			"language": "en-us",
-			"edition_filter": ["*Professional*"],
 			"include_wsl": true,
 			"notes": "Pre-configures WSL, keeps developer tools"
 		}

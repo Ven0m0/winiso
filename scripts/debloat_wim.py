@@ -10,6 +10,7 @@ Features:
     - Case-insensitive matching
 """
 
+import json
 import os
 import re
 import subprocess
@@ -22,6 +23,11 @@ from pyutils import log_error, log_info, log_success, log_warn
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
 CONFIG_FILE = PROJECT_ROOT / "config" / "debloat_list.txt"
+GROUPS_SELECTION_FILE = PROJECT_ROOT / ".uup-groups"
+COMPONENT_GROUPS_FILE = PROJECT_ROOT / "config" / "component_groups.json"
+
+# Never let a component group delete these, regardless of selection.
+PROTECTED_KEYWORDS = ("store", "webview", "vclibs", "ui.xaml", "defender", "desktopappinstaller")
 
 PATTERN_RE = re.compile(r"^[a-zA-Z0-9.*_-]+$")
 
@@ -102,6 +108,52 @@ def load_patterns() -> list[str]:
     return patterns
 
 
+def is_protected_pattern(pattern: str) -> bool:
+    lowered = pattern.lower()
+    return any(keyword in lowered for keyword in PROTECTED_KEYWORDS)
+
+
+def load_group_patterns() -> list[str]:
+    """Expand component groups selected via .uup-groups into glob patterns.
+
+    .uup-groups (written by download_uup.py --preset/--groups) holds one group
+    name per line; config/component_groups.json maps each name to patterns.
+    """
+    if not GROUPS_SELECTION_FILE.is_file():
+        return []
+    group_names = [
+        line.strip()
+        for line in GROUPS_SELECTION_FILE.read_text(encoding="utf-8", errors="replace").splitlines()
+        if line.strip()
+    ]
+    if not group_names or not COMPONENT_GROUPS_FILE.is_file():
+        return []
+
+    try:
+        data = json.loads(COMPONENT_GROUPS_FILE.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        log_warn(f"Failed to parse {COMPONENT_GROUPS_FILE}")
+        return []
+    groups = data.get("groups", {}) if isinstance(data, dict) else {}
+
+    patterns: list[str] = []
+    seen: set[str] = set()
+    for name in group_names:
+        group = groups.get(name) if isinstance(groups, dict) else None
+        if not isinstance(group, dict):
+            log_warn(f"Unknown component group: {name}")
+            continue
+        for pattern in group.get("patterns", []):
+            if not isinstance(pattern, str) or pattern in seen:
+                continue
+            if is_protected_pattern(pattern):
+                log_warn(f"Skipping protected pattern from group '{name}': {pattern}")
+                continue
+            seen.add(pattern)
+            patterns.append(pattern)
+    return patterns
+
+
 def parse_edition_names(info_output: str) -> dict[int, str]:
     editions: dict[int, str] = {}
     current_index: int | None = None
@@ -172,6 +224,9 @@ def main() -> int:
     edition_names = parse_edition_names(info_output)
 
     patterns = load_patterns()
+    for pattern in load_group_patterns():
+        if pattern not in patterns:
+            patterns.append(pattern)
     base_delete_commands = build_base_delete_commands(patterns, nano)
 
     for index in range(1, image_count + 1):

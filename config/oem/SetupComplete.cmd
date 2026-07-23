@@ -20,14 +20,6 @@ fsutil behavior set disable8dot3 1 >> "%LOGFILE%" 2>&1
 echo 8.3 short name creation disabled for future files >> "%LOGFILE%"
 
 :: -----------------------------------------------------------------------------
-:: Strip existing 8.3 short names on all fixed drives
-:: -----------------------------------------------------------------------------
-echo [%DATE% %TIME%] Stripping existing 8.3 short names... >> "%LOGFILE%"
-for /f "skip=1 tokens=1" %%D in ('wmic logicaldisk where "drivetype=3" get deviceid') do (
-	if not "%%D"=="" fsutil 8dot3name strip /d %%D /s >> "%LOGFILE%" 2>&1
-)
-
-:: -----------------------------------------------------------------------------
 :: NTFS Compression (enable capability, don't force)
 :: -----------------------------------------------------------------------------
 echo [%DATE% %TIME%] Configuring NTFS compression... >> "%LOGFILE%"
@@ -44,12 +36,6 @@ Dism /Online /Cleanup-Image /StartComponentCleanup >> "%LOGFILE%" 2>&1
 :: -----------------------------------------------------------------------------
 echo [%DATE% %TIME%] Setting High Performance power plan... >> "%LOGFILE%"
 powercfg /setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c >> "%LOGFILE%" 2>&1
-
-:: -----------------------------------------------------------------------------
-:: Disable Hibernate
-:: -----------------------------------------------------------------------------
-echo [%DATE% %TIME%] Disabling hibernate... >> "%LOGFILE%"
-powercfg /hibernate off >> "%LOGFILE%" 2>&1
 
 :: -----------------------------------------------------------------------------
 :: Disable Consumer Experience (Start menu suggestions, etc.)

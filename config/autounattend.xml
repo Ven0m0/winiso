@@ -31,7 +31,7 @@
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>7</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:set ^"OS_VERSION=11^"&amp;echo:for /f ^"tokens=3 delims=.^" ^%^%v in ('ver'^) do (&amp;echo:if ^%^%v LSS 20000 set ^"OS_VERSION=10^"&amp;echo:^)&amp;echo:rem Install drivers from $WinPEDriver$ folder&amp;echo:if defined PEDRIVERS_FOLDER ()</Path>
+					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:rem Install drivers from $WinPEDriver$ folder&amp;echo:if defined PEDRIVERS_FOLDER ()</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>8</Order>
@@ -81,49 +81,44 @@
 					<Order>19</Order>
 					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:echo:FORMAT QUICK FS=NTFS LABEL=^^^"Recovery^^^"&amp;echo:echo:ASSIGN LETTER=R&amp;echo:echo:SET ID=^^^"de94bba4-06d1-4d40-a16a-bfd50179d6ac^^^"&amp;echo:echo:GPT ATTRIBUTES=0x8000000000000001&amp;echo:^))</Path>
 				</RunSynchronousCommand>
-<RunSynchronousCommand wcm:action="add">
+				<RunSynchronousCommand wcm:action="add">
 					<Order>20</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:@echo diskpart will now partition and format your disk&amp;echo:pause&amp;echo:diskpart.exe /s X:\diskpart.txt ^|^| ( echo WARNING: diskpart.exe encountered an error but continuing... ^&amp;&amp;timeout /t 5 ^&amp;amp;&amp;amp;goto :continue1 ^)&amp;echo:goto :diskpartok&amp;echo:^:continue1&amp;echo:set "IMG_PARAM=/Name:Windows %OS_VERSION% Pro"&amp;echo:goto :doneimg&amp;echo:^:diskpartok&amp;echo:set ^"IMG_PARAM=/Name:^"Windows ^%OS_VERSION^% Pro^"^"&amp;echo:^:doneimg)</Path>
+					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:@echo diskpart will now partition and format your disk&amp;echo:pause&amp;echo:diskpart.exe /s X:\diskpart.txt ^|^| ( echo Could not partition disk 0, aborting. ^&amp; pause ^&amp; exit /b 1 ^))</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>21</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:goto :skipimgset&amp;echo:^:setimgifok&amp;echo:set ^"IMG_PARAM=/Name:^"Windows ^%OS_VERSION^% Pro^"^"&amp;echo:^:skipimgset)</Path>
+					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:dism.exe /Apply-Image /ImageFile:^%IMAGE_FILE^% ^%SWM_PARAM^% /Index:1 /ApplyDir:W:\ /CheckIntegrity /Verify ^|^| ( echo Could not apply image, aborting. ^&amp; pause ^&amp; exit /b 1 ^))</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>22</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:dism.exe /Apply-Image /ImageFile:^%IMAGE_FILE^% ^%SWM_PARAM^% ^%IMG_PARAM^% /ApplyDir:W:\ /CheckIntegrity /Verify ^|^| ( echo WARNING: dism.exe encountered an error but continuing... ^&amp;&amp;timeout /t 5 ^&amp;amp;&amp;amp;goto :dismdone ^)&amp;echo:goto :dismok&amp;echo:^:dismdone&amp;echo:goto :bcdboot&amp;echo:^:dismok)</Path>
-				</RunSynchronousCommand>
-				<RunSynchronousCommand wcm:action="add">
-					<Order>23</Order>
 					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:bcdboot.exe W:\Windows /s S: ^|^| ( echo WARNING: bcdboot.exe encountered an error but continuing... ^)&amp;echo:mkdir W:\Windows\Panther 2^&amp;^&gt;nul&amp;echo:copy ^%XML_FILE^% W:\Windows\Panther\unattend.xml 2^&amp;^&gt;nul&amp;echo:if defined PEDRIVERS_FOLDER ())</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
-					<Order>24</Order>
+					<Order>23</Order>
 					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:dism.exe /Add-Driver /Image:W:\ /Driver:^"^%PEDRIVERS_FOLDER^%^" /Recurse&amp;echo:^)&amp;echo:dism.exe /Image:W:\ /Set-TimeZone:^"W. Europe Standard Time^"&amp;echo:rem Disable 8.3 on volume W:&amp;echo:fsutil.exe 8dot3name set W: 1&amp;echo:rem Disable 8.3 globally and strip existing&amp;echo:fsutil.exe behavior set disable8dot3 1&amp;echo:fsutil.exe 8dot3name strip /s /f W:\&amp;echo:rem Disable WPBT&amp;echo:reg.exe LOAD HKLM\mount W:\Windows\System32\config\SYSTEM)</Path>
 				</RunSynchronousCommand>
-				
 				<RunSynchronousCommand wcm:action="add">
-					<Order>26</Order>
+					<Order>24</Order>
 					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:reg.exe add ^"HKLM\mount\ControlSet001\Control\Session Manager^" /v DisableWpbtExecution /t REG_DWORD /d 1 /f&amp;echo:reg.exe UNLOAD HKLM\mount&amp;echo:rem Set device setup region to Germany (GeoID 94^))</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
-					<Order>27</Order>
+					<Order>25</Order>
 					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:reg.exe LOAD HKLM\mount W:\Windows\System32\config\SOFTWARE&amp;echo:reg.exe ADD ^"HKLM\mount\Microsoft\Windows\CurrentVersion\Control Panel\DeviceRegion^" /v DeviceRegion /t REG_DWORD /d 94 /f&amp;echo:reg.exe UNLOAD HKLM\mount)</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
-					<Order>28</Order>
+					<Order>26</Order>
 					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:rem Copy $OEM$ folder if present&amp;echo:set ^"ROBOCOPY_ARGS=/E /XX /COPY:DAT /DCOPY:DAT /R:0^"&amp;echo:if defined OEM_FOLDER (&amp;echo:if exist ^"^%OEM_FOLDER^%\$$^" robocopy.exe ^"^%OEM_FOLDER^%\$$^" W:\Windows ^%ROBOCOPY_ARGS^%)</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
-					<Order>29</Order>
+					<Order>27</Order>
 					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:if exist ^"^%OEM_FOLDER^%\$1^" robocopy.exe ^"^%OEM_FOLDER^%\$1^" W:\ ^%ROBOCOPY_ARGS^%&amp;echo:@for ^%^%d in (C D E F G H I J K L M N O P Q R S T U V W X Y Z^) do @()</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
-					<Order>30</Order>
+					<Order>28</Order>
 					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:if exist ^"^%OEM_FOLDER^%\^%^%d^" robocopy.exe ^"^%OEM_FOLDER^%\^%^%d^" ^%^%d:\ ^%ROBOCOPY_ARGS^%&amp;echo:^)&amp;echo:^)&amp;echo:rem Continue with next stage of Windows Setup after reboot&amp;echo:wpeutil.exe reboot)</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
-					<Order>31</Order>
+					<Order>29</Order>
 					<Path>cmd.exe /c "X:\pe.cmd"</Path>
 				</RunSynchronousCommand>
 			</RunSynchronous>
@@ -1190,6 +1185,3 @@ Stop-Transcript
 		</File>
 	</Extensions>
 </unattend>
-
-
-

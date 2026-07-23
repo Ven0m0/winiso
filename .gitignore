@@ -8,6 +8,7 @@ output/*
 uup_files/*
 !uup_files/.gitkeep
 .uup_cache/
+**/.uup_cache/
 
 # ─── Logs & traces ────────────────────────────────────────────────────────────
 *.log

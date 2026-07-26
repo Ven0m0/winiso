@@ -44,8 +44,12 @@ def main() -> int:
         description="Generate SHA256/SHA512 checksums and an optional GPG signature for an ISO."
     )
     parser.add_argument("iso_file", help="Path to the ISO file")
-    parser.add_argument("--gpg", action="store_true", help="Also create a GPG detached signature")
-    parser.add_argument("--key", dest="key_id", default=None, help="GPG key ID or email (implies --gpg)")
+    parser.add_argument(
+        "--gpg", action="store_true", help="Also create a GPG detached signature"
+    )
+    parser.add_argument(
+        "--key", dest="key_id", default=None, help="GPG key ID or email (implies --gpg)"
+    )
     args = parser.parse_args()
 
     sign_gpg = args.gpg or args.key_id is not None

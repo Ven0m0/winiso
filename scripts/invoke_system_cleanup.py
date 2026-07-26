@@ -21,7 +21,19 @@ from pathlib import Path
 
 from win_utils import require_admin, write_success
 
-DRIVE_ROOT_GARBAGE_EXTS = ("bat", "cmd", "txt", "log", "jpg", "jpeg", "tmp", "temp", "bak", "backup", "exe")
+DRIVE_ROOT_GARBAGE_EXTS = (
+    "bat",
+    "cmd",
+    "txt",
+    "log",
+    "jpg",
+    "jpeg",
+    "tmp",
+    "temp",
+    "bak",
+    "backup",
+    "exe",
+)
 WINDIR_GARBAGE_EXTS = ("log", "txt", "bmp", "tmp")
 DRIVER_VENDOR_DIRS = ("NVIDIA", "ATI", "AMD", "Dell", "Intel", "HP")
 
@@ -29,7 +41,7 @@ DRIVER_VENDOR_DIRS = ("NVIDIA", "ATI", "AMD", "Dell", "Intel", "HP")
 def remove_path_quiet(path: str) -> None:
     """Mirrors PowerShell's Remove-Item -Recurse -Force -ErrorAction SilentlyContinue,
     including trailing "\\*" wildcard semantics."""
-    if path.endswith("\\*") or path.endswith("/*"):
+    if path.endswith(("\\*", "/*")):
         parent = Path(path[:-2])
         if not parent.is_dir():
             return
@@ -59,8 +71,12 @@ def remove_files_by_ext(root: Path, extensions: tuple[str, ...]) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Live-OS disk cleanup helper for Windows servicing.")
-    parser.add_argument("--log-path", default=str(Path(tempfile.gettempdir()) / "iso-cmd-cleanup.log"))
+    parser = argparse.ArgumentParser(
+        description="Live-OS disk cleanup helper for Windows servicing."
+    )
+    parser.add_argument(
+        "--log-path", default=str(Path(tempfile.gettempdir()) / "iso-cmd-cleanup.log")
+    )
     args = parser.parse_args()
 
     require_admin()
@@ -75,7 +91,9 @@ def main() -> int:
 
     log_path = Path(args.log_path)
     with log_path.open("a", encoding="utf-8") as log:
-        _ = log.write(f"Cleanup started: {datetime.datetime.now(datetime.timezone.utc).isoformat()}\n")
+        _ = log.write(
+            f"Cleanup started: {datetime.datetime.now(datetime.timezone.utc).isoformat()}\n"
+        )
 
     remove_path_quiet(f"{windir}\\Temp\\*")
     remove_path_quiet(f"{temp}\\*")
@@ -102,15 +120,25 @@ def main() -> int:
     remove_path_quiet(f"{system_drive}\\$Recycle.Bin")
 
     _ = subprocess.run(
-        ["reg.exe", "delete", "HKCU\\SOFTWARE\\Classes\\Local Settings\\Muicache", "/f"],
+        [
+            "reg.exe",
+            "delete",
+            "HKCU\\SOFTWARE\\Classes\\Local Settings\\Muicache",
+            "/f",
+        ],
         capture_output=True,
+        check=False,
     )
 
     remove_path_quiet(f"{all_users_profile}\\Microsoft\\Windows\\WER\\ReportArchive")
     remove_path_quiet(f"{all_users_profile}\\Microsoft\\Windows\\WER\\ReportQueue")
 
-    remove_path_quiet(f"{all_users_profile}\\Microsoft\\Windows Defender\\Scans\\History\\Results\\Quick")
-    remove_path_quiet(f"{all_users_profile}\\Microsoft\\Windows Defender\\Scans\\History\\Results\\Resource")
+    remove_path_quiet(
+        f"{all_users_profile}\\Microsoft\\Windows Defender\\Scans\\History\\Results\\Quick"
+    )
+    remove_path_quiet(
+        f"{all_users_profile}\\Microsoft\\Windows Defender\\Scans\\History\\Results\\Resource"
+    )
 
     remove_path_quiet(f"{all_users_profile}\\Microsoft\\Search\\Data\\Temp")
 
@@ -121,13 +149,17 @@ def main() -> int:
         if base:
             remove_path_quiet(f"{base}\\NVIDIA Corporation\\Installer")
             remove_path_quiet(f"{base}\\NVIDIA Corporation\\Installer2")
-    remove_path_quiet(f"{os.environ.get('ProgramData', '')}\\NVIDIA Corporation\\Downloader")
+    remove_path_quiet(
+        f"{os.environ.get('ProgramData', '')}\\NVIDIA Corporation\\Downloader"
+    )
     remove_path_quiet(f"{os.environ.get('ProgramData', '')}\\NVIDIA\\Downloader")
 
     remove_path_quiet(f"{windir}\\Logs\\CBS")
 
     with log_path.open("a", encoding="utf-8") as log:
-        _ = log.write(f"Cleanup finished: {datetime.datetime.now(datetime.timezone.utc).isoformat()}\n")
+        _ = log.write(
+            f"Cleanup finished: {datetime.datetime.now(datetime.timezone.utc).isoformat()}\n"
+        )
 
     write_success(f"Cleanup complete. Log: {log_path}")
     return 0

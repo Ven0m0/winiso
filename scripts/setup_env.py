@@ -5,12 +5,55 @@ import shutil
 import subprocess
 import sys
 
-from pyutils import REQUIRED_TOOLS, check_iso_tool, check_tool, log_error, log_info, log_success
+from pyutils import (
+    REQUIRED_TOOLS,
+    check_iso_tool,
+    check_tool,
+    log_error,
+    log_info,
+    log_success,
+)
 
 PACKAGE_MANAGERS = {
-    "pacman": (["pacman", "-S", "--needed", "aria2", "cabextract", "wimlib", "chntpw", "cdrtools"], "Arch Linux (pacman)"),
-    "apt": (["apt", "install", "-y", "aria2", "cabextract", "wimtools", "chntpw", "genisoimage"], "Debian/Ubuntu (apt)"),
-    "dnf": (["dnf", "install", "-y", "aria2", "cabextract", "wimlib-utils", "chntpw", "genisoimage"], "Fedora (dnf)"),
+    "pacman": (
+        [
+            "pacman",
+            "-S",
+            "--needed",
+            "aria2",
+            "cabextract",
+            "wimlib",
+            "chntpw",
+            "cdrtools",
+        ],
+        "Arch Linux (pacman)",
+    ),
+    "apt": (
+        [
+            "apt",
+            "install",
+            "-y",
+            "aria2",
+            "cabextract",
+            "wimtools",
+            "chntpw",
+            "genisoimage",
+        ],
+        "Debian/Ubuntu (apt)",
+    ),
+    "dnf": (
+        [
+            "dnf",
+            "install",
+            "-y",
+            "aria2",
+            "cabextract",
+            "wimlib-utils",
+            "chntpw",
+            "genisoimage",
+        ],
+        "Fedora (dnf)",
+    ),
 }
 
 
@@ -18,7 +61,9 @@ def main() -> int:
     log_info("Checking and installing dependencies...")
 
     if sys.platform == "win32":
-        log_error("setup_env.py installs Linux system packages and is not applicable on Windows.")
+        log_error(
+            "setup_env.py installs Linux system packages and is not applicable on Windows."
+        )
         log_error("Use mise (mise run install-deps) or winget for Windows tooling.")
         return 1
 

@@ -10,7 +10,7 @@ autoinstall:
       uri: http://ports.ubuntu.com/ubuntu-ports
   identity: {hostname: public, password: $6$76eU//YqTyV7foup$8xcQQLxVXixZGQ5WMbFD7BArZ2F8w8F.KkmJRyKsJpama.44/xlk.axi0MMWiLSFEERFnUqCWLsSPumCCmjQL/, realname: public, username: public}
   keyboard: {layout: us, toggle: null, variant: ''}
-  locale: en_US  
+  locale: en_US
   ssh:
     allow-pw: true
     authorized-keys: []
@@ -23,5 +23,3 @@ autoinstall:
     - {fstype: ext4, volume: partition-1, preserve: false, type: format, id: format-0}
     - {device: format-0, path: /, type: mount, id: mount-0}
   version: 1
-
-

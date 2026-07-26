@@ -6,12 +6,19 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 
-import debloat_wim  # noqa: E402
+import debloat_wim
 
 
 class TestIsProtectedPattern(unittest.TestCase):
     def test_protected_keywords_blocked(self):
-        for pattern in ("*Store*", "*WebView*", "*VCLibs*", "*UI.Xaml*", "*Defender*", "*DesktopAppInstaller*"):
+        for pattern in (
+            "*Store*",
+            "*WebView*",
+            "*VCLibs*",
+            "*UI.Xaml*",
+            "*Defender*",
+            "*DesktopAppInstaller*",
+        ):
             self.assertTrue(debloat_wim.is_protected_pattern(pattern), pattern)
 
     def test_unrelated_pattern_allowed(self):
@@ -50,7 +57,9 @@ class TestLoadGroupPatterns(unittest.TestCase):
         self.assertEqual(debloat_wim.load_group_patterns(), [])
 
     def test_expands_selected_groups_and_dedupes(self):
-        debloat_wim.GROUPS_SELECTION_FILE.write_text("gaming\ngaming\ntelemetry\n", encoding="utf-8")
+        debloat_wim.GROUPS_SELECTION_FILE.write_text(
+            "gaming\ngaming\ntelemetry\n", encoding="utf-8"
+        )
         patterns = debloat_wim.load_group_patterns()
         self.assertEqual(patterns, ["*Xbox*", "*Solitaire*", "*Copilot*"])
 
@@ -61,7 +70,9 @@ class TestLoadGroupPatterns(unittest.TestCase):
         self.assertIn("*Copilot*", patterns)
 
     def test_unknown_group_is_ignored(self):
-        debloat_wim.GROUPS_SELECTION_FILE.write_text("not-a-real-group\n", encoding="utf-8")
+        debloat_wim.GROUPS_SELECTION_FILE.write_text(
+            "not-a-real-group\n", encoding="utf-8"
+        )
         self.assertEqual(debloat_wim.load_group_patterns(), [])
 
 

@@ -23,12 +23,27 @@ from win_utils import invoke_dism, require_admin, write_step, write_success
 
 def strip_8dot3(path: Path) -> None:
     write_step(f"Stripping 8.3 short names under {path}")
-    _ = subprocess.run(["fsutil", "8dot3name", "strip", "/f", "/s", str(path)], capture_output=True)
+    _ = subprocess.run(
+        ["fsutil", "8dot3name", "strip", "/f", "/s", str(path)],
+        capture_output=True,
+        check=False,
+    )
 
 
 def clean_mounted_image(mount_dir: Path) -> None:
-    _ = subprocess.run(["dism.exe", f"/Image:{mount_dir}", "/Optimize-ProvisionedAppxPackages"], capture_output=True)
-    invoke_dism(["/Cleanup-Image", f"/Image={mount_dir}", "/StartComponentCleanup", "/ResetBase"])
+    _ = subprocess.run(
+        ["dism.exe", f"/Image:{mount_dir}", "/Optimize-ProvisionedAppxPackages"],
+        capture_output=True,
+        check=False,
+    )
+    invoke_dism(
+        [
+            "/Cleanup-Image",
+            f"/Image={mount_dir}",
+            "/StartComponentCleanup",
+            "/ResetBase",
+        ]
+    )
 
 
 def export_wim(source: Path, destination: Path) -> None:
@@ -45,7 +60,9 @@ def export_wim(source: Path, destination: Path) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Strip 8.3 short filenames from a staged ISO and its WIMs.")
+    parser = argparse.ArgumentParser(
+        description="Strip 8.3 short filenames from a staged ISO and its WIMs."
+    )
     parser.add_argument("--iso-root", default=r"C:\ISO")
     parser.add_argument("--mount-root", default=r"C:\mnt")
     parser.add_argument("--install-only", action="store_true")
@@ -65,7 +82,14 @@ def main() -> int:
     install_mount.mkdir(parents=True, exist_ok=True)
 
     write_step("Mounting install.wim")
-    invoke_dism(["/Mount-Image", f"/ImageFile:{install_wim}", "/Index:1", f"/MountDir:{install_mount}"])
+    invoke_dism(
+        [
+            "/Mount-Image",
+            f"/ImageFile:{install_wim}",
+            "/Index:1",
+            f"/MountDir:{install_mount}",
+        ]
+    )
     strip_8dot3(install_mount)
     clean_mounted_image(install_mount)
 
@@ -80,12 +104,28 @@ def main() -> int:
         winre_mount.mkdir(parents=True, exist_ok=True)
 
         write_step("Mounting Winre.wim")
-        invoke_dism(["/Mount-Image", f"/ImageFile:{winre_wim}", "/Index:1", f"/MountDir:{winre_mount}"])
+        invoke_dism(
+            [
+                "/Mount-Image",
+                f"/ImageFile:{winre_wim}",
+                "/Index:1",
+                f"/MountDir:{winre_mount}",
+            ]
+        )
         strip_8dot3(winre_mount)
-        invoke_dism(["/Cleanup-Image", f"/Image={winre_mount}", "/StartComponentCleanup", "/ResetBase"])
+        invoke_dism(
+            [
+                "/Cleanup-Image",
+                f"/Image={winre_mount}",
+                "/StartComponentCleanup",
+                "/ResetBase",
+            ]
+        )
         invoke_dism(["/Unmount-Image", f"/MountDir:{winre_mount}", "/Commit"])
 
-        winre_cleaned = install_mount / "Windows" / "System32" / "Recovery" / "Winre_cleaned.wim"
+        winre_cleaned = (
+            install_mount / "Windows" / "System32" / "Recovery" / "Winre_cleaned.wim"
+        )
         export_wim(winre_wim, winre_cleaned)
 
         time.sleep(1)
@@ -108,9 +148,23 @@ def main() -> int:
         boot_mount.mkdir(parents=True, exist_ok=True)
 
         write_step("Mounting boot.wim")
-        invoke_dism(["/Mount-Image", f"/ImageFile:{boot_wim}", "/Index:1", f"/MountDir:{boot_mount}"])
+        invoke_dism(
+            [
+                "/Mount-Image",
+                f"/ImageFile:{boot_wim}",
+                "/Index:1",
+                f"/MountDir:{boot_mount}",
+            ]
+        )
         strip_8dot3(boot_mount)
-        invoke_dism(["/Cleanup-Image", f"/Image={boot_mount}", "/StartComponentCleanup", "/ResetBase"])
+        invoke_dism(
+            [
+                "/Cleanup-Image",
+                f"/Image={boot_mount}",
+                "/StartComponentCleanup",
+                "/ResetBase",
+            ]
+        )
         invoke_dism(["/Unmount-Image", f"/MountDir:{boot_mount}", "/Commit"])
 
         boot_cleaned = iso_root / "sources" / "boot_cleaned.wim"

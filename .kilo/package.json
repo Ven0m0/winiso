@@ -1,16 +1,16 @@
 {
-  "dependencies": {
-    "@ast-grep/cli": "*",
-    "@kilocode/plugin": "7.4.15",
-    "@opencode-ai/plugin": "*",
-    "diff": "*",
-    "repair-json-stream": "*"
-  },
-  "devDependencies": {
-    "@kilocode/sdk": "*",
-    "@opencode-ai/sdk": "*",
-    "@types/bun": "*",
-    "typescript": "*"
-  },
-  "packageManager": "bun@*"
+	"dependencies": {
+		"@ast-grep/cli": "*",
+		"@kilocode/plugin": "7.4.15",
+		"@opencode-ai/plugin": "*",
+		"diff": "*",
+		"repair-json-stream": "*"
+	},
+	"devDependencies": {
+		"@kilocode/sdk": "*",
+		"@opencode-ai/sdk": "*",
+		"@types/bun": "*",
+		"typescript": "*"
+	},
+	"packageManager": "bun@*"
 }

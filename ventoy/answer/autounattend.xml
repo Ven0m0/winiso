@@ -744,14 +744,14 @@ $htmlAccentColor = '#FF00FF';
 			[System.Drawing.Color]
 			$Color
 		);
-						
+
 		[byte[]] $bytes = @(
 			$Color.R;
 			$Color.G;
 			$Color.B;
 			$Color.A;
 		);
-		return [System.BitConverter]::ToUInt32( $bytes, 0); 
+		return [System.BitConverter]::ToUInt32( $bytes, 0);
 	}
 
 	$startColor = [System.Drawing.Color]::FromArgb( 0xD2, $accentColor );
@@ -1066,7 +1066,7 @@ $scripts = @(
 		  'SubscribedContent-353698Enabled';
 		  'SystemPaneSuggestionsEnabled';
 		);
-		
+
 		foreach( $name in $names ) {
 		  reg.exe add "HKU\DefaultUser\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" /v $name /t REG_DWORD /d 0 /f;
 		}

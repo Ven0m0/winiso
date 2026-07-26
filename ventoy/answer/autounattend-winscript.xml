@@ -468,7 +468,7 @@ Write-Host '-- Enabling Detailed BSOD' -ForegroundColor Green
 reg add "HKLM\System\CurrentControlSet\Control\CrashControl" /v "DisplayParameters" /t REG_DWORD /d 1 /f
 Write-Host '-- Disabling Sticky Keys' -ForegroundColor Green
 reg add "HKCU\Control Panel\Accessibility\StickyKeys" /v "Flags" /t REG_SZ /d "58" /f
-Write-Host -- Installing these apps: 
+Write-Host -- Installing these apps:
 Write-Host -- AutoHotkey.AutoHotkey, LIGHTNINGUK.ImgBurn
 Start-Process powershell.exe -ArgumentList '-NoProfile -NoLogo -NoExit -Command $apps = @(\"AutoHotkey.AutoHotkey\", \"LIGHTNINGUK.ImgBurn\"); foreach ($app in $apps) { winget install $app --accept-source-agreements --accept-package-agreements --force }'
 # Pause the script

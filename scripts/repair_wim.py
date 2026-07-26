@@ -14,11 +14,19 @@ import subprocess
 import sys
 from pathlib import Path
 
-from win_utils import invoke_dism, require_admin, write_error_exit, write_step, write_success
+from win_utils import (
+    invoke_dism,
+    require_admin,
+    write_error_exit,
+    write_step,
+    write_success,
+)
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Repair install.wim against a reference image.")
+    parser = argparse.ArgumentParser(
+        description="Repair install.wim against a reference image."
+    )
     parser.add_argument("--reference-wim", required=True)
     parser.add_argument("--target-wim", default=r"C:\ISO\sources\install.wim")
     parser.add_argument("--mount-root", default=r"C:\mnt")
@@ -41,10 +49,24 @@ def main() -> int:
     mount_root.mkdir(parents=True, exist_ok=True)
 
     write_step("Mounting reference image")
-    invoke_dism(["/Mount-Image", f"/ImageFile:{reference_wim}", "/Index:1", f"/MountDir:{reference_mount_root}"])
+    invoke_dism(
+        [
+            "/Mount-Image",
+            f"/ImageFile:{reference_wim}",
+            "/Index:1",
+            f"/MountDir:{reference_mount_root}",
+        ]
+    )
 
     write_step("Mounting target image")
-    invoke_dism(["/Mount-Image", f"/ImageFile:{target_wim}", "/Index:1", f"/MountDir:{mount_root}"])
+    invoke_dism(
+        [
+            "/Mount-Image",
+            f"/ImageFile:{target_wim}",
+            "/Index:1",
+            f"/MountDir:{mount_root}",
+        ]
+    )
 
     write_step("Running RestoreHealth against reference source")
     invoke_dism(
@@ -56,8 +78,18 @@ def main() -> int:
         ]
     )
 
-    _ = subprocess.run(["dism.exe", f"/Image:{mount_root}", "/Optimize-ProvisionedAppxPackages"])
-    invoke_dism(["/Cleanup-Image", f"/Image={mount_root}", "/StartComponentCleanup", "/ResetBase"])
+    _ = subprocess.run(
+        ["dism.exe", f"/Image:{mount_root}", "/Optimize-ProvisionedAppxPackages"],
+        check=False,
+    )
+    invoke_dism(
+        [
+            "/Cleanup-Image",
+            f"/Image={mount_root}",
+            "/StartComponentCleanup",
+            "/ResetBase",
+        ]
+    )
 
     write_step("Saving target image")
     invoke_dism(["/Unmount-Image", f"/MountDir:{mount_root}", "/Commit"])

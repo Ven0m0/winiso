@@ -1,7 +1,7 @@
-import unittest
-from pathlib import Path
 import re
 import sys
+import unittest
+from pathlib import Path
 
 # Add the scripts directory to sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
@@ -27,11 +27,9 @@ class TestSecurity(unittest.TestCase):
             resolved_output = output_dir.resolve()
             resolved_root = root.resolve()
 
-            if os.path.commonpath([resolved_output, resolved_root]) != str(
+            return os.path.commonpath([resolved_output, resolved_root]) == str(
                 resolved_root
-            ):
-                return False
-            return True
+            )
 
         # Normal case
         self.assertTrue(is_safe("uup_files", project_root))

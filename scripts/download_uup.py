@@ -3,22 +3,22 @@
 Automates the download of UUP files from uupdump.net
 """
 
-import sys
-import os
-import time
-from typing import Optional, Dict, List, Any, Union, Set, Literal, cast, overload
-import json
 import argparse
+import json
+import os
 import shutil
+import sys
+import time
 from pathlib import Path
-from urllib.request import urlopen, Request
-from urllib.error import URLError, HTTPError
+from typing import Any, Literal, cast, overload
+from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
+from urllib.request import Request, urlopen
 
 CACHE_DIR_NAME: str = ".uup_cache"
 DEFAULT_CACHE_TTL_SECONDS: int = 3600
 COMPONENT_GROUPS_FILE: str = "config/component_groups.json"
-ALL_COMPONENT_GROUPS: List[str] = [
+ALL_COMPONENT_GROUPS: list[str] = [
     "gaming",
     "productivity",
     "social",
@@ -30,12 +30,21 @@ ALL_COMPONENT_GROUPS: List[str] = [
 ]
 
 # Profile definitions for different use cases
-PROFILES: Dict[str, Dict[str, Any]] = {
+PROFILES: dict[str, dict[str, Any]] = {
     "minimal": {
         "description": "Stripped-down Windows 11 with maximum debloating",
         "edition": "Core",
         "language": "en-us",
-        "component_groups": ["gaming", "productivity", "social", "telemetry", "media", "system", "news", "oem"],
+        "component_groups": [
+            "gaming",
+            "productivity",
+            "social",
+            "telemetry",
+            "media",
+            "system",
+            "news",
+            "oem",
+        ],
     },
     "standard": {
         "description": "Default debloated Windows 11 (Professional)",
@@ -73,7 +82,7 @@ class Colors:
     BOLD = "\033[1m"
 
 
-_url_cache: Dict[str, Union[str, Dict[str, Any]]] = {}
+_url_cache: dict[str, str | dict[str, Any]] = {}
 
 
 def log_info(msg: str) -> None:
@@ -100,7 +109,7 @@ def log_debug(msg: str) -> None:
 def check_dependencies() -> bool:
     """Check if required tools are installed"""
     required = ["aria2c", "wimlib-imagex", "cabextract"]
-    missing: List[str] = []
+    missing: list[str] = []
     for tool in required:
         if not shutil.which(tool):
             missing.append(tool)
@@ -114,27 +123,28 @@ def check_dependencies() -> bool:
 @overload
 def fetch_url(
     url: str,
-    headers: Optional[Dict[str, str]] = None,
-    data: Optional[Dict[str, Any]] = None,
+    headers: dict[str, str] | None = None,
+    data: dict[str, Any] | None = None,
     return_json: Literal[False] = False,
-) -> Optional[str]: ...
+) -> str | None: ...
 
 
 @overload
 def fetch_url(
     url: str,
-    headers: Optional[Dict[str, str]] = None,
-    data: Optional[Dict[str, Any]] = None,
-    return_json: Literal[True] = True,
-) -> Optional[Dict[str, Any]]: ...
+    headers: dict[str, str] | None = None,
+    data: dict[str, Any] | None = None,
+    *,
+    return_json: Literal[True],
+) -> dict[str, Any] | None: ...
 
 
 def fetch_url(
     url: str,
-    headers: Optional[Dict[str, str]] = None,
-    data: Optional[Dict[str, Any]] = None,
+    headers: dict[str, str] | None = None,
+    data: dict[str, Any] | None = None,
     return_json: bool = False,
-) -> Optional[Union[str, Dict[str, Any]]]:
+) -> str | dict[str, Any] | None:
     """Fetch URL with error handling and optional caching"""
     if headers is None:
         headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"}
@@ -144,13 +154,13 @@ def fetch_url(
         return _url_cache[cache_key]
 
     try:
-        payload: Optional[bytes] = None
+        payload: bytes | None = None
         if data:
             payload = urlencode(data).encode("utf-8")
         req = Request(url, headers=headers, data=payload)
         with urlopen(req, timeout=30) as response:
             text = response.read().decode("utf-8")
-            result: Optional[Union[str, Dict[str, Any]]] = text
+            result: str | dict[str, Any] | None = text
 
             if return_json:
                 try:
@@ -176,28 +186,32 @@ def fetch_url(
     except OSError as e:
         log_error(f"Network error fetching URL: {e}")
         return None
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - last-resort guard so an unexpected error surfaces as a log line, not a crash
         log_error(f"Unexpected error fetching URL: {e}")
         return None
 
 
 @overload
-def _get_response_dict(data: Dict[str, Any]) -> Optional[Dict[str, Any]]: ...
+def _get_response_dict(data: dict[str, Any]) -> dict[str, Any] | None: ...
 
 
 @overload
-def _get_response_dict(data: Dict[str, Any], default: Dict[str, Any]) -> Dict[str, Any]: ...
+def _get_response_dict(
+    data: dict[str, Any], default: dict[str, Any]
+) -> dict[str, Any]: ...
 
 
-def _get_response_dict(data: Dict[str, Any], default: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
+def _get_response_dict(
+    data: dict[str, Any], default: dict[str, Any] | None = None
+) -> dict[str, Any] | None:
     """Extract the 'response' field from API data with proper typing."""
     response = data.get("response")
     if isinstance(response, dict):
-        return cast(Dict[str, Any], response)
+        return cast(dict[str, Any], response)
     return default
 
 
-def get_latest_builds(max_results: int = 10) -> Optional[List[Dict[str, Any]]]:
+def get_latest_builds(max_results: int = 10) -> list[dict[str, Any]] | None:
     """Fetch latest Windows 11 builds from uupdump.net API"""
     log_info("Fetching latest Windows 11 builds from uupdump.net...")
 
@@ -219,7 +233,7 @@ def get_latest_builds(max_results: int = 10) -> Optional[List[Dict[str, Any]]]:
         log_warn("No builds found in API response")
         return []
 
-    build_list: List[Dict[str, Any]] = []
+    build_list: list[dict[str, Any]] = []
     for build_id, build_info in builds.items():
         build_info["id"] = build_id
         build_list.append(build_info)
@@ -228,7 +242,7 @@ def get_latest_builds(max_results: int = 10) -> Optional[List[Dict[str, Any]]]:
     return build_list[:max_results]
 
 
-def display_builds(builds: Optional[List[Dict[str, Any]]]) -> None:
+def display_builds(builds: list[dict[str, Any]] | None) -> None:
     """Display builds in a user-friendly format"""
     if not builds:
         log_warn("No builds available.")
@@ -247,11 +261,13 @@ def display_builds(builds: Optional[List[Dict[str, Any]]]) -> None:
         print()
 
 
-def get_build_info(build_id: str, language: Optional[str] = "en-us") -> Optional[Dict[str, Any]]:
+def get_build_info(
+    build_id: str, language: str | None = "en-us"
+) -> dict[str, Any] | None:
     """Get detailed information about a specific build, optionally for a specific language"""
     log_info(f"Fetching build information for ID: {build_id}")
 
-    params: Dict[str, str] = {"id": build_id}
+    params: dict[str, str] = {"id": build_id}
     if language:
         params["lang"] = language
     api_url = f"https://api.uupdump.net/get.php?{urlencode(params)}"
@@ -267,7 +283,7 @@ def get_build_info(build_id: str, language: Optional[str] = "en-us") -> Optional
     return _get_response_dict(data)
 
 
-def get_available_editions(build_id: str) -> Optional[Dict[str, Any]]:
+def get_available_editions(build_id: str) -> dict[str, Any] | None:
     """Get available editions for a specific build from the API"""
     log_info(f"Fetching available editions for build: {build_id}")
 
@@ -286,7 +302,7 @@ def get_available_editions(build_id: str) -> Optional[Dict[str, Any]]:
     return response_data
 
 
-def get_available_languages(build_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
+def get_available_languages(build_id: str | None = None) -> dict[str, Any] | None:
     """Get available languages for a specific build from the API"""
     if build_id:
         log_info(f"Fetching available languages for build: {build_id}")
@@ -308,7 +324,9 @@ def get_available_languages(build_id: Optional[str] = None) -> Optional[Dict[str
     return _get_response_dict(data, {})
 
 
-def fetch_latest_from_wu(arch: str = "amd64", ring: str = "Retail") -> Optional[Dict[str, Any]]:
+def fetch_latest_from_wu(
+    arch: str = "amd64", ring: str = "Retail"
+) -> dict[str, Any] | None:
     """Fetch the latest build from Windows Update servers"""
     log_info(f"Fetching latest {arch} build from Windows Update ({ring} ring)...")
 
@@ -327,7 +345,7 @@ def fetch_latest_from_wu(arch: str = "amd64", ring: str = "Retail") -> Optional[
     return _get_response_dict(data, {})
 
 
-def get_api_version() -> Optional[Dict[str, Any]]:
+def get_api_version() -> dict[str, Any] | None:
     """Get the current UUP dump API version"""
     api_url = "https://api.uupdump.net/"
     response = fetch_url(api_url)
@@ -347,7 +365,7 @@ def get_api_version() -> Optional[Dict[str, Any]]:
     return _get_response_dict(data, {})
 
 
-def get_update_info(update_id: str) -> Optional[Dict[str, Any]]:
+def get_update_info(update_id: str) -> dict[str, Any] | None:
     """Get update information from updateinfo.php endpoint"""
     log_info(f"Fetching update info for ID: {update_id}")
 
@@ -380,14 +398,14 @@ def _safe_cache_name(key: str) -> str:
     return safe[:128] + ".json"
 
 
-def cache_get(key: str, ttl_seconds: int = DEFAULT_CACHE_TTL_SECONDS) -> Optional[Any]:
+def cache_get(key: str, ttl_seconds: int = DEFAULT_CACHE_TTL_SECONDS) -> Any | None:
     """Read a cached value if present and not expired."""
     cache_file = get_cache_dir() / _safe_cache_name(key)
     if not cache_file.exists():
         return None
 
     try:
-        with open(cache_file, "r", encoding="utf-8") as f:
+        with open(cache_file, encoding="utf-8") as f:
             entry = json.load(f)
     except (json.JSONDecodeError, OSError) as e:
         log_warn(f"Cache read failed for {key}: {e}")
@@ -423,7 +441,7 @@ def cache_set(key: str, data: Any) -> bool:
         return False
 
 
-def cache_clear(key: Optional[str] = None) -> int:
+def cache_clear(key: str | None = None) -> int:
     """Remove a single cache entry (if key given) or all entries. Returns the number removed."""
     cache_dir = get_cache_dir()
     if key:
@@ -451,14 +469,14 @@ def get_latest_builds_cached(
     max_results: int = 10,
     ttl_seconds: int = DEFAULT_CACHE_TTL_SECONDS,
     force_refresh: bool = False,
-) -> Optional[List[Dict[str, Any]]]:
+) -> list[dict[str, Any]] | None:
     """Fetch latest builds, returning a cached result when fresh enough."""
     cache_key = f"latest_builds_{max_results}"
 
     if not force_refresh:
         cached = cache_get(cache_key, ttl_seconds=ttl_seconds)
         if cached is not None:
-            return cast(List[Dict[str, Any]], cached)
+            return cast(list[dict[str, Any]], cached)
 
     builds = get_latest_builds(max_results)
     if builds is not None:
@@ -470,8 +488,8 @@ def get_build_info_cached(
     build_id: str,
     ttl_seconds: int = DEFAULT_CACHE_TTL_SECONDS,
     force_refresh: bool = False,
-    language: Optional[str] = "en-us",
-) -> Optional[Dict[str, Any]]:
+    language: str | None = "en-us",
+) -> dict[str, Any] | None:
     """Fetch build info, returning a cached result when fresh enough."""
     cache_key = f"build_info_{build_id}"
     if language:
@@ -480,7 +498,7 @@ def get_build_info_cached(
     if not force_refresh:
         cached = cache_get(cache_key, ttl_seconds=ttl_seconds)
         if cached is not None:
-            return cast(Dict[str, Any], cached)
+            return cast(dict[str, Any], cached)
 
     info = get_build_info(build_id, language=language)
     if info is not None:
@@ -490,9 +508,9 @@ def get_build_info_cached(
 
 def download_language_packs(
     build_id: str,
-    languages: List[str],
-    output_dir: Union[str, Path],
-    edition_filter: Optional[List[str]] = None,
+    languages: list[str],
+    output_dir: str | Path,
+    edition_filter: list[str] | None = None,
     verbose: bool = False,
     use_cache: bool = True,
     cache_ttl: int = DEFAULT_CACHE_TTL_SECONDS,
@@ -529,14 +547,14 @@ def download_language_packs(
     return all_success
 
 
-def select_editions(build_info: Dict[str, Any]) -> Optional[List[str]]:
+def select_editions(build_info: dict[str, Any]) -> list[str] | None:
     """Allow user to select which editions to download"""
     files = build_info.get("files", {})
 
     # Find edition-specific ESD files
-    edition_files: Dict[str, str] = {}
+    edition_files: dict[str, str] = {}
 
-    for filename, file_info in files.items():
+    for filename in files:
         if filename.endswith(".esd"):
             filename_lower = filename.lower()
             if "professional" in filename_lower:
@@ -577,11 +595,11 @@ def select_editions(build_info: Dict[str, Any]) -> Optional[List[str]]:
     return None
 
 
-def list_edition_files(build_info: Dict[str, Any]) -> Dict[str, str]:
+def list_edition_files(build_info: dict[str, Any]) -> dict[str, str]:
     """Return the mapping of known edition name -> ESD filename from build info."""
-    edition_files: Dict[str, str] = {}
+    edition_files: dict[str, str] = {}
     files = build_info.get("files", {})
-    for filename in files.keys():
+    for filename in files:
         if not filename.endswith(".esd"):
             continue
         lower = filename.lower()
@@ -593,9 +611,9 @@ def list_edition_files(build_info: Dict[str, Any]) -> Dict[str, str]:
 
 
 def resolve_edition_filter(
-    build_info: Dict[str, Any],
-    edition: Optional[str] = None,
-) -> Optional[List[str]]:
+    build_info: dict[str, Any],
+    edition: str | None = None,
+) -> list[str] | None:
     """Resolve the edition name to its ESD filename, or return None for all.
 
     Used by the --edition CLI flag to bypass the interactive prompt. The edition
@@ -622,7 +640,9 @@ def resolve_edition_filter(
             log_info(f"Filtering to edition: {k} -> {filename}")
             return [filename]
 
-    log_error(f"Unknown edition '{edition}'. Available: {', '.join(edition_files.keys())}")
+    log_error(
+        f"Unknown edition '{edition}'. Available: {', '.join(edition_files.keys())}"
+    )
     return None
 
 
@@ -644,7 +664,7 @@ def _prepare_output_directory(output_path: Path) -> None:
 # Mirror sources for redundant downloads
 # These are alternative CDN endpoints (UUP dump has no official mirrors, but
 # users can configure custom mirrors for redundancy in restricted networks)
-DEFAULT_MIRRORS: List[str] = [
+DEFAULT_MIRRORS: list[str] = [
     "https://uupdump.net/get.php",
 ]
 
@@ -652,7 +672,7 @@ DEFAULT_MIRRORS: List[str] = [
 MIRROR_CONFIG_FILE: str = ".uup-mirrors"
 
 
-def load_mirrors() -> List[str]:
+def load_mirrors() -> list[str]:
     """Load custom mirrors from .uup-mirrors file or return defaults."""
     script_dir = Path(__file__).parent
     project_root = script_dir.parent
@@ -660,8 +680,12 @@ def load_mirrors() -> List[str]:
 
     if mirror_path.exists():
         try:
-            with open(mirror_path, "r", encoding="utf-8") as f:
-                mirrors = [line.strip() for line in f if line.strip() and not line.startswith("#")]
+            with open(mirror_path, encoding="utf-8") as f:
+                mirrors = [
+                    line.strip()
+                    for line in f
+                    if line.strip() and not line.startswith("#")
+                ]
             if mirrors:
                 return mirrors
         except OSError:
@@ -671,19 +695,22 @@ def load_mirrors() -> List[str]:
 
 def _prepare_download_list(
     build_id: str,
-    files: Dict[str, Any],
-    edition_filter: Optional[List[str]] = None,
-    mirrors: Optional[List[str]] = None,
-    delta_filter: Optional[Set[str]] = None,
-) -> List[Dict[str, Any]]:
-    download_list: List[Dict[str, Any]] = []
+    files: dict[str, Any],
+    edition_filter: list[str] | None = None,
+    mirrors: list[str] | None = None,
+    delta_filter: set[str] | None = None,
+) -> list[dict[str, Any]]:
+    download_list: list[dict[str, Any]] = []
     base_urls = mirrors if mirrors else load_mirrors()
     primary_url = base_urls[0] if base_urls else "https://uupdump.net/get.php"
 
     for filename, file_info in files.items():
-        if edition_filter and filename.endswith(".esd"):
-            if filename not in edition_filter:
-                continue
+        if (
+            edition_filter
+            and filename.endswith(".esd")
+            and filename not in edition_filter
+        ):
+            continue
         if delta_filter is not None and filename not in delta_filter:
             continue
         file_url = f"{primary_url}?id={build_id}&pack={filename}&aria2=2"
@@ -698,7 +725,7 @@ def _prepare_download_list(
 DEFAULT_DELTA_STORE: str = ".uup-delta"
 
 
-def get_build_files(build_info: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
+def get_build_files(build_info: dict[str, Any]) -> dict[str, dict[str, Any]]:
     """Extract the per-file metadata from a build info dict.
 
     Returns a mapping of ``filename -> {size, sha256, ...}`` for every entry in
@@ -711,7 +738,7 @@ def get_build_files(build_info: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
     raw_files: Any = build_info.get("files", {})
     if not isinstance(raw_files, dict):
         return {}
-    result: Dict[str, Dict[str, Any]] = {}
+    result: dict[str, dict[str, Any]] = {}
     for filename, info in raw_files.items():
         if not isinstance(filename, str) or not isinstance(info, dict):
             continue
@@ -720,9 +747,9 @@ def get_build_files(build_info: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
 
 
 def calculate_delta(
-    base_files: Dict[str, Dict[str, Any]],
-    target_files: Dict[str, Dict[str, Any]],
-) -> Dict[str, List[str]]:
+    base_files: dict[str, dict[str, Any]],
+    target_files: dict[str, dict[str, Any]],
+) -> dict[str, list[str]]:
     """Compare two file lists and classify each file by change type.
 
     The returned dict has four keys:
@@ -739,12 +766,12 @@ def calculate_delta(
     base_keys = set(base_files.keys())
     target_keys = set(target_files.keys())
 
-    added: List[str] = sorted(target_keys - base_keys)
-    removed: List[str] = sorted(base_keys - target_keys)
+    added: list[str] = sorted(target_keys - base_keys)
+    removed: list[str] = sorted(base_keys - target_keys)
 
     common = base_keys & target_keys
-    modified: List[str] = []
-    unchanged: List[str] = []
+    modified: list[str] = []
+    unchanged: list[str] = []
     for name in sorted(common):
         if base_files[name] != target_files[name]:
             modified.append(name)
@@ -759,7 +786,7 @@ def calculate_delta(
     }
 
 
-def get_delta_store_path(store_dir: Optional[Union[str, Path]] = None) -> Path:
+def get_delta_store_path(store_dir: str | Path | None = None) -> Path:
     """Return the path to the local delta-manifest store, creating it if needed.
 
     The store is intentionally outside the project root in spirit (it is a
@@ -798,9 +825,9 @@ def _safe_delta_filename(build_id: str) -> str:
 
 def save_delta_manifest(
     build_id: str,
-    files: Dict[str, Dict[str, Any]],
-    store_dir: Optional[Union[str, Path]] = None,
-) -> Optional[Path]:
+    files: dict[str, dict[str, Any]],
+    store_dir: str | Path | None = None,
+) -> Path | None:
     """Persist a build's file list to the local delta store.
 
     Returns the manifest path on success, or ``None`` on failure. The manifest
@@ -825,8 +852,8 @@ def save_delta_manifest(
 
 def load_delta_manifest(
     build_id: str,
-    store_dir: Optional[Union[str, Path]] = None,
-) -> Optional[Dict[str, Dict[str, Any]]]:
+    store_dir: str | Path | None = None,
+) -> dict[str, dict[str, Any]] | None:
     """Load a previously saved delta manifest for ``build_id``.
 
     Returns the ``files`` mapping, or ``None`` if the manifest is missing or
@@ -852,7 +879,7 @@ def load_delta_manifest(
     if not manifest_path.exists():
         return None
     try:
-        with open(manifest_path, "r", encoding="utf-8") as f:
+        with open(manifest_path, encoding="utf-8") as f:
             data: Any = json.load(f)
     except (OSError, json.JSONDecodeError) as exc:
         log_warn(f"Failed to read delta manifest for {build_id}: {exc}")
@@ -862,17 +889,17 @@ def load_delta_manifest(
     files: Any = data.get("files", {})
     if not isinstance(files, dict):
         return None
-    result: Dict[str, Dict[str, Any]] = {}
+    result: dict[str, dict[str, Any]] = {}
     for name, info in files.items():
         if isinstance(name, str) and isinstance(info, dict):
-            result[name] = cast(Dict[str, Any], info)
+            result[name] = cast(dict[str, Any], info)
     return result
 
 
 def compute_changed_files(
-    base_files: Dict[str, Dict[str, Any]],
-    target_files: Dict[str, Dict[str, Any]],
-) -> Set[str]:
+    base_files: dict[str, dict[str, Any]],
+    target_files: dict[str, dict[str, Any]],
+) -> set[str]:
     """Return the set of filenames that need to be re-downloaded.
 
     Equivalent to ``added | modified`` from :func:`calculate_delta`. This is
@@ -886,7 +913,7 @@ def compute_changed_files(
 def format_delta_summary(
     base_id: str,
     target_id: str,
-    delta: Dict[str, List[str]],
+    delta: dict[str, list[str]],
 ) -> str:
     """Format a human-readable summary of a delta for CLI output."""
     lines = [
@@ -903,7 +930,7 @@ def format_delta_summary(
 def _run_aria2_download(
     output_path: Path,
     aria2_input: Path,
-    download_list: List[Dict[str, Any]],
+    download_list: list[dict[str, Any]],
     verbose: bool = False,
     resume: bool = True,
 ) -> bool:
@@ -948,12 +975,14 @@ def _run_aria2_download(
             "--continue=true",
         ]
         if resume:
-            cmd.extend([
-                "--save-session",
-                str(session_file),
-                "--save-session-interval",
-                "60",
-            ])
+            cmd.extend(
+                [
+                    "--save-session",
+                    str(session_file),
+                    "--save-session-interval",
+                    "60",
+                ]
+            )
         if verbose:
             cmd.append("--log")
             cmd.append(str(aria2_log))
@@ -989,7 +1018,7 @@ def _run_aria2_download(
     except OSError as e:
         log_error(f"System error during download: {e}")
         return False
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - last-resort guard so an unexpected error surfaces as a log line, not a crash
         log_error(f"An unexpected error occurred during download: {e}")
         return False
     finally:
@@ -1002,17 +1031,17 @@ def _run_aria2_download(
 
 def download_build(
     build_id: str,
-    output_dir: Union[str, Path],
-    edition_filter: Optional[List[str]] = None,
-    build_info: Optional[Dict[str, Any]] = None,
+    output_dir: str | Path,
+    edition_filter: list[str] | None = None,
+    build_info: dict[str, Any] | None = None,
     verbose: bool = False,
     resume: bool = True,
     use_cache: bool = True,
     cache_ttl: int = DEFAULT_CACHE_TTL_SECONDS,
-    mirrors: Optional[List[str]] = None,
-    language: Optional[str] = "en-us",
-    delta_from: Optional[str] = None,
-    delta_store: Optional[Union[str, Path]] = None,
+    mirrors: list[str] | None = None,
+    language: str | None = "en-us",
+    delta_from: str | None = None,
+    delta_store: str | Path | None = None,
 ) -> bool:
     """Download UUP files for a specific build
 
@@ -1024,7 +1053,10 @@ def download_build(
     """
     if build_info is None:
         build_info = get_build_info_cached(
-            build_id, ttl_seconds=cache_ttl, force_refresh=not use_cache, language=language
+            build_id,
+            ttl_seconds=cache_ttl,
+            force_refresh=not use_cache,
+            language=language,
         )
 
     if not build_info:
@@ -1050,7 +1082,7 @@ def download_build(
     _prepare_output_directory(output_path)
 
     target_files = get_build_files(build_info)
-    delta_filter: Optional[Set[str]] = None
+    delta_filter: set[str] | None = None
     if delta_from:
         base_files = load_delta_manifest(delta_from, store_dir=delta_store)
         if base_files is None:
@@ -1067,9 +1099,7 @@ def download_build(
             )
             delta_filter = set(delta["added"]) | set(delta["modified"])
             if not delta_filter:
-                log_success(
-                    f"No changes detected vs {delta_from}; nothing to download"
-                )
+                log_success(f"No changes detected vs {delta_from}; nothing to download")
                 save_delta_manifest(build_id, target_files, store_dir=delta_store)
                 return True
 
@@ -1097,13 +1127,13 @@ def download_build(
 
 
 def _process_selected_build(
-    selected_build: Dict[str, Any],
-    output_dir: Union[str, Path],
+    selected_build: dict[str, Any],
+    output_dir: str | Path,
     verbose: bool = False,
     use_cache: bool = True,
     cache_ttl: int = DEFAULT_CACHE_TTL_SECONDS,
-    edition: Optional[str] = None,
-    mirrors: Optional[List[str]] = None,
+    edition: str | None = None,
+    mirrors: list[str] | None = None,
 ) -> bool:
     """Process the selected build for download."""
     build_id = selected_build["id"]
@@ -1164,11 +1194,11 @@ def _process_selected_build(
 
 
 def interactive_mode(
-    output_dir: Union[str, Path],
+    output_dir: str | Path,
     verbose: bool = False,
     use_cache: bool = True,
     cache_ttl: int = DEFAULT_CACHE_TTL_SECONDS,
-    edition: Optional[str] = None,
+    edition: str | None = None,
 ) -> bool:
     """Interactive mode for selecting and downloading builds"""
     print(f"\n{Colors.BOLD}UUP File Downloader for Windows 11{Colors.RESET}")
@@ -1215,14 +1245,14 @@ def interactive_mode(
             return False
 
 
-def get_profiles() -> Dict[str, Dict[str, Any]]:
+def get_profiles() -> dict[str, dict[str, Any]]:
     """Load build profiles from config file or return built-in defaults."""
     script_dir = Path(__file__).parent
     profiles_path = script_dir.parent / "config" / "profiles.json"
 
     if profiles_path.exists():
         try:
-            with open(profiles_path, "r", encoding="utf-8") as f:
+            with open(profiles_path, encoding="utf-8") as f:
                 data = json.load(f)
             if isinstance(data, dict):
                 profiles = data.get("profiles", PROFILES)
@@ -1234,7 +1264,7 @@ def get_profiles() -> Dict[str, Dict[str, Any]]:
     return PROFILES
 
 
-def get_pinned_build() -> Optional[Dict[str, Any]]:
+def get_pinned_build() -> dict[str, Any] | None:
     """Load pinned build configuration from .uup-pin.json in the project root."""
     script_dir = Path(__file__).parent
     project_root = script_dir.parent
@@ -1244,7 +1274,7 @@ def get_pinned_build() -> Optional[Dict[str, Any]]:
         return None
 
     try:
-        with open(pin_path, "r", encoding="utf-8") as f:
+        with open(pin_path, encoding="utf-8") as f:
             data = json.load(f)
             if isinstance(data, dict) and "build_id" in data:
                 return data
@@ -1257,15 +1287,15 @@ def get_pinned_build() -> Optional[Dict[str, Any]]:
 
 def save_pinned_build(
     build_id: str,
-    title: Optional[str] = None,
-    edition: Optional[str] = None,
+    title: str | None = None,
+    edition: str | None = None,
 ) -> bool:
     """Save a build as the pinned version for reproducibility."""
     script_dir = Path(__file__).parent
     project_root = script_dir.parent
     pin_path = project_root / ".uup-pin.json"
 
-    data: Dict[str, Any] = {"build_id": build_id}
+    data: dict[str, Any] = {"build_id": build_id}
     if title:
         data["title"] = title
     if edition:
@@ -1295,13 +1325,13 @@ def display_profiles() -> None:
         print()
 
 
-def get_profile(name: str) -> Optional[Dict[str, Any]]:
+def get_profile(name: str) -> dict[str, Any] | None:
     """Get a specific build profile by name."""
     profiles = get_profiles()
     return profiles.get(name)
 
 
-def load_component_groups(path: Optional[str] = None) -> Dict[str, Any]:
+def load_component_groups(path: str | None = None) -> dict[str, Any]:
     """Load component groups from config/component_groups.json.
 
     Returns a dict mapping group name -> {"description": str, "patterns": List[str]}.
@@ -1310,7 +1340,7 @@ def load_component_groups(path: Optional[str] = None) -> Dict[str, Any]:
     if path is None:
         path = COMPONENT_GROUPS_FILE
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             data: Any = json.load(f)
     except (OSError, json.JSONDecodeError, ValueError) as exc:
         log_warn(f"Could not load component groups from {path}: {exc}")
@@ -1322,40 +1352,44 @@ def load_component_groups(path: Optional[str] = None) -> Dict[str, Any]:
     if not isinstance(raw_groups, dict):
         log_warn(f"Component groups in {path} are not a mapping")
         return {}
-    result: Dict[str, Any] = {}
+    result: dict[str, Any] = {}
     for name, body in raw_groups.items():
         if not isinstance(name, str) or not isinstance(body, dict):
             continue
         patterns: Any = body.get("patterns", [])
         if not isinstance(patterns, list):
             continue
-        cleaned: List[str] = [p for p in patterns if isinstance(p, str) and p]
+        cleaned: list[str] = [p for p in patterns if isinstance(p, str) and p]
         if not cleaned:
             continue
-        description: str = body.get("description", "") if isinstance(body.get("description"), str) else ""
+        description: str = (
+            body.get("description", "")
+            if isinstance(body.get("description"), str)
+            else ""
+        )
         result[name] = {"description": description, "patterns": cleaned}
     return result
 
 
-def list_component_groups(path: Optional[str] = None) -> List[str]:
+def list_component_groups(path: str | None = None) -> list[str]:
     """Return the names of all available component groups (sorted)."""
     groups = load_component_groups(path)
     return sorted(groups.keys())
 
 
-def get_component_group(name: str, path: Optional[str] = None) -> Optional[Dict[str, Any]]:
+def get_component_group(name: str, path: str | None = None) -> dict[str, Any] | None:
     """Get a single component group by name, or None if not found."""
     groups = load_component_groups(path)
     return groups.get(name)
 
 
-def validate_component_groups(names: List[str], path: Optional[str] = None) -> List[str]:
+def validate_component_groups(names: list[str], path: str | None = None) -> list[str]:
     """Return the subset of `names` that exist in the component groups file.
 
     Logs a warning for any names that are unknown.
     """
     available = set(list_component_groups(path))
-    valid: List[str] = []
+    valid: list[str] = []
     for name in names:
         if name in available:
             valid.append(name)
@@ -1365,14 +1399,14 @@ def validate_component_groups(names: List[str], path: Optional[str] = None) -> L
 
 
 def collect_component_patterns(
-    group_names: List[str], path: Optional[str] = None
-) -> List[str]:
+    group_names: list[str], path: str | None = None
+) -> list[str]:
     """Collect deduplicated glob patterns from the given component groups.
 
     Order is preserved (group order, then pattern order within each group).
     """
-    seen: Set[str] = set()
-    combined: List[str] = []
+    seen: set[str] = set()
+    combined: list[str] = []
     for group_name in group_names:
         group = get_component_group(group_name, path)
         if not group:
@@ -1386,7 +1420,7 @@ def collect_component_patterns(
 
 
 def write_component_groups_for_build(
-    group_names: List[str], output_path: str = ".uup-groups"
+    group_names: list[str], output_path: str = ".uup-groups"
 ) -> bool:
     """Write the selected component groups to a file consumable by the build pipeline.
 
@@ -1395,15 +1429,14 @@ def write_component_groups_for_build(
     """
     try:
         with open(output_path, "w", encoding="utf-8") as f:
-            for name in group_names:
-                f.write(f"{name}\n")
+            f.writelines(f"{name}\n" for name in group_names)
         return True
     except OSError as exc:
         log_error(f"Could not write component groups file {output_path}: {exc}")
         return False
 
 
-def display_component_groups(path: Optional[str] = None) -> None:
+def display_component_groups(path: str | None = None) -> None:
     """Print all available component groups with descriptions to stdout."""
     groups = load_component_groups(path)
     if not groups:
@@ -1419,7 +1452,7 @@ def display_component_groups(path: Optional[str] = None) -> None:
     print()
 
 
-def parse_args(args: Optional[List[str]] = None) -> argparse.Namespace:
+def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Download UUP files from uupdump.net for Windows 11 ISO building",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -1492,7 +1525,9 @@ For more information, visit: https://uupdump.net
     )
 
     parser.add_argument(
-        "--verbose", action="store_true", help="Show verbose output including aria2c stderr/stdout"
+        "--verbose",
+        action="store_true",
+        help="Show verbose output including aria2c stderr/stdout",
     )
 
     parser.add_argument(
@@ -1641,15 +1676,13 @@ For more information, visit: https://uupdump.net
         "--delta-info",
         metavar="BUILD_ID",
         dest="delta_info",
-        help=(
-            "Show information about the saved delta manifest for BUILD_ID and exit."
-        ),
+        help=("Show information about the saved delta manifest for BUILD_ID and exit."),
     )
 
     return parser.parse_args(args)
 
 
-def _handle_info_mode(args: argparse.Namespace) -> Optional[int]:
+def _handle_info_mode(args: argparse.Namespace) -> int | None:
     """Handles info-only modes and returns the appropriate exit code. Returns None if not handled."""
     # List editions mode
     if args.editions:
@@ -1711,9 +1744,7 @@ def _handle_info_mode(args: argparse.Namespace) -> Optional[int]:
         if not files:
             log_error(f"No files found for build {build_id}")
             return 1
-        manifest_path = save_delta_manifest(
-            build_id, files, store_dir=args.delta_store
-        )
+        manifest_path = save_delta_manifest(build_id, files, store_dir=args.delta_store)
         if manifest_path:
             log_success(
                 f"Saved delta manifest for {build_id} ({len(files)} files) "
@@ -1734,7 +1765,9 @@ def _handle_info_mode(args: argparse.Namespace) -> Optional[int]:
         print(f"\n{Colors.BOLD}Delta Manifest:{Colors.RESET} {args.delta_info}\n")
         print(f"  Files: {len(files)}")
         total_size = sum(
-            int(info.get("size", 0)) for info in files.values() if isinstance(info, dict)
+            int(info.get("size", 0))
+            for info in files.values()
+            if isinstance(info, dict)
         )
         print(f"  Total size: {total_size} bytes")
         return 0
@@ -1742,7 +1775,7 @@ def _handle_info_mode(args: argparse.Namespace) -> Optional[int]:
     return None
 
 
-def _resolve_output_dir(output_arg: str) -> Optional[Path]:
+def _resolve_output_dir(output_arg: str) -> Path | None:
     """Resolves and validates the output directory to prevent traversal."""
     script_dir = Path(__file__).parent
     project_root = script_dir.parent
@@ -1795,7 +1828,7 @@ def main() -> int:
 
     # Handle write-groups mode
     if args.write_groups:
-        names: List[str] = []
+        names: list[str] = []
         if args.groups:
             names = [n.strip() for n in args.groups.split(",") if n.strip()]
         if not names:
@@ -1813,7 +1846,9 @@ def main() -> int:
     if args.use_pin:
         pin = get_pinned_build()
         if not pin:
-            log_error("No pinned build found. Use --pin-build with --build-id to create one.")
+            log_error(
+                "No pinned build found. Use --pin-build with --build-id to create one."
+            )
             return 1
         log_info(f"Using pinned build: {pin['build_id']}")
         args.build_id = pin["build_id"]
@@ -1842,21 +1877,19 @@ def main() -> int:
         profile_groups: Any = profile.get("component_groups", [])
         if isinstance(profile_groups, list) and profile_groups:
             valid_profile_groups = validate_component_groups(profile_groups)
-            if valid_profile_groups:
-                if write_component_groups_for_build(valid_profile_groups):
-                    log_info(
-                        f"Component groups for build: {', '.join(valid_profile_groups)}"
-                    )
+            if valid_profile_groups and write_component_groups_for_build(
+                valid_profile_groups
+            ):
+                log_info(
+                    f"Component groups for build: {', '.join(valid_profile_groups)}"
+                )
 
     # Handle --groups override (always wins over profile defaults)
     if args.groups:
         cli_groups = [n.strip() for n in args.groups.split(",") if n.strip()]
         valid_cli_groups = validate_component_groups(cli_groups)
-        if valid_cli_groups:
-            if write_component_groups_for_build(valid_cli_groups):
-                log_info(
-                    f"Component groups (from --groups): {', '.join(valid_cli_groups)}"
-                )
+        if valid_cli_groups and write_component_groups_for_build(valid_cli_groups):
+            log_info(f"Component groups (from --groups): {', '.join(valid_cli_groups)}")
 
     # Note: verbose is not info_only - it affects download behavior
     info_only_mode = (
@@ -1893,7 +1926,7 @@ def main() -> int:
         return 1
 
     # Mirrors mode: parse --mirrors option
-    custom_mirrors: Optional[List[str]] = None
+    custom_mirrors: list[str] | None = None
     if args.mirrors:
         custom_mirrors = [m.strip() for m in args.mirrors.split(",") if m.strip()]
         log_info(f"Using {len(custom_mirrors)} custom mirror(s)")
@@ -1901,7 +1934,7 @@ def main() -> int:
     # Direct build ID mode
     if args.build_id:
         log_info(f"Downloading build ID: {args.build_id}")
-        edition_filter: Optional[List[str]] = None
+        edition_filter: list[str] | None = None
         if args.edition:
             build_info = get_build_info_cached(
                 args.build_id,
@@ -1915,7 +1948,11 @@ def main() -> int:
 
         # Handle multi-language download
         if args.languages_download:
-            langs = [l.strip() for l in args.languages_download.split(",") if l.strip()]
+            langs = [
+                lang.strip()
+                for lang in args.languages_download.split(",")
+                if lang.strip()
+            ]
             if langs:
                 success = download_language_packs(
                     args.build_id,

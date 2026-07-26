@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+- Removed the three local `.pre-commit-config.yaml` hooks (`psscriptanalyzer-lint`,
+  `psscriptanalyzer-format`, `pester-tests`) that shelled out to
+  `.github/scripts/Lint-PowerShell.ps1`/`Format-PowerShell.ps1`/`Test-PowerShell.ps1` —
+  none of those scripts, nor the `.github/scripts/` directory, ever existed, so every
+  hook failed immediately with a "not recognized as the name of a script file" error.
+  Root cause: leftover config from before the Windows servicing pipeline was converted
+  to Python; there's no PowerShell codebase left to lint/format/test. The existing
+  `thetestlabs/py-psscriptanalyzer` hooks already cover lint+format for any `.ps1` file
+  in the repo. Also excluded `uupdump/` from those hooks (vendored upstream UUP-converter
+  content, same treatment as `scripts/custom_convert.sh` — not ours to reformat) and
+  excluded `CLAUDE.md` from `trailing-whitespace`/`end-of-file-fixer`/
+  `fix-byte-order-marker`/`mixed-line-ending`, discovered when running the full suite:
+  on a Windows checkout without symlink support, `CLAUDE.md` (a real git symlink to
+  `AGENTS.md`) materializes as a plain text file, so those hooks would silently corrupt
+  the symlink target (appending a trailing newline) if ever committed.
+- Brought the rest of the `.pre-commit-config.yaml` suite to green (`prek run --all-files`
+  now exits 0): fixed the remaining ruff lint errors post-autofix (an `@overload` ambiguity
+  in `download_uup.fetch_url` where both the `Literal[False]` and `Literal[True]` variants
+  declared defaults — made the `True` variant keyword-only with no default; an ambiguous
+  `l` loop variable; nested-if/nested-with simplifications; two intentional blind
+  `except Exception` boundaries marked with `# noqa: BLE001`); marked the Python scripts'
+  missing executable bits (`git add --chmod=+x`, matching the `chmod +x` step every Makefile
+  target already runs); reformatted two stray non-compliant JSON files
+  (`.claude/settings.json`, `renovate.json`, `.kilo/package.json`) with biome and excluded
+  `ventoy/` from `biome-ci` (vendored Ventoy config, same "not ours to reformat" treatment
+  as `uupdump/`); added `pyrightconfig.json` (`typeCheckingMode: standard`, scoped to
+  `scripts/download_uup.py`) since basedpyright's own stricter-than-pyright default rules
+  (`reportAny`, `reportExplicitAny`, `reportUnusedCallResult`, etc.) were failing the hook
+  on 357 pre-existing warnings that were never a deliberately-adopted bar — matches
+  AGENTS.md's existing "other scripts are not yet gated on this" and PLAN.md's "add strict
+  typing/coverage gates only if actually wanted".
 - Fixed a gap in the `RunSynchronousCommand` `<Order>` sequence in `ventoy/answer/autounattend.xml`'s WindowsPE pass (jumped from 20 to 22, and 24 to 26) left over from a prior edit that removed commands without renumbering the rest. Windows Setup requires these values to be contiguous starting at 1; the gap silently truncated the WindowsPE command chain after disk formatting, skipping image apply, bcdboot, driver injection, and the post-format reboot. Also fixed stray non-indented markup and trailing blank lines introduced by the same edit. Re-synced `config/autounattend.xml` to the corrected canonical copy, which carried the same class of gap.
 - Made the WindowsPE `diskpart.exe` and `dism.exe /Apply-Image` steps in `ventoy/answer/autounattend.xml` / `config/autounattend.xml` retry once (after a 5s pause) instead of aborting setup on the first failure, since both can fail transiently right after boot (disk not yet settled, USB enumeration races). If the retry also fails, setup still exits with `pause`/`exit /b 1` (the on-screen diskpart/dism error is preserved either way) rather than continuing on an unformatted or partially-applied disk.
 
@@ -16,6 +47,12 @@ All notable changes to this project will be documented in this file.
 - Folded the placeholder `config/TODO.md` reference link into the root `TODO.md`.
 
 ### Added
+- Wired up `prek` (already listed in `mise.toml`'s tools but unused) as the local hook
+  runner for `.pre-commit-config.yaml`: new `mise run precommit`/`precommit-install` tasks,
+  documented in `AGENTS.md`. Confirmed compatible with plain `pre-commit` first
+  (`prek validate-config` + `prek run --all-files --dry-run` resolve every existing hook
+  cleanly) — no config changes were needed, `pre-commit run --all-files`/`pre-commit install`
+  still work identically against the same file for contributors without prek.
 - Documented `config/ntlite-presets/*.xml` and `scripts/apply.reg` as a manual, Windows-only
   NTLite alternative to the automated build pipeline (`AGENTS.md` Config Rules, `README.md`).
   Neither was previously referenced by any script or doc.

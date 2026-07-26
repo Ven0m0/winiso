@@ -16,7 +16,9 @@ from win_utils import find_oscdimg, write_error_exit, write_success
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Build a bootable ISO from a staged directory via oscdimg.")
+    parser = argparse.ArgumentParser(
+        description="Build a bootable ISO from a staged directory via oscdimg."
+    )
     parser.add_argument("--iso-root", default=r"C:\ISO")
     parser.add_argument("--output-iso", default=r"C:\Win.iso")
     args = parser.parse_args()
@@ -36,7 +38,17 @@ def main() -> int:
 
     boot_data = f"2#p0,e,b{etfsboot}#pEF,e,b{efisys}"
     result = subprocess.run(
-        [oscdimg_path, "-m", "-o", "-u2", "-udfver102", f"-bootdata:{boot_data}", str(iso_root), args.output_iso]
+        [
+            oscdimg_path,
+            "-m",
+            "-o",
+            "-u2",
+            "-udfver102",
+            f"-bootdata:{boot_data}",
+            str(iso_root),
+            args.output_iso,
+        ],
+        check=False,
     )
     if result.returncode != 0:
         write_error_exit(f"oscdimg failed with exit code {result.returncode}")

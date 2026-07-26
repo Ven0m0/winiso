@@ -172,3 +172,12 @@ run = [
 description = "Lint and format JS/TS/JSON/HTML/CSS with biome"
 run = ["bun x @biomejs/biome check --write . --diagnostic-level=error"]
 
+# Run all .pre-commit-config.yaml hooks via prek (drop-in pre-commit replacement, same config)
+[tasks.precommit]
+description = "Run pre-commit hooks against all files (via prek; `pre-commit run --all-files` also works)"
+run = ["prek run --all-files"]
+
+# Install prek's git hook shims (equivalent to `pre-commit install`)
+[tasks.precommit-install]
+description = "Install git hooks via prek (equivalent to `pre-commit install`)"
+run = ["prek install"]

@@ -20,9 +20,21 @@ import sys
 from pathlib import Path
 
 import win_config
-from win_utils import find_oscdimg, invoke_dism, require_admin, safe_remove_directory, write_error_exit, write_step, write_success
+from win_utils import (
+    find_oscdimg,
+    invoke_dism,
+    require_admin,
+    safe_remove_directory,
+    write_error_exit,
+    write_step,
+    write_success,
+)
 
-EDGE_PATHS = ("Program Files (x86)/Microsoft/Edge", "Program Files (x86)/Microsoft/EdgeCore", "Program Files (x86)/Microsoft/EdgeUpdate")
+EDGE_PATHS = (
+    "Program Files (x86)/Microsoft/Edge",
+    "Program Files (x86)/Microsoft/EdgeCore",
+    "Program Files (x86)/Microsoft/EdgeUpdate",
+)
 
 PACKAGES_TO_REMOVE = (
     "Microsoft-Windows-Hello-Face-Package*",
@@ -49,34 +61,74 @@ FEATURES_TO_DISABLE = (
 FEATURES_TO_ENABLE = ("DirectPlay",)
 
 APPX_TO_REMOVE = (
-    "Clipchamp.Clipchamp*", "Microsoft.549981C3F5F10*", "Microsoft.BingNews*", "Microsoft.BingWeather*",
-    "Microsoft.GamingApp*", "Microsoft.GetHelp*", "Microsoft.Getstarted*", "Microsoft.MicrosoftOfficeHub*",
-    "Microsoft.MicrosoftSolitaireCollection*", "Microsoft.MicrosoftStickyNotes*", "Microsoft.Paint*",
-    "Microsoft.People*", "Microsoft.PowerAutomateDesktop*", "Microsoft.ScreenSketch*", "Microsoft.SecHealthUI*",
-    "Microsoft.StorePurchaseApp*", "Microsoft.Todos*", "Microsoft.Windows.Photos*", "Microsoft.WindowsAlarms*",
-    "Microsoft.WindowsCalculator*", "Microsoft.WindowsCamera*", "microsoft.windowscommunicationsapps*",
-    "Microsoft.WindowsFeedbackHub*", "Microsoft.WindowsMaps*", "Microsoft.WindowsNotepad*",
-    "Microsoft.WindowsSoundRecorder*", "Microsoft.WindowsStore*", "Microsoft.Xbox.TCUI*",
-    "Microsoft.XboxGameOverlay*", "Microsoft.XboxGamingOverlay*", "Microsoft.XboxIdentityProvider*",
-    "Microsoft.XboxSpeechToTextOverlay*", "Microsoft.YourPhone*", "Microsoft.ZuneMusic*", "Microsoft.ZuneVideo*",
-    "MicrosoftCorporationII.QuickAssist*", "MicrosoftWindows.Client.WebExperience*",
+    "Clipchamp.Clipchamp*",
+    "Microsoft.549981C3F5F10*",
+    "Microsoft.BingNews*",
+    "Microsoft.BingWeather*",
+    "Microsoft.GamingApp*",
+    "Microsoft.GetHelp*",
+    "Microsoft.Getstarted*",
+    "Microsoft.MicrosoftOfficeHub*",
+    "Microsoft.MicrosoftSolitaireCollection*",
+    "Microsoft.MicrosoftStickyNotes*",
+    "Microsoft.Paint*",
+    "Microsoft.People*",
+    "Microsoft.PowerAutomateDesktop*",
+    "Microsoft.ScreenSketch*",
+    "Microsoft.SecHealthUI*",
+    "Microsoft.StorePurchaseApp*",
+    "Microsoft.Todos*",
+    "Microsoft.Windows.Photos*",
+    "Microsoft.WindowsAlarms*",
+    "Microsoft.WindowsCalculator*",
+    "Microsoft.WindowsCamera*",
+    "microsoft.windowscommunicationsapps*",
+    "Microsoft.WindowsFeedbackHub*",
+    "Microsoft.WindowsMaps*",
+    "Microsoft.WindowsNotepad*",
+    "Microsoft.WindowsSoundRecorder*",
+    "Microsoft.WindowsStore*",
+    "Microsoft.Xbox.TCUI*",
+    "Microsoft.XboxGameOverlay*",
+    "Microsoft.XboxGamingOverlay*",
+    "Microsoft.XboxIdentityProvider*",
+    "Microsoft.XboxSpeechToTextOverlay*",
+    "Microsoft.YourPhone*",
+    "Microsoft.ZuneMusic*",
+    "Microsoft.ZuneVideo*",
+    "MicrosoftCorporationII.QuickAssist*",
+    "MicrosoftWindows.Client.WebExperience*",
 )
 
 CAPABILITIES_TO_REMOVE = (
-    "App.StepsRecorder*", "Browser.InternetExplorer*", "Hello.Face*", "MathRecognizer*",
-    "Microsoft.Wallpapers.Extended*", "Microsoft.Windows.MSPaint*", "Microsoft.Windows.Notepad*",
-    "Microsoft.Windows.PowerShell.ISE*", "Microsoft.Windows.SnippingTool*", "Microsoft.Windows.Wifi.Client*",
+    "App.StepsRecorder*",
+    "Browser.InternetExplorer*",
+    "Hello.Face*",
+    "MathRecognizer*",
+    "Microsoft.Wallpapers.Extended*",
+    "Microsoft.Windows.MSPaint*",
+    "Microsoft.Windows.Notepad*",
+    "Microsoft.Windows.PowerShell.ISE*",
+    "Microsoft.Windows.SnippingTool*",
+    "Microsoft.Windows.Wifi.Client*",
     "OneCoreUAP.OneSync*",
 )
 
 
 def dism_get_names(mount_dir: Path, args: list[str], identity_key: str) -> list[str]:
     """Parses "<identity_key> : Name" / "State : Installed" blocks from dism.exe output."""
-    result = subprocess.run(["dism.exe", f"/Image:{mount_dir}", *args], capture_output=True, text=True)
+    result = subprocess.run(
+        ["dism.exe", f"/Image:{mount_dir}", *args],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
     names: list[str] = []
     current: str | None = None
     for line in result.stdout.splitlines():
-        identity_match = re.match(rf"^{re.escape(identity_key)}\s*:\s*(.+)$", line.strip())
+        identity_match = re.match(
+            rf"^{re.escape(identity_key)}\s*:\s*(.+)$", line.strip()
+        )
         if identity_match:
             current = identity_match.group(1).strip()
             continue
@@ -105,39 +157,94 @@ def remove_packages(mount_dir: Path) -> None:
     print("Removing Windows Packages...")
     for name in dism_get_names(mount_dir, ["/Get-Packages"], "Package Identity"):
         if matches_any(name, PACKAGES_TO_REMOVE):
-            _ = subprocess.run(["dism.exe", f"/Image:{mount_dir}", "/Remove-Package", f"/PackageName:{name}", "/NoRestart"], capture_output=True)
+            _ = subprocess.run(
+                [
+                    "dism.exe",
+                    f"/Image:{mount_dir}",
+                    "/Remove-Package",
+                    f"/PackageName:{name}",
+                    "/NoRestart",
+                ],
+                capture_output=True,
+                check=False,
+            )
 
 
 def set_features(mount_dir: Path) -> None:
     print("Configuring Optional Features...")
     for feature in FEATURES_TO_DISABLE:
-        _ = subprocess.run(["dism.exe", f"/Image:{mount_dir}", "/Disable-Feature", f"/FeatureName:{feature}", "/NoRestart"], capture_output=True)
+        _ = subprocess.run(
+            [
+                "dism.exe",
+                f"/Image:{mount_dir}",
+                "/Disable-Feature",
+                f"/FeatureName:{feature}",
+                "/NoRestart",
+            ],
+            capture_output=True,
+            check=False,
+        )
     for feature in FEATURES_TO_ENABLE:
-        _ = subprocess.run(["dism.exe", f"/Image:{mount_dir}", "/Enable-Feature", f"/FeatureName:{feature}", "/All", "/NoRestart"], capture_output=True)
+        _ = subprocess.run(
+            [
+                "dism.exe",
+                f"/Image:{mount_dir}",
+                "/Enable-Feature",
+                f"/FeatureName:{feature}",
+                "/All",
+                "/NoRestart",
+            ],
+            capture_output=True,
+            check=False,
+        )
 
 
 def remove_appx_packages(mount_dir: Path) -> None:
     print("Removing AppX Packages...")
-    for name in dism_get_names(mount_dir, ["/Get-ProvisionedAppxPackages"], "DisplayName"):
+    for name in dism_get_names(
+        mount_dir, ["/Get-ProvisionedAppxPackages"], "DisplayName"
+    ):
         if matches_any(name, APPX_TO_REMOVE):
-            _ = subprocess.run(["dism.exe", f"/Image:{mount_dir}", "/Remove-ProvisionedAppxPackage", f"/PackageName:{name}"], capture_output=True)
+            _ = subprocess.run(
+                [
+                    "dism.exe",
+                    f"/Image:{mount_dir}",
+                    "/Remove-ProvisionedAppxPackage",
+                    f"/PackageName:{name}",
+                ],
+                capture_output=True,
+                check=False,
+            )
 
 
 def remove_capabilities(mount_dir: Path) -> None:
     print("Removing Capabilities...")
     for name in dism_get_names(mount_dir, ["/Get-Capabilities"], "Capability Identity"):
         if matches_any(name, CAPABILITIES_TO_REMOVE):
-            _ = subprocess.run(["dism.exe", f"/Image:{mount_dir}", "/Remove-Capability", f"/CapabilityName:{name}"], capture_output=True)
+            _ = subprocess.run(
+                [
+                    "dism.exe",
+                    f"/Image:{mount_dir}",
+                    "/Remove-Capability",
+                    f"/CapabilityName:{name}",
+                ],
+                capture_output=True,
+                check=False,
+            )
 
 
 def mount_iso(iso_path: Path) -> str:
     result = subprocess.run(
         [
-            "powershell", "-NoProfile", "-NonInteractive", "-Command",
+            "powershell",
+            "-NoProfile",
+            "-NonInteractive",
+            "-Command",
             f"(Mount-DiskImage -ImagePath '{iso_path}' -PassThru | Get-Volume).DriveLetter",
         ],
         capture_output=True,
         text=True,
+        check=False,
     )
     drive_letter = result.stdout.strip()
     if not drive_letter:
@@ -147,8 +254,15 @@ def mount_iso(iso_path: Path) -> str:
 
 def dismount_iso(iso_path: Path) -> None:
     _ = subprocess.run(
-        ["powershell", "-NoProfile", "-NonInteractive", "-Command", f"Dismount-DiskImage -ImagePath '{iso_path}'"],
+        [
+            "powershell",
+            "-NoProfile",
+            "-NonInteractive",
+            "-Command",
+            f"Dismount-DiskImage -ImagePath '{iso_path}'",
+        ],
         capture_output=True,
+        check=False,
     )
 
 
@@ -158,7 +272,9 @@ def run_debloat(mount_dir: Path, wim_path: Path) -> int:
     mount_dir.mkdir(parents=True, exist_ok=True)
 
     print("Mounting Windows Image...")
-    invoke_dism(["/Mount-Image", f"/ImageFile:{wim_path}", "/Index:1", f"/MountDir:{mount_dir}"])
+    invoke_dism(
+        ["/Mount-Image", f"/ImageFile:{wim_path}", "/Index:1", f"/MountDir:{mount_dir}"]
+    )
 
     try:
         remove_edge(mount_dir)
@@ -174,7 +290,9 @@ def run_debloat(mount_dir: Path, wim_path: Path) -> int:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Apply image settings to a Windows ISO or extracted folder.")
+    parser = argparse.ArgumentParser(
+        description="Apply image settings to a Windows ISO or extracted folder."
+    )
     parser.add_argument("--iso-path")
     parser.add_argument("--extract-path")
     parser.add_argument("--output-path")
@@ -198,7 +316,9 @@ def main() -> int:
         print("ERROR: Cannot specify both --iso-path and --extract-path")
         return 1
 
-    mount_dir = Path(args.mount_dir) if args.mount_dir else Path(win_config.DEFAULT_MOUNT_DIR)
+    mount_dir = (
+        Path(args.mount_dir) if args.mount_dir else Path(win_config.DEFAULT_MOUNT_DIR)
+    )
 
     if args.debloat:
         if not args.wim_path:
@@ -218,7 +338,11 @@ def main() -> int:
         if not iso_path.is_file():
             write_error_exit(f"ISO not found: {iso_path}")
 
-        output_path = Path(args.output_path) if args.output_path else iso_path.with_name(iso_path.stem + "_modified.iso")
+        output_path = (
+            Path(args.output_path)
+            if args.output_path
+            else iso_path.with_name(iso_path.stem + "_modified.iso")
+        )
 
         extract_dir = Path(win_config.TEMP_EXTRACT_DIR)
         shutil.rmtree(extract_dir, ignore_errors=True)
@@ -245,8 +369,18 @@ def main() -> int:
         safe_remove_directory(boot_mount)
         boot_mount.mkdir(parents=True, exist_ok=True)
 
-        invoke_dism(["/Mount-Image", f"/ImageFile:{extract_dir / 'sources' / 'boot.wim'}", f"/Index:{idx}", f"/MountDir:{boot_mount}", "/Optimize"])
-        _ = shutil.copy(script_dir / "autounattend.xml", boot_mount / "autounattend.xml")
+        invoke_dism(
+            [
+                "/Mount-Image",
+                f"/ImageFile:{extract_dir / 'sources' / 'boot.wim'}",
+                f"/Index:{idx}",
+                f"/MountDir:{boot_mount}",
+                "/Optimize",
+            ]
+        )
+        _ = shutil.copy(
+            script_dir / "autounattend.xml", boot_mount / "autounattend.xml"
+        )
         write_success(f"Copied autounattend.xml to boot.wim index {idx}")
 
         invoke_dism(["/Unmount-Image", f"/MountDir:{boot_mount}", "/Commit"])
@@ -259,8 +393,11 @@ def main() -> int:
 
     invoke_dism(
         [
-            "/Mount-Image", f"/ImageFile:{extract_dir / 'sources' / 'install.wim'}",
-            f"/Index:{win_config.INSTALL_WIM_INDEX}", f"/MountDir:{install_mount}", "/Optimize",
+            "/Mount-Image",
+            f"/ImageFile:{extract_dir / 'sources' / 'install.wim'}",
+            f"/Index:{win_config.INSTALL_WIM_INDEX}",
+            f"/MountDir:{install_mount}",
+            "/Optimize",
         ]
     )
     write_success(f"Mounted install.wim index {win_config.INSTALL_WIM_INDEX}")
@@ -274,12 +411,26 @@ def main() -> int:
     write_step("Disabling 8.3 filename creation...")
     reg_hive_path = install_mount / "Windows" / "System32" / "Config" / "SYSTEM"
     temp_hive = "HKLM\\WIM_REG"
-    _ = subprocess.run(["reg", "load", temp_hive, str(reg_hive_path)], capture_output=True)
     _ = subprocess.run(
-        ["reg", "add", f"{temp_hive}\\ControlSet001\\Control\\FileSystem", "/v", "NtfsDisable8dot3NameCreation", "/t", "REG_DWORD", "/d", "1", "/f"],
-        capture_output=True,
+        ["reg", "load", temp_hive, str(reg_hive_path)], capture_output=True, check=False
     )
-    _ = subprocess.run(["reg", "unload", temp_hive], capture_output=True)
+    _ = subprocess.run(
+        [
+            "reg",
+            "add",
+            f"{temp_hive}\\ControlSet001\\Control\\FileSystem",
+            "/v",
+            "NtfsDisable8dot3NameCreation",
+            "/t",
+            "REG_DWORD",
+            "/d",
+            "1",
+            "/f",
+        ],
+        capture_output=True,
+        check=False,
+    )
+    _ = subprocess.run(["reg", "unload", temp_hive], capture_output=True, check=False)
     write_success("8.3 filename creation disabled")
 
     write_step("Injecting post-install scripts...")
@@ -303,7 +454,9 @@ def main() -> int:
                 base_name = Path.cwd().name or "modified"
                 output_path = Path.cwd() / f"{base_name}_modified.iso"
             else:
-                output_path = Path(args.iso_path).with_name(Path(args.iso_path).stem + "_modified.iso")
+                output_path = Path(args.iso_path).with_name(
+                    Path(args.iso_path).stem + "_modified.iso"
+                )
 
         write_step("Creating ISO...")
         boot_etfs = extract_dir / "boot" / "etfsboot.com"
@@ -316,7 +469,18 @@ def main() -> int:
 
         boot_data = f"bootdata:2#p0,e,b{boot_etfs}#pEF,e,b{boot_efi}"
         result = subprocess.run(
-            [oscdimg_path, "-m", "-o", "-u2", "-udfver102", f"-l{win_config.VOLUME_LABEL}", boot_data, str(extract_dir), str(output_path)]
+            [
+                oscdimg_path,
+                "-m",
+                "-o",
+                "-u2",
+                "-udfver102",
+                f"-l{win_config.VOLUME_LABEL}",
+                boot_data,
+                str(extract_dir),
+                str(output_path),
+            ],
+            check=False,
         )
         if result.returncode != 0:
             write_error_exit("ISO creation failed")

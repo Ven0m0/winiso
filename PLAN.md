@@ -60,4 +60,9 @@ triage.
 - `.mise/tasks/` now holds only `install`; the rest of the tasks already live
   in `mise.toml`. Low-priority: fold `install` in too or leave as-is.
 - No `pyproject.toml`/mypy/pytest config exists. Ruff is configured via
-  `mise.toml`. Add strict typing/coverage gates only if actually wanted.
+  `mise.toml`. `pyrightconfig.json` sets `typeCheckingMode: standard` and scopes
+  `basedpyright` to `scripts/download_uup.py`, matching the pre-commit hook and
+  AGENTS.md's "other scripts are not yet gated on this" — basedpyright's own
+  stricter-than-pyright default rules (`reportAny`, `reportExplicitAny`, etc.)
+  were never deliberately opted into. Add strict typing/coverage gates only if
+  actually wanted.

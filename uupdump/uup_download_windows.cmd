@@ -4,7 +4,7 @@
 :: Proxy configuration
 :: If you need to configure a proxy to be able to connect to the internet,
 :: then you can do this by configuring the all_proxy environment variable.
-:: By default this variable is commented out, configuring aria2c to use 
+:: By default this variable is commented out, configuring aria2c to use
 :: the proxy settings specified by the system.
 ::
 :: Usage: set "all_proxy=proxy_address"

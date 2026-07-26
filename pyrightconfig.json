@@ -1,0 +1,4 @@
+{
+	"typeCheckingMode": "standard",
+	"include": ["scripts/download_uup.py"]
+}

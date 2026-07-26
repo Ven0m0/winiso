@@ -262,8 +262,15 @@ When editing workflows: use minimal `permissions`, pin action refs to exact SHA 
 ## Development Environment
 
 ```bash
-mise trust && mise install   # Install Python 3.14, ruff, shellcheck, ripgrep, etc.
+mise trust && mise install   # Install Python 3.14, ruff, shellcheck, ripgrep, prek, etc.
+mise run precommit-install   # One-time: install git hooks (prek, same config as pre-commit)
+mise run precommit           # Run all .pre-commit-config.yaml hooks against all files
 ```
+
+`.pre-commit-config.yaml` is run by `prek` (a Rust drop-in replacement, already in `mise.toml`) but
+stays plain pre-commit-compatible — `pre-commit run --all-files` / `pre-commit install` work
+identically against the same file for contributors without prek. Renovate keeps hook `rev:`
+pins current via its `pre-commit` manager (`renovate.json`).
 
 Tools managed by `mise.toml`: `python 3.14`, `uv`, `ruff`, `ty`, `basedpyright`,
 `shellcheck`, `shfmt`, `actionlint`, `ripgrep`, `fd`, `powershell` (needed only for

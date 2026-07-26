@@ -7,7 +7,15 @@ import subprocess
 import sys
 from pathlib import Path
 
-from pyutils import REQUIRED_TOOLS, check_iso_tool, check_required_tools, log_error, log_info, log_success, log_warn
+from pyutils import (
+    REQUIRED_TOOLS,
+    check_iso_tool,
+    check_required_tools,
+    log_error,
+    log_info,
+    log_success,
+    log_warn,
+)
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
@@ -75,7 +83,9 @@ def main() -> int:
     if debloat_list.is_file():
         log_success("debloat_list.txt found")
         lines = debloat_list.read_text(encoding="utf-8", errors="replace").splitlines()
-        pattern_count = sum(1 for line in lines if line.strip() and not line.startswith("#"))
+        pattern_count = sum(
+            1 for line in lines if line.strip() and not line.startswith("#")
+        )
         log_info(f"  → {pattern_count} debloat patterns configured")
     else:
         log_warn("debloat_list.txt not found - no apps will be removed")
@@ -86,9 +96,15 @@ def main() -> int:
         log_success("autounattend.xml found")
         xmllint = shutil.which("xmllint")
         if xmllint:
-            result = subprocess.run([xmllint, "--noout", str(autounattend)], capture_output=True)
+            result = subprocess.run(
+                [xmllint, "--noout", str(autounattend)],
+                capture_output=True,
+                check=False,
+            )
             if result.returncode != 0:
-                log_error("autounattend.xml failed XML validation - run 'xmllint --noout config/autounattend.xml' for details")
+                log_error(
+                    "autounattend.xml failed XML validation - run 'xmllint --noout config/autounattend.xml' for details"
+                )
                 errors += 1
             else:
                 log_success("  → autounattend.xml is valid XML")
@@ -97,7 +113,9 @@ def main() -> int:
             warnings += 1
     else:
         log_warn("autounattend.xml not found - installation will require manual setup")
-        log_info("  → Generate one at: https://schneegans.de/windows/unattend-generator/")
+        log_info(
+            "  → Generate one at: https://schneegans.de/windows/unattend-generator/"
+        )
         warnings += 1
 
     oem_dir = config_dir / "oem"
@@ -106,10 +124,14 @@ def main() -> int:
         if (oem_dir / "SetupComplete.cmd").is_file():
             log_success("  → SetupComplete.cmd found")
         else:
-            log_warn("  → SetupComplete.cmd not found - no first-boot tweaks will be applied")
+            log_warn(
+                "  → SetupComplete.cmd not found - no first-boot tweaks will be applied"
+            )
             warnings += 1
     else:
-        log_warn("OEM scripts directory not found - no first-boot tweaks will be applied")
+        log_warn(
+            "OEM scripts directory not found - no first-boot tweaks will be applied"
+        )
         warnings += 1
 
     print()
@@ -125,9 +147,15 @@ def main() -> int:
 
     print()
     log_info("Environment configuration...")
-    log_info(f"TARGET_EDITION: {os.environ.get('TARGET_EDITION', 'ProfessionalWorkstation (default)')}")
-    log_info(f"FALLBACK_EDITION: {os.environ.get('FALLBACK_EDITION', 'Professional (default)')}")
-    log_info(f"PAUSE_FOR_WINDOWS_STAGE: {os.environ.get('PAUSE_FOR_WINDOWS_STAGE', '0 (disabled)')}")
+    log_info(
+        f"TARGET_EDITION: {os.environ.get('TARGET_EDITION', 'ProfessionalWorkstation (default)')}"
+    )
+    log_info(
+        f"FALLBACK_EDITION: {os.environ.get('FALLBACK_EDITION', 'Professional (default)')}"
+    )
+    log_info(
+        f"PAUSE_FOR_WINDOWS_STAGE: {os.environ.get('PAUSE_FOR_WINDOWS_STAGE', '0 (disabled)')}"
+    )
 
     print()
     log_info("Checking available disk space...")

@@ -27,7 +27,14 @@ GROUPS_SELECTION_FILE = PROJECT_ROOT / ".uup-groups"
 COMPONENT_GROUPS_FILE = PROJECT_ROOT / "config" / "component_groups.json"
 
 # Never let a component group delete these, regardless of selection.
-PROTECTED_KEYWORDS = ("store", "webview", "vclibs", "ui.xaml", "defender", "desktopappinstaller")
+PROTECTED_KEYWORDS = (
+    "store",
+    "webview",
+    "vclibs",
+    "ui.xaml",
+    "defender",
+    "desktopappinstaller",
+)
 
 PATTERN_RE = re.compile(r"^[a-zA-Z0-9.*_-]+$")
 
@@ -83,12 +90,29 @@ def build_system_hive_script() -> str:
     lines: list[str] = []
     for cs in ("ControlSet001", "ControlSet002", "ControlSet003"):
         for service in ("DiagTrack", "dmwappushservice"):
-            lines += [f"nk {cs}\\Services\\{service}", f"cd {cs}\\Services\\{service}", "nv 4 Start", "ed Start", "4", "cd \\"]
+            lines += [
+                f"nk {cs}\\Services\\{service}",
+                f"cd {cs}\\Services\\{service}",
+                "nv 4 Start",
+                "ed Start",
+                "4",
+                "cd \\",
+            ]
     lines += ["nk Setup\\LabConfig", "cd Setup\\LabConfig"]
-    for value in ("BypassTPMCheck", "BypassSecureBootCheck", "BypassRAMCheck", "BypassStorageCheck", "BypassCPUCheck"):
+    for value in (
+        "BypassTPMCheck",
+        "BypassSecureBootCheck",
+        "BypassRAMCheck",
+        "BypassStorageCheck",
+        "BypassCPUCheck",
+    ):
         lines += [f"nv 4 {value}", f"ed {value}", "1"]
     lines += ["cd \\", "nk Setup\\MoSetup", "cd Setup\\MoSetup"]
-    lines += ["nv 4 AllowUpgradesWithUnsupportedTPMOrCPU", "ed AllowUpgradesWithUnsupportedTPMOrCPU", "1"]
+    lines += [
+        "nv 4 AllowUpgradesWithUnsupportedTPMOrCPU",
+        "ed AllowUpgradesWithUnsupportedTPMOrCPU",
+        "1",
+    ]
     lines += ["q", "y"]
     return "\n".join(lines) + "\n"
 
@@ -97,7 +121,9 @@ def load_patterns() -> list[str]:
     if not CONFIG_FILE.is_file():
         return []
     patterns: list[str] = []
-    for raw_line in CONFIG_FILE.read_text(encoding="utf-8", errors="replace").splitlines():
+    for raw_line in CONFIG_FILE.read_text(
+        encoding="utf-8", errors="replace"
+    ).splitlines():
         line = raw_line.strip()
         if not line or line.startswith("#"):
             continue
@@ -123,7 +149,9 @@ def load_group_patterns() -> list[str]:
         return []
     group_names = [
         line.strip()
-        for line in GROUPS_SELECTION_FILE.read_text(encoding="utf-8", errors="replace").splitlines()
+        for line in GROUPS_SELECTION_FILE.read_text(
+            encoding="utf-8", errors="replace"
+        ).splitlines()
         if line.strip()
     ]
     if not group_names or not COMPONENT_GROUPS_FILE.is_file():
@@ -169,35 +197,58 @@ def parse_edition_names(info_output: str) -> dict[int, str]:
     return editions
 
 
-def apply_registry_tweaks(wim_file: Path, index: int, temp_reg_dir: Path, index_cmd_lines: list[str]) -> None:
+def apply_registry_tweaks(
+    wim_file: Path, index: int, temp_reg_dir: Path, index_cmd_lines: list[str]
+) -> None:
     log_info(f"Applying registry tweaks to index {index}...")
 
     _ = subprocess.run(
         [
-            "wimlib-imagex", "extract", str(wim_file), str(index),
+            "wimlib-imagex",
+            "extract",
+            str(wim_file),
+            str(index),
             "/Windows/System32/config/SOFTWARE",
             "/Windows/System32/config/SYSTEM",
-            f"--dest-dir={temp_reg_dir}", "--no-acls",
+            f"--dest-dir={temp_reg_dir}",
+            "--no-acls",
         ],
         capture_output=True,
+        check=False,
     )
 
     software_hive = temp_reg_dir / "SOFTWARE"
     if software_hive.is_file():
-        _ = subprocess.run(["chntpw", "-e", str(software_hive)], input=SOFTWARE_HIVE_SCRIPT.encode(), capture_output=True)
-        index_cmd_lines.append(f"add '{software_hive}' '/Windows/System32/config/SOFTWARE'")
+        _ = subprocess.run(
+            ["chntpw", "-e", str(software_hive)],
+            input=SOFTWARE_HIVE_SCRIPT.encode(),
+            capture_output=True,
+            check=False,
+        )
+        index_cmd_lines.append(
+            f"add '{software_hive}' '/Windows/System32/config/SOFTWARE'"
+        )
 
     system_hive = temp_reg_dir / "SYSTEM"
     if system_hive.is_file():
-        _ = subprocess.run(["chntpw", "-e", str(system_hive)], input=build_system_hive_script().encode(), capture_output=True)
+        _ = subprocess.run(
+            ["chntpw", "-e", str(system_hive)],
+            input=build_system_hive_script().encode(),
+            capture_output=True,
+            check=False,
+        )
         index_cmd_lines.append(f"add '{system_hive}' '/Windows/System32/config/SYSTEM'")
 
 
 def build_base_delete_commands(patterns: list[str], nano: bool) -> list[str]:
     lines: list[str] = []
     for pattern in patterns:
-        lines.append(f'delete --recursive --force "/Program Files/WindowsApps/{pattern}"')
-        lines.append(f'delete --recursive --force "/ProgramData/Microsoft/Windows/AppRepository/Packages/{pattern}"')
+        lines.append(
+            f'delete --recursive --force "/Program Files/WindowsApps/{pattern}"'
+        )
+        lines.append(
+            f'delete --recursive --force "/ProgramData/Microsoft/Windows/AppRepository/Packages/{pattern}"'
+        )
     if nano:
         for path in NANO_FONT_DELETES:
             lines.append(f'delete --recursive --force "/{path}"')
@@ -218,9 +269,16 @@ def main() -> int:
     os.environ["WIMLIB_IMAGEX_IGNORE_CASE"] = "1"
     nano = os.environ.get("NANO", "0") == "1"
 
-    info_result = subprocess.run(["wimlib-imagex", "info", str(wim_file)], capture_output=True, text=True)
+    info_result = subprocess.run(
+        ["wimlib-imagex", "info", str(wim_file)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
     info_output = info_result.stdout if info_result.returncode == 0 else ""
-    image_count = info_output.count("\nIndex:") + (1 if info_output.startswith("Index:") else 0)
+    image_count = info_output.count("\nIndex:") + (
+        1 if info_output.startswith("Index:") else 0
+    )
     edition_names = parse_edition_names(info_output)
 
     patterns = load_patterns()
@@ -254,13 +312,16 @@ def main() -> int:
                     input="\n".join(index_cmd_lines) + "\n",
                     capture_output=True,
                     text=True,
+                    check=False,
                 )
                 for line in update_result.stdout.splitlines()[:20]:
                     if "does not exist" not in line:
                         print(line)
 
     log_info("Optimizing WIM...")
-    optimize_result = subprocess.run(["wimlib-imagex", "optimize", str(wim_file), "--recompress"])
+    optimize_result = subprocess.run(
+        ["wimlib-imagex", "optimize", str(wim_file), "--recompress"], check=False
+    )
     if optimize_result.returncode != 0:
         log_warn("Optimization returned non-zero")
 

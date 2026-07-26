@@ -33,9 +33,11 @@ def require_admin() -> None:
 
 
 def invoke_dism(args: list[str]) -> None:
-    result = subprocess.run(["dism.exe", *args])
+    result = subprocess.run(["dism.exe", *args], check=False)
     if result.returncode != 0:
-        write_error_exit(f"dism {' '.join(args)} failed with exit code {result.returncode}")
+        write_error_exit(
+            f"dism {' '.join(args)} failed with exit code {result.returncode}"
+        )
 
 
 def find_oscdimg() -> str:
@@ -43,14 +45,21 @@ def find_oscdimg() -> str:
     program_files_x86 = os.environ.get("ProgramFiles(x86)", "")
     candidates = [
         Path(userprofile) / "AppData/Local/Microsoft/WinGet/Links/oscdimg.exe",
-        Path(r"C:\Program Files (x86)\Windows Kits\10\Assessment and Deployment Kit\Deployment Tools\amd64\Oscdimg\oscdimg.exe"),
-        Path(r"C:\Program Files (x86)\Windows Kits\11\Assessment and Deployment Kit\Deployment Tools\amd64\Oscdimg\oscdimg.exe"),
-        Path(program_files_x86) / "Windows Kits/10/Deployment Tools/amd64/Oscdimg/oscdimg.exe",
+        Path(
+            r"C:\Program Files (x86)\Windows Kits\10\Assessment and Deployment Kit\Deployment Tools\amd64\Oscdimg\oscdimg.exe"
+        ),
+        Path(
+            r"C:\Program Files (x86)\Windows Kits\11\Assessment and Deployment Kit\Deployment Tools\amd64\Oscdimg\oscdimg.exe"
+        ),
+        Path(program_files_x86)
+        / "Windows Kits/10/Deployment Tools/amd64/Oscdimg/oscdimg.exe",
     ]
     for path in candidates:
         if path.is_file():
             return str(path)
-    write_error_exit("oscdimg.exe not found. Install Windows ADK Deployment Tools or winget it.")
+    write_error_exit(
+        "oscdimg.exe not found. Install Windows ADK Deployment Tools or winget it."
+    )
     raise AssertionError("unreachable")
 
 

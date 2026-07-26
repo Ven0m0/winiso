@@ -15,6 +15,7 @@ repos:
     rev: 1.39.9
     hooks:
       - id: basedpyright
+        files: ^scripts/download_uup\.py$
   - repo: https://github.com/asottile/pyupgrade
     rev: v3.21.2
     hooks:
@@ -24,14 +25,18 @@ repos:
     rev: v6.0.0
     hooks:
       - id: trailing-whitespace
+        exclude: ^CLAUDE\.md$
       - id: end-of-file-fixer
+        exclude: ^CLAUDE\.md$
       - id: check-yaml
         args: [--allow-multiple-documents]
       - id: check-json
       - id: check-toml
       - id: check-xml
       - id: fix-byte-order-marker
+        exclude: ^CLAUDE\.md$
       - id: mixed-line-ending
+        exclude: ^CLAUDE\.md$
       - id: detect-private-key
       - id: check-case-conflict
       - id: check-executables-have-shebangs
@@ -47,6 +52,7 @@ repos:
     rev: v2.5.5
     hooks:
       - id: biome-ci
+        exclude: ^ventoy/
   - repo: https://github.com/python-jsonschema/check-jsonschema
     rev: 0.37.4
     hooks:
@@ -66,33 +72,6 @@ repos:
     rev: v0.3.1 # Use the latest version
     hooks:
       - id: py-psscriptanalyzer # Lint your PowerShell
+        exclude: ^uupdump/
       - id: py-psscriptanalyzer-format # Format your PowerShell
-  
-  - repo: local
-    hooks:
-      - id: psscriptanalyzer-lint
-        name: PSScriptAnalyzer (Lint)
-        description: Run PSScriptAnalyzer for PowerShell linting
-        entry: pwsh -NoProfile -File .github/scripts/Lint-PowerShell.ps1 -CheckMode
-        language: system
-        types: [powershell]
-        files: \.(ps1|psm1|psd1)$
-        stages: [pre-commit]
-
-      - id: psscriptanalyzer-format
-        name: PowerShell Format Check
-        description: Check PowerShell file formatting (indentation, BOM, trailing whitespace)
-        entry: pwsh -NoProfile -File .github/scripts/Format-PowerShell.ps1 -CheckMode
-        language: system
-        types: [powershell]
-        files: \.(ps1|psm1|psd1)$
-        stages: [pre-commit]
-
-      - id: pester-tests
-        name: Pester Tests
-        description: Run Pester unit tests for PowerShell scripts
-        entry: pwsh -NoProfile -File .github/scripts/Test-PowerShell.ps1
-        language: system
-        pass_filenames: false
-        stages: [pre-commit]
-        always_run: false
+        exclude: ^uupdump/

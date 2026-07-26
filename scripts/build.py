@@ -73,7 +73,9 @@ def main() -> int:
     args = parse_args()
 
     log_info("Running prerequisite validation...")
-    result = subprocess.run([sys.executable, str(SCRIPT_DIR / "validate_prereqs.py")])
+    result = subprocess.run(
+        [sys.executable, str(SCRIPT_DIR / "validate_prereqs.py")], check=False
+    )
     if result.returncode != 0:
         log_error("Prerequisite validation failed. Please fix errors and try again.")
         return 1
@@ -132,6 +134,7 @@ def main() -> int:
         ["bash", str(SCRIPT_DIR / "custom_convert.sh"), "wim", str(UUP_DIR), "0"],
         cwd=SCRIPT_DIR,
         env=env,
+        check=False,
     )
     if result.returncode != 0:
         log_error("Build failed during conversion.")

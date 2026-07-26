@@ -1,14 +1,13 @@
+import argparse
+import json
+import os
+import shutil
+import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
-import tempfile
-import shutil
-import os
-import json
-import argparse
-from unittest.mock import patch, MagicMock
-
-import subprocess
+from unittest.mock import MagicMock, patch
 
 # Add the scripts directory to sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
@@ -120,9 +119,7 @@ class TestDownloadBuild(unittest.TestCase):
 
     @patch("download_uup.get_build_info_cached")
     @patch("download_uup.log_error")
-    def test_download_build_no_files(
-        self, mock_log_error, mock_get_build_info_cached
-    ):
+    def test_download_build_no_files(self, mock_log_error, mock_get_build_info_cached):
         mock_get_build_info_cached.return_value = {"files": {}}
         result = download_uup.download_build("build123", Path("out"))
         self.assertFalse(result)
@@ -149,9 +146,7 @@ class TestDownloadBuild(unittest.TestCase):
             build_info=build_info,
         )
         self.assertFalse(result)
-        mock_log_error.assert_called_with(
-            "No files to download after filtering"
-        )
+        mock_log_error.assert_called_with("No files to download after filtering")
 
 
 class TestGetLatestBuilds(unittest.TestCase):
@@ -218,7 +213,6 @@ class TestGetLatestBuilds(unittest.TestCase):
         self.assertEqual(result[0]["title"], "Windows 11 Build 2")
         self.assertEqual(result[1]["id"], "build-3")
         self.assertEqual(result[1]["title"], "Windows 11 Build 3")
-
 
 
 class TestFetchLatestFromWU(unittest.TestCase):
@@ -427,8 +421,8 @@ class TestFetchUrl(unittest.TestCase):
     @patch("download_uup.urlopen")
     @patch("download_uup.log_error")
     def test_fetch_url_http_error(self, mock_log_error, mock_urlopen):
-        from urllib.error import HTTPError
         from io import BytesIO
+        from urllib.error import HTTPError
 
         mock_urlopen.side_effect = HTTPError(
             "http://example.com", 404, "Not Found", {}, BytesIO(b"")
@@ -467,9 +461,8 @@ class TestFetchUrl(unittest.TestCase):
     @patch("download_uup.urlopen")
     @patch("download_uup.log_error")
     def test_fetch_url_timeout_error(self, mock_log_error, mock_urlopen):
-        import socket
 
-        mock_urlopen.side_effect = socket.timeout("timed out")
+        mock_urlopen.side_effect = TimeoutError("timed out")
 
         result = download_uup.fetch_url("http://example.com")
 
@@ -532,7 +525,9 @@ class TestRunAria2Download(unittest.TestCase):
         )
 
         self.assertFalse(result)
-        mock_log_warn.assert_called_with("\nDownload cancelled by user - session saved for resume")
+        mock_log_warn.assert_called_with(
+            "\nDownload cancelled by user - session saved for resume"
+        )
 
     @patch("builtins.open", new_callable=unittest.mock.mock_open)
     @patch("subprocess.run")
@@ -543,7 +538,7 @@ class TestRunAria2Download(unittest.TestCase):
         mock_run.side_effect = Exception("Unexpected error")
         dl_list = [{"url": "http://test", "name": "test.esd"}]
 
-        result = download_uup._run_aria2_download(
+        download_uup._run_aria2_download(
             Path("out"), Path("in.txt"), dl_list, verbose=False
         )
 
@@ -554,9 +549,7 @@ class TestRunAria2Download(unittest.TestCase):
     @patch("builtins.open", new_callable=unittest.mock.mock_open)
     @patch("subprocess.run")
     @patch("download_uup.log_error")
-    def test_run_aria2_download_os_error(
-        self, mock_log_error, mock_run, mock_open
-    ):
+    def test_run_aria2_download_os_error(self, mock_log_error, mock_run, mock_open):
         mock_run.side_effect = FileNotFoundError("No such file")
         dl_list = [{"url": "http://test", "name": "test.esd"}]
 
@@ -565,16 +558,12 @@ class TestRunAria2Download(unittest.TestCase):
         )
 
         self.assertFalse(result)
-        mock_log_error.assert_called_with(
-            "System error during download: No such file"
-        )
+        mock_log_error.assert_called_with("System error during download: No such file")
 
     @patch("builtins.open", new_callable=unittest.mock.mock_open)
     @patch("subprocess.run")
     @patch("download_uup.Path.unlink")
-    def test_run_aria2_download_success(
-        self, mock_unlink, mock_run, mock_open
-    ):
+    def test_run_aria2_download_success(self, mock_unlink, mock_run, mock_open):
         mock_result = unittest.mock.MagicMock()
         mock_result.stdout = "Download progress"
         mock_run.return_value = mock_result
@@ -608,17 +597,15 @@ class TestRunAria2Download(unittest.TestCase):
     @patch("builtins.open", new_callable=unittest.mock.mock_open)
     @patch("subprocess.run")
     @patch("download_uup.log_error")
-    def test_run_aria2_download_invalid_filename(self, mock_log_error, mock_run, mock_open):
+    def test_run_aria2_download_invalid_filename(
+        self, mock_log_error, mock_run, mock_open
+    ):
         dl_list = [{"url": "http://test", "name": "../escape.esd"}]
 
-        result = download_uup._run_aria2_download(
-            Path("out"), Path("in.txt"), dl_list
-        )
+        result = download_uup._run_aria2_download(Path("out"), Path("in.txt"), dl_list)
 
         self.assertFalse(result)
-        mock_log_error.assert_called_with(
-            "Invalid filename detected: ../escape.esd"
-        )
+        mock_log_error.assert_called_with("Invalid filename detected: ../escape.esd")
 
 
 class TestPrepareDownloadList(unittest.TestCase):
@@ -631,7 +618,10 @@ class TestPrepareDownloadList(unittest.TestCase):
         result = download_uup._prepare_download_list(build_id, files)
 
         self.assertEqual(len(result), 2)
-        self.assertEqual(result[0]["url"], "https://uupdump.net/get.php?id=test-id&pack=file1.esd&aria2=2")
+        self.assertEqual(
+            result[0]["url"],
+            "https://uupdump.net/get.php?id=test-id&pack=file1.esd&aria2=2",
+        )
         self.assertEqual(result[0]["name"], "file1.esd")
 
     def test_prepare_download_list_with_filter(self):
@@ -929,12 +919,18 @@ class TestProcessSelectedBuild(unittest.TestCase):
     @patch("download_uup.select_editions", return_value=None)
     @patch("download_uup.get_build_info_cached")
     def test_process_selected_build_success(
-        self, mock_get_build_info_cached, mock_select_editions, mock_input, mock_download_build
+        self,
+        mock_get_build_info_cached,
+        mock_select_editions,
+        mock_input,
+        mock_download_build,
     ):
         mock_get_build_info_cached.return_value = {"files": {}}
         selected_build = {"id": "test-build-id", "title": "Test Build"}
 
-        result = download_uup._process_selected_build(selected_build, Path("/tmp"), verbose=False)
+        result = download_uup._process_selected_build(
+            selected_build, Path("/tmp"), verbose=False
+        )
 
         self.assertTrue(result)
         mock_download_build.assert_called_once()
@@ -943,7 +939,10 @@ class TestProcessSelectedBuild(unittest.TestCase):
     @patch("download_uup.resolve_edition_filter", return_value=["filter"])
     @patch("download_uup.get_build_info_cached")
     def test_process_selected_build_with_edition(
-        self, mock_get_build_info_cached, mock_resolve_edition_filter, mock_download_build
+        self,
+        mock_get_build_info_cached,
+        mock_resolve_edition_filter,
+        mock_download_build,
     ):
         mock_get_build_info_cached.return_value = {"files": {"a.esd": {"size": 1}}}
         selected_build = {"id": "test-build-id", "title": "Test Build"}
@@ -1027,7 +1026,9 @@ class TestProfiles(unittest.TestCase):
     @patch("builtins.print")
     def test_display_profiles(self, mock_print):
         download_uup.display_profiles()
-        calls = [str(call.args[0]) if call.args else "" for call in mock_print.call_args_list]
+        calls = [
+            str(call.args[0]) if call.args else "" for call in mock_print.call_args_list
+        ]
         self.assertTrue(any("Available Build Profiles" in c for c in calls))
 
 
@@ -1055,7 +1056,7 @@ class TestPinFunctions(unittest.TestCase):
         def _patched_path(*args, **kwargs):
             # Replace the project_root path with our temp dir
             if args and args[0] == __file__:
-                p = self._orig_path(*args, **kwargs)
+                self._orig_path(*args, **kwargs)
                 return MagicMock()
             return self._orig_path(*args, **kwargs)
 
@@ -1147,13 +1148,13 @@ class TestCache(unittest.TestCase):
     def test_latest_builds_cached_uses_cache(self):
         from unittest.mock import patch
 
-        sample = [{"id": "b1", "title": "Test", "created": 1, "build": "1", "arch": "x64"}]
+        sample = [
+            {"id": "b1", "title": "Test", "created": 1, "build": "1", "arch": "x64"}
+        ]
         with patch.object(
             download_uup, "get_latest_builds", return_value=sample
         ) as mock_api:
-            first = download_uup.get_latest_builds_cached(
-                max_results=5, ttl_seconds=60
-            )
+            first = download_uup.get_latest_builds_cached(max_results=5, ttl_seconds=60)
             second = download_uup.get_latest_builds_cached(
                 max_results=5, ttl_seconds=60
             )
@@ -1179,9 +1180,7 @@ class TestCache(unittest.TestCase):
     def test_latest_builds_cached_api_failure_no_cache(self):
         from unittest.mock import patch
 
-        with patch.object(
-            download_uup, "get_latest_builds", return_value=None
-        ):
+        with patch.object(download_uup, "get_latest_builds", return_value=None):
             result = download_uup.get_latest_builds_cached(
                 max_results=5, ttl_seconds=60
             )
@@ -1240,15 +1239,11 @@ class TestEditionSelection(unittest.TestCase):
         self.assertIsNone(result)
 
     def test_resolve_edition_filter_known(self):
-        result = download_uup.resolve_edition_filter(
-            self._build_info(), "professional"
-        )
+        result = download_uup.resolve_edition_filter(self._build_info(), "professional")
         self.assertEqual(result, ["Microsoft.Windows.Professional.esd"])
 
     def test_resolve_edition_filter_case_insensitive(self):
-        result = download_uup.resolve_edition_filter(
-            self._build_info(), "ENTERPRISE"
-        )
+        result = download_uup.resolve_edition_filter(self._build_info(), "ENTERPRISE")
         self.assertEqual(result, ["Microsoft.Windows.Enterprise.esd"])
 
     def test_resolve_edition_filter_prefix(self):
@@ -1256,9 +1251,7 @@ class TestEditionSelection(unittest.TestCase):
         self.assertEqual(result, ["Microsoft.Windows.Home.esd"])
 
     def test_resolve_edition_filter_unknown(self):
-        result = download_uup.resolve_edition_filter(
-            self._build_info(), "datacenter"
-        )
+        result = download_uup.resolve_edition_filter(self._build_info(), "datacenter")
         self.assertIsNone(result)
 
     def test_resolve_edition_filter_no_edition_files(self):
@@ -1421,9 +1414,7 @@ class TestComponentGroups(unittest.TestCase):
         self.assertTrue(args.list_groups)
 
     def test_parse_args_write_groups_flag(self):
-        args = parse_args(
-            ["--groups", "gaming,telemetry", "--write-groups", "/tmp/x"]
-        )
+        args = parse_args(["--groups", "gaming,telemetry", "--write-groups", "/tmp/x"])
         self.assertEqual(args.write_groups, "/tmp/x")
         self.assertEqual(args.groups, "gaming,telemetry")
 
@@ -1467,19 +1458,24 @@ class TestMainInfoModes(unittest.TestCase):
 
     @patch("download_uup.get_pinned_build", return_value={"build_id": "abc"})
     def test_main_show_pin_present(self, mock_get_pin):
-        with patch.object(sys, "argv", ["download_uup.py", "--show-pin"]):
-            with patch("builtins.print") as mock_print:
-                rc = download_uup.main()
+        with (
+            patch.object(sys, "argv", ["download_uup.py", "--show-pin"]),
+            patch("builtins.print") as mock_print,
+        ):
+            rc = download_uup.main()
         self.assertEqual(rc, 0)
         self.assertTrue(mock_print.called)
 
-    @patch("download_uup.get_pinned_build", return_value={
-        "build_id": "abc", "title": "Win11", "edition": "Pro"
-    })
+    @patch(
+        "download_uup.get_pinned_build",
+        return_value={"build_id": "abc", "title": "Win11", "edition": "Pro"},
+    )
     def test_main_show_pin_with_title_and_edition(self, mock_get_pin):
-        with patch.object(sys, "argv", ["download_uup.py", "--show-pin"]):
-            with patch("builtins.print") as mock_print:
-                rc = download_uup.main()
+        with (
+            patch.object(sys, "argv", ["download_uup.py", "--show-pin"]),
+            patch("builtins.print") as mock_print,
+        ):
+            rc = download_uup.main()
         self.assertEqual(rc, 0)
         printed = " ".join(str(c.args[0]) for c in mock_print.call_args_list)
         self.assertIn("Win11", printed)
@@ -1493,40 +1489,48 @@ class TestMainInfoModes(unittest.TestCase):
         mock_display.assert_called_once()
 
     def test_main_write_groups_requires_groups(self):
-        with patch.object(sys, "argv", ["download_uup.py", "--write-groups", "/tmp/x"]):
-            with patch("download_uup.log_error") as mock_log_error:
-                rc = download_uup.main()
+        with (
+            patch.object(sys, "argv", ["download_uup.py", "--write-groups", "/tmp/x"]),
+            patch("download_uup.log_error") as mock_log_error,
+        ):
+            rc = download_uup.main()
         self.assertEqual(rc, 1)
         mock_log_error.assert_called()
 
     @patch("download_uup.write_component_groups_for_build", return_value=False)
     def test_main_write_groups_write_failure(self, mock_write):
         with patch.object(
-            sys, "argv",
+            sys,
+            "argv",
             ["download_uup.py", "--groups", "gaming", "--write-groups", "/tmp/x"],
         ):
             rc = download_uup.main()
         self.assertEqual(rc, 1)
 
     def test_main_use_pin_no_pin(self):
-        with patch.object(sys, "argv", ["download_uup.py", "--use-pin"]):
-            with patch("download_uup.get_pinned_build", return_value=None), \
-                 patch("download_uup.log_error") as mock_log_error:
-                rc = download_uup.main()
+        with (
+            patch.object(sys, "argv", ["download_uup.py", "--use-pin"]),
+            patch("download_uup.get_pinned_build", return_value=None),
+            patch("download_uup.log_error") as mock_log_error,
+        ):
+            rc = download_uup.main()
         self.assertEqual(rc, 1)
         mock_log_error.assert_called()
 
     def test_main_pin_build_without_build_id(self):
-        with patch.object(sys, "argv", ["download_uup.py", "--pin-build"]):
-            with patch("download_uup.log_error") as mock_log_error:
-                rc = download_uup.main()
+        with (
+            patch.object(sys, "argv", ["download_uup.py", "--pin-build"]),
+            patch("download_uup.log_error") as mock_log_error,
+        ):
+            rc = download_uup.main()
         self.assertEqual(rc, 1)
         mock_log_error.assert_called()
 
     @patch("download_uup.save_pinned_build", return_value=False)
     def test_main_pin_build_failure(self, mock_save):
         with patch.object(
-            sys, "argv",
+            sys,
+            "argv",
             ["download_uup.py", "--build-id", "abc", "--pin-build"],
         ):
             rc = download_uup.main()
@@ -1559,29 +1563,33 @@ class TestMainInfoModes(unittest.TestCase):
     @patch("download_uup.get_build_info_cached", return_value=None)
     @patch("download_uup.check_dependencies", return_value=True)
     def test_main_build_id_no_info(self, mock_check, mock_get_info):
-        with patch.object(sys, "argv", ["download_uup.py", "--build-id", "abc"]):
-            with patch("download_uup.log_error") as mock_log_error:
-                rc = download_uup.main()
+        with (
+            patch.object(sys, "argv", ["download_uup.py", "--build-id", "abc"]),
+            patch("download_uup.log_error") as mock_log_error,
+        ):
+            rc = download_uup.main()
         self.assertEqual(rc, 1)
         mock_log_error.assert_called()
 
-    @patch("download_uup.get_build_info_cached", return_value={
-        "files": {"Microsoft.Windows.Professional.esd": {"size": 1}}
-    })
+    @patch(
+        "download_uup.get_build_info_cached",
+        return_value={"files": {"Microsoft.Windows.Professional.esd": {"size": 1}}},
+    )
     @patch("download_uup.check_dependencies", return_value=True)
     def test_main_build_id_with_edition(self, mock_check, mock_get_info):
-        with patch.object(
-            sys, "argv",
-            ["download_uup.py", "--build-id", "abc", "--edition", "professional"],
+        with (
+            patch.object(
+                sys,
+                "argv",
+                ["download_uup.py", "--build-id", "abc", "--edition", "professional"],
+            ),
+            patch("download_uup.download_build", return_value=True) as mock_dl,
         ):
-            with patch("download_uup.download_build", return_value=True) as mock_dl:
-                rc = download_uup.main()
+            rc = download_uup.main()
         self.assertEqual(rc, 0)
         mock_dl.assert_called_once()
         args, _ = mock_dl.call_args
-        self.assertEqual(
-            args[2], ["Microsoft.Windows.Professional.esd"]
-        )
+        self.assertEqual(args[2], ["Microsoft.Windows.Professional.esd"])
 
     @patch("download_uup.get_latest_builds_cached", return_value=[{"id": "x"}])
     @patch("download_uup.display_builds")
@@ -1600,21 +1608,25 @@ class TestMainInfoModes(unittest.TestCase):
         self.assertEqual(rc, 1)
 
     def test_main_preset_unknown(self):
-        with patch.object(
-            sys, "argv", ["download_uup.py", "--preset", "no-such-profile"]
+        with (
+            patch.object(
+                sys, "argv", ["download_uup.py", "--preset", "no-such-profile"]
+            ),
+            patch("download_uup.log_error") as mock_log_error,
         ):
-            with patch("download_uup.log_error") as mock_log_error:
-                rc = download_uup.main()
+            rc = download_uup.main()
         self.assertEqual(rc, 1)
         mock_log_error.assert_called()
 
     @patch("download_uup.check_dependencies", return_value=True)
     def test_main_interactive(self, mock_check):
-        with patch.object(sys, "argv", ["download_uup.py"]):
-            with patch(
+        with (
+            patch.object(sys, "argv", ["download_uup.py"]),
+            patch(
                 "download_uup.interactive_mode", return_value=True
-            ) as mock_interactive:
-                rc = download_uup.main()
+            ) as mock_interactive,
+        ):
+            rc = download_uup.main()
         self.assertEqual(rc, 0)
         mock_interactive.assert_called_once()
 
@@ -1622,13 +1634,17 @@ class TestMainInfoModes(unittest.TestCase):
 class TestHandleInfoMode(unittest.TestCase):
     """Tests for _handle_info_mode individual branches."""
 
-    @patch("download_uup.get_available_editions", return_value={
-        "editionList": ["pro"], "editionFancyNames": {"pro": "Pro"}
-    })
+    @patch(
+        "download_uup.get_available_editions",
+        return_value={"editionList": ["pro"], "editionFancyNames": {"pro": "Pro"}},
+    )
     def test_editions_success(self, mock_get):
         from argparse import Namespace
+
         args = Namespace(
-            editions="abc", languages=None, latest=False,
+            editions="abc",
+            languages=None,
+            latest=False,
         )
         with patch("builtins.print"):
             rc = download_uup._handle_info_mode(args)
@@ -1637,19 +1653,26 @@ class TestHandleInfoMode(unittest.TestCase):
     @patch("download_uup.get_available_editions", return_value=None)
     def test_editions_failure(self, mock_get):
         from argparse import Namespace
+
         args = Namespace(
-            editions="abc", languages=None, latest=False,
+            editions="abc",
+            languages=None,
+            latest=False,
         )
         rc = download_uup._handle_info_mode(args)
         self.assertEqual(rc, 1)
 
-    @patch("download_uup.get_available_languages", return_value={
-        "langList": ["en-us"], "langFancyNames": {"en-us": "English"}
-    })
+    @patch(
+        "download_uup.get_available_languages",
+        return_value={"langList": ["en-us"], "langFancyNames": {"en-us": "English"}},
+    )
     def test_languages_success(self, mock_get):
         from argparse import Namespace
+
         args = Namespace(
-            editions=None, languages="abc", latest=False,
+            editions=None,
+            languages="abc",
+            latest=False,
         )
         with patch("builtins.print"):
             rc = download_uup._handle_info_mode(args)
@@ -1658,20 +1681,33 @@ class TestHandleInfoMode(unittest.TestCase):
     @patch("download_uup.get_available_languages", return_value=None)
     def test_languages_failure(self, mock_get):
         from argparse import Namespace
+
         args = Namespace(
-            editions=None, languages="abc", latest=False,
+            editions=None,
+            languages="abc",
+            latest=False,
         )
         rc = download_uup._handle_info_mode(args)
         self.assertEqual(rc, 1)
 
-    @patch("download_uup.fetch_latest_from_wu", return_value={
-        "updateId": "u1", "updateTitle": "T", "foundBuild": "B", "arch": "x64"
-    })
+    @patch(
+        "download_uup.fetch_latest_from_wu",
+        return_value={
+            "updateId": "u1",
+            "updateTitle": "T",
+            "foundBuild": "B",
+            "arch": "x64",
+        },
+    )
     def test_latest_success(self, mock_get):
         from argparse import Namespace
+
         args = Namespace(
-            editions=None, languages=None, latest=True,
-            arch="amd64", ring="Retail",
+            editions=None,
+            languages=None,
+            latest=True,
+            arch="amd64",
+            ring="Retail",
         )
         with patch("builtins.print"):
             rc = download_uup._handle_info_mode(args)
@@ -1680,18 +1716,27 @@ class TestHandleInfoMode(unittest.TestCase):
     @patch("download_uup.fetch_latest_from_wu", return_value=None)
     def test_latest_failure(self, mock_get):
         from argparse import Namespace
+
         args = Namespace(
-            editions=None, languages=None, latest=True,
-            arch="amd64", ring="Retail",
+            editions=None,
+            languages=None,
+            latest=True,
+            arch="amd64",
+            ring="Retail",
         )
         rc = download_uup._handle_info_mode(args)
         self.assertEqual(rc, 1)
 
     def test_not_handled(self):
         from argparse import Namespace
+
         args = Namespace(
-            editions=None, languages=None, latest=False, update_info=None,
-            save_delta_manifest=None, delta_info=None,
+            editions=None,
+            languages=None,
+            latest=False,
+            update_info=None,
+            save_delta_manifest=None,
+            delta_info=None,
         )
         rc = download_uup._handle_info_mode(args)
         self.assertIsNone(rc)
@@ -1818,18 +1863,21 @@ class TestDisplayComponentGroups(unittest.TestCase):
         self.tmpdir = tempfile.mkdtemp()
         self.path = os.path.join(self.tmpdir, "groups.json")
         with open(self.path, "w") as f:
-            json.dump({
-                "groups": {
-                    "gaming": {
-                        "description": "Games",
-                        "patterns": ["*Xbox*"],
-                    },
-                    "oem": {
-                        "description": "",
-                        "patterns": ["*OEM*"],
-                    },
-                }
-            }, f)
+            json.dump(
+                {
+                    "groups": {
+                        "gaming": {
+                            "description": "Games",
+                            "patterns": ["*Xbox*"],
+                        },
+                        "oem": {
+                            "description": "",
+                            "patterns": ["*OEM*"],
+                        },
+                    }
+                },
+                f,
+            )
 
     def tearDown(self):
         shutil.rmtree(self.tmpdir, ignore_errors=True)
@@ -1908,7 +1956,7 @@ class TestSavePinnedBuild(unittest.TestCase):
 
     def test_save_pinned_build_minimal(self):
         # Use a build_id-only save by calling in a temp project root
-        target = self.tmp_path / ".uup-pin.json"
+        self.tmp_path / ".uup-pin.json"
         with patch.object(download_uup, "Path") as MockPath:
             MockPath.return_value.parent.parent = self.tmp_path
             ok = download_uup.save_pinned_build("b1")
@@ -1977,9 +2025,7 @@ class TestDownloadLanguagePacks(unittest.TestCase):
         self, mock_get_build_info_cached, mock_download_build
     ):
         with tempfile.TemporaryDirectory() as tmpdir:
-            result = download_uup.download_language_packs(
-                "test-id", ["en-us"], tmpdir
-            )
+            result = download_uup.download_language_packs("test-id", ["en-us"], tmpdir)
             self.assertFalse(result)
             mock_download_build.assert_not_called()
 
@@ -2053,9 +2099,7 @@ class TestCalculateDelta(unittest.TestCase):
         self.assertEqual(delta["unchanged"], ["a"])
 
     def test_modified_files_size_changed(self):
-        delta = download_uup.calculate_delta(
-            {"a": {"size": 1}}, {"a": {"size": 2}}
-        )
+        delta = download_uup.calculate_delta({"a": {"size": 1}}, {"a": {"size": 2}})
         self.assertEqual(delta["added"], [])
         self.assertEqual(delta["removed"], [])
         self.assertEqual(delta["modified"], ["a"])
@@ -2083,9 +2127,7 @@ class TestCalculateDelta(unittest.TestCase):
         self.assertEqual(delta["unchanged"], [])
 
     def test_disjoint_builds(self):
-        delta = download_uup.calculate_delta(
-            {"a": {"size": 1}}, {"b": {"size": 2}}
-        )
+        delta = download_uup.calculate_delta({"a": {"size": 1}}, {"b": {"size": 2}})
         self.assertEqual(delta["added"], ["b"])
         self.assertEqual(delta["removed"], ["a"])
         self.assertEqual(delta["modified"], [])
@@ -2158,14 +2200,18 @@ class TestDeltaManifestIO(unittest.TestCase):
             store = Path(tmp)
             manifest = store / download_uup._safe_delta_filename("build-1")
             manifest.write_text("not json{", encoding="utf-8")
-            self.assertIsNone(download_uup.load_delta_manifest("build-1", store_dir=tmp))
+            self.assertIsNone(
+                download_uup.load_delta_manifest("build-1", store_dir=tmp)
+            )
 
     def test_load_manifest_filters_non_dict_entries(self):
         with tempfile.TemporaryDirectory() as tmp:
             store = Path(tmp)
             manifest = store / download_uup._safe_delta_filename("build-1")
             manifest.write_text(
-                json.dumps({"build_id": "build-1", "files": {"a": {"size": 1}, "bad": "x"}}),
+                json.dumps(
+                    {"build_id": "build-1", "files": {"a": {"size": 1}, "bad": "x"}}
+                ),
                 encoding="utf-8",
             )
             loaded = download_uup.load_delta_manifest("build-1", store_dir=tmp)
@@ -2176,14 +2222,18 @@ class TestDeltaManifestIO(unittest.TestCase):
             store = Path(tmp)
             manifest = store / download_uup._safe_delta_filename("build-1")
             manifest.write_text(json.dumps(["a", "b"]), encoding="utf-8")
-            self.assertIsNone(download_uup.load_delta_manifest("build-1", store_dir=tmp))
+            self.assertIsNone(
+                download_uup.load_delta_manifest("build-1", store_dir=tmp)
+            )
 
     def test_load_manifest_files_not_dict(self):
         with tempfile.TemporaryDirectory() as tmp:
             store = Path(tmp)
             manifest = store / download_uup._safe_delta_filename("build-1")
             manifest.write_text(json.dumps({"files": "nope"}), encoding="utf-8")
-            self.assertIsNone(download_uup.load_delta_manifest("build-1", store_dir=tmp))
+            self.assertIsNone(
+                download_uup.load_delta_manifest("build-1", store_dir=tmp)
+            )
 
     def test_save_creates_store_dir(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -2244,12 +2294,16 @@ class TestPrepareDownloadListWithDelta(unittest.TestCase):
 
     def test_delta_filter_none_includes_all(self):
         files = {"a.esd": {"size": 1}, "b.cab": {"size": 2}}
-        result = download_uup._prepare_download_list("test-id", files, delta_filter=None)
+        result = download_uup._prepare_download_list(
+            "test-id", files, delta_filter=None
+        )
         self.assertEqual(len(result), 2)
 
     def test_delta_filter_empty_set_excludes_all(self):
         files = {"a.esd": {"size": 1}, "b.cab": {"size": 2}}
-        result = download_uup._prepare_download_list("test-id", files, delta_filter=set())
+        result = download_uup._prepare_download_list(
+            "test-id", files, delta_filter=set()
+        )
         self.assertEqual(result, [])
 
     def test_delta_filter_with_edition_filter(self):
@@ -2347,9 +2401,7 @@ class TestDownloadBuildDelta(unittest.TestCase):
 
     @patch("download_uup.save_delta_manifest")
     @patch("download_uup._run_aria2_download", return_value=True)
-    def test_download_build_without_delta_saves_manifest(
-        self, mock_run, mock_save
-    ):
+    def test_download_build_without_delta_saves_manifest(self, mock_run, mock_save):
         build_info = {"files": {"a.esd": {"size": 1}}}
         download_uup.download_build(
             "test-id",
@@ -2381,9 +2433,7 @@ class TestDownloadBuildDelta(unittest.TestCase):
 
 class TestDeltaCLIArgs(unittest.TestCase):
     def test_delta_from_flag(self):
-        args = download_uup.parse_args(
-            ["--build-id", "abc", "--delta-from", "xyz"]
-        )
+        args = download_uup.parse_args(["--build-id", "abc", "--delta-from", "xyz"])
         self.assertEqual(args.delta_from, "xyz")
 
     def test_delta_store_flag(self):
@@ -2457,45 +2507,50 @@ class TestMainDeltaModes(unittest.TestCase):
     @patch("download_uup.check_dependencies")
     def test_save_delta_manifest_in_info_only(self, mock_check):
         """--save-delta-manifest must be treated as info-only (no dep check)."""
-        with patch("download_uup._handle_info_mode", return_value=0) as mock_handle:
-            with patch("download_uup.parse_args", return_value=argparse.Namespace(
-                build_id=None,
-                editions=None,
-                languages=None,
-                latest=False,
-                save_delta_manifest="abc",
-                delta_info=None,
-                delta_from=None,
-                delta_store=None,
-                list_presets=False,
-                show_pin=False,
-                pin_build=False,
-                use_pin=False,
-                list_groups=False,
-                write_groups=None,
-                list=False,
-                clear_cache=False,
-                output="uup_files",
-                cache_ttl=3600,
-                no_cache=False,
-                preset=None,
-                groups=None,
-                resume=True,
-                verbose=False,
-                edition=None,
-                update_info=None,
-                language=None,
-                languages_download=None,
-                arch="amd64",
-                ring="Retail",
-                max_results=10,
-                preset_mode=False,
-                mirrors=None,
-            )):
-                rc = download_uup.main()
-                self.assertEqual(rc, 0)
-                mock_handle.assert_called_once()
-                mock_check.assert_not_called()
+        with (
+            patch("download_uup._handle_info_mode", return_value=0) as mock_handle,
+            patch(
+                "download_uup.parse_args",
+                return_value=argparse.Namespace(
+                    build_id=None,
+                    editions=None,
+                    languages=None,
+                    latest=False,
+                    save_delta_manifest="abc",
+                    delta_info=None,
+                    delta_from=None,
+                    delta_store=None,
+                    list_presets=False,
+                    show_pin=False,
+                    pin_build=False,
+                    use_pin=False,
+                    list_groups=False,
+                    write_groups=None,
+                    list=False,
+                    clear_cache=False,
+                    output="uup_files",
+                    cache_ttl=3600,
+                    no_cache=False,
+                    preset=None,
+                    groups=None,
+                    resume=True,
+                    verbose=False,
+                    edition=None,
+                    update_info=None,
+                    language=None,
+                    languages_download=None,
+                    arch="amd64",
+                    ring="Retail",
+                    max_results=10,
+                    preset_mode=False,
+                    mirrors=None,
+                ),
+            ),
+        ):
+            rc = download_uup.main()
+            self.assertEqual(rc, 0)
+            mock_handle.assert_called_once()
+            mock_check.assert_not_called()
 
 
 if __name__ == "__main__":

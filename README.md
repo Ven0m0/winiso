@@ -252,6 +252,13 @@ Generate from [Schneegans Unattend Generator](https://schneegans.de/windows/unat
 - Minimal telemetry
 - Keep: Defender, Store, Windows Update
 
+## Alternative: NTLite (manual, Windows-only)
+
+Prefer NTLite's GUI over this repo's automated Linux pipeline? Mount the WIM in NTLite and
+import `config/ntlite-presets/Win11-25H2.xml`, then import `scripts/apply.reg` (via NTLite's
+Registry tab or `regedit`) for the setup bypasses the preset doesn't include. See
+`AGENTS.md` for the full breakdown. Neither file is used by `build.py`/`debloat_wim.py`.
+
 ## Requirements
 
 - **Linux:** Arch Linux, Debian/Ubuntu, or Fedora

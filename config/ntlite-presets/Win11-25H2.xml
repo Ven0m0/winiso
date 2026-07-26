@@ -185,13 +185,14 @@
 		<settings pass="oobeSystem">
 			<component name="Microsoft-Windows-Shell-Setup">
 				<TimeZone>W. Europe Standard Time</TimeZone>
+				<!-- Username/Password stripped: set your own before importing into NTLite -->
 				<AutoLogon>
 					<Enabled>true</Enabled>
 					<LogonCount>9999999</LogonCount>
-					<Username>Ven0m0</Username>
+					<Username></Username>
 					<Password>
-						<PlainText>false</PlainText>
-						<Value>aABlAHIAbQBlAHMAMAAxAFAAYQBzAHMAdwBvAHIAZAA=</Value>
+						<PlainText>true</PlainText>
+						<Value></Value>
 					</Password>
 				</AutoLogon>
 				<OOBE>
@@ -205,12 +206,13 @@
 				</OOBE>
 				<UserAccounts>
 					<LocalAccounts>
+						<!-- Name/Password stripped: set your own before importing into NTLite -->
 						<LocalAccount>
 							<Group>Administrators</Group>
-							<Name>Ven0m0</Name>
+							<Name></Name>
 							<Password>
-								<PlainText>false</PlainText>
-								<Value>aABlAHIAbQBlAHMAMAAxAFAAYQBzAHMAdwBvAHIAZAA=</Value>
+								<PlainText>true</PlainText>
+								<Value></Value>
 							</Password>
 						</LocalAccount>
 					</LocalAccounts>

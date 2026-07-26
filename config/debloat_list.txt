@@ -13,6 +13,7 @@
 # GAMING & ENTERTAINMENT
 # -----------------------------------------------------------------------------
 *Xbox*
+*GamingApp*
 *Solitaire*
 *CandyCrush*
 *BubbleWitch*
@@ -66,6 +67,8 @@
 *CommunicationsApps*
 *windowscommunicationsapps*
 *OutlookForWindows*
+*OutlookPWA*
+*Flipgrid*
 
 # -----------------------------------------------------------------------------
 # MEDIA APPS
@@ -91,11 +94,13 @@
 *PinningConfirmationDialog*
 *SecureAssessmentBrowser*
 *CompatibilityEnhancements*
+*CrossDevice*
 
 # -----------------------------------------------------------------------------
 # AI & COPILOT
 # -----------------------------------------------------------------------------
 *Copilot*
+*Client.AIX*
 *CoreAI*
 *WritingAssistant*
 *GameAssist*
@@ -171,12 +176,14 @@
 # -----------------------------------------------------------------------------
 # Widgets sidebar
 # *MicrosoftWindows.Client.WebExperience*
+# *WidgetsPlatformRuntime*
 
 # OneNote (if using desktop Office)
 # *OneNote*
 
 # Family Safety
 # *Family*
+# *ParentalControls*
 
 # Wallet/Pay
 # *Wallet*

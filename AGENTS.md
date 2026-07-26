@@ -56,6 +56,8 @@ scripts/repair_wim.py               # DISM RestoreHealth against a reference ima
 config/autounattend.xml             # Unattended Windows setup answers (UTF-8, no BOM)
 config/debloat_list.txt             # Bloatware glob patterns (grouped by category)
 config/oem/SetupComplete.cmd        # First-boot CMD script (CRLF required); injected via $OEM$ and directly by apply_image_settings.py
+config/ntlite-presets/*.xml         # NTLite presets — manual alternative path, not consumed by build.py/debloat_wim.py
+scripts/apply.reg                   # Manual TPM/RAM/CPU/SecureBoot bypass — companion to the NTLite alternative path, not called by any script
 
 ventoy/answer/                      # Canonical autounattend.xml source; config/autounattend.xml is a copy of it
 
@@ -181,6 +183,27 @@ the Windows-servicing side) provides.
 
 - CRLF line endings required (Windows CMD)
 - Runs on first Windows boot after installation
+
+### NTLite manual alternative (`config/ntlite-presets/`, `scripts/apply.reg`)
+
+Separate, manual, Windows-only workflow — not consumed by `build.py` or `debloat_wim.py`.
+For users who prefer NTLite's GUI over the automated Linux pipeline:
+
+1. Mount the install.wim (UUP-converted or vanilla) in NTLite on Windows.
+2. Import `config/ntlite-presets/Win11-25H2.xml` (current target). `Clean10.xml` targets
+   Windows 10 and is kept for reference only.
+3. Import `scripts/apply.reg` via NTLite's Registry tab (or `regedit`/`chntpw` against the
+   mounted hive) to add the bypasses the preset's own `LabConfig` tweaks don't cover
+   (`BypassCPUCheck`, `BypassStorageCheck`, `BypassSecureBootCheck`, `BypassNRO`,
+   `OOBEBypassNRO`, `BypassMSARequirement`, and the `MoSetup` bypasses) — the preset only
+   sets `BypassRAMCheck`/`BypassTPMCheck`.
+
+The presets' `RemoveComponents` AppX entries that map to real bloatware packages have been
+mined into `config/debloat_list.txt`/`config/component_groups.json` so the automated
+pipeline covers them too (`*GamingApp*`, `*Client.AIX*`, `*CrossDevice*`, `*OutlookPWA*`,
+`*Flipgrid*`). DISM-only entries (drivers, keyboard layouts, language packs, print/scan
+stacks) were left out — `debloat_wim.py` only deletes `WindowsApps`/`AppRepository` folders
+by glob, it doesn't do DISM feature removal.
 
 ---
 

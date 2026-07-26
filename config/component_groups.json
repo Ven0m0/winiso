@@ -5,6 +5,7 @@
 			"description": "Game launchers and entertainment apps (gaming-friendly profile keeps Xbox Game Pass; this is a more aggressive removal)",
 			"patterns": [
 				"*Xbox*",
+				"*GamingApp*",
 				"*Solitaire*",
 				"*CandyCrush*",
 				"*BubbleWitch*",
@@ -47,7 +48,9 @@
 				"*Teams*",
 				"*CommunicationsApps*",
 				"*windowscommunicationsapps*",
-				"*OutlookForWindows*"
+				"*OutlookForWindows*",
+				"*OutlookPWA*",
+				"*Flipgrid*"
 			]
 		},
 		"telemetry": {
@@ -56,6 +59,7 @@
 				"*DiagnosticDataViewer*",
 				"*Advertising*",
 				"*Copilot*",
+				"*Client.AIX*",
 				"*CoreAI*",
 				"*WritingAssistant*",
 				"*GameAssist*",
@@ -102,6 +106,7 @@
 				"*PinningConfirmationDialog*",
 				"*SecureAssessmentBrowser*",
 				"*CompatibilityEnhancements*",
+				"*CrossDevice*",
 				"*WindowsMaps*",
 				"*WindowsAlarms*",
 				"*WindowsSoundRecorder*",

@@ -48,16 +48,21 @@ scripts/windows_service.cmd         # Optional Windows-side DISM servicing (stan
 scripts/apply_image_settings.py     # ISO extraction, unattend injection, debloat (Windows-side)
 scripts/win_config.py               # Windows servicing config (mount dir, oscdimg path, volume label)
 scripts/win_utils.py                # Shared Windows servicing helpers (dism.exe/oscdimg wrappers)
-scripts/invoke_system_cleanup.py    # Live-OS disk cleanup helper (Windows-side)
 scripts/new_iso.py                  # oscdimg ISO builder (Windows-side)
-scripts/remove_short_names.py       # 8.3 short-name stripping (Windows-side)
-scripts/repair_wim.py               # DISM RestoreHealth against a reference image (Windows-side)
+scripts/WinUtils.ps1                # Shared PowerShell helpers (dism.exe wrappers) — dot-source this, never copy
+scripts/Invoke-SystemCleanup.ps1    # Live-OS disk cleanup helper (Windows-side, PowerShell)
+scripts/Remove-ShortNames.ps1       # 8.3 short-name stripping for install.wim (Windows-side, PowerShell); GUI folder pickers, no boot.wim/Winre.wim handling
+scripts/Repair-Wim.ps1              # DISM RestoreHealth against a reference image (Windows-side, PowerShell); GUI file/folder pickers, no hardcoded paths
+scripts/Mount-WimGui.ps1            # Native WinForms GUI to pick a WIM + mount folder and run dism /Mount-Image
 
 config/autounattend.xml             # Unattended Windows setup answers (UTF-8, no BOM)
 config/debloat_list.txt             # Bloatware glob patterns (grouped by category)
 config/oem/SetupComplete.cmd        # First-boot CMD script (CRLF required); injected via $OEM$ and directly by apply_image_settings.py
 config/ntlite-presets/*.xml         # NTLite presets — manual alternative path, not consumed by build.py/debloat_wim.py
-scripts/apply.reg                   # Manual TPM/RAM/CPU/SecureBoot bypass — companion to the NTLite alternative path, not called by any script
+config/ntlite-presets/InstallApps.cmd # Winget app installer for NTLite's Post-Setup > Commands (After Logon) — not called by any script
+config/unattend-generator/apply.reg # Manual TPM/RAM/CPU/SecureBoot bypass + 8.3/power-plan tweaks — companion to the NTLite alternative path, not called by any script
+config/unattend-generator/after-logon.cmd # Reference copy of the generator's FirstLogonScript0 (winget installs + powercfg) — not called by any script
+config/unattend-generator/system.ps1 # Reference copy of the generator's SystemScript1 (disables Defender realtime/behavior monitoring) — not called by any script
 
 ventoy/answer/                      # Canonical autounattend.xml source; config/autounattend.xml is a copy of it
 
@@ -122,13 +127,15 @@ Copy `install.wim` to a Windows machine, run `scripts/windows_service.cmd` again
 ## Pipeline Script Rules
 
 The Linux build pipeline (`build.py`, `setup_env.py`, `sign_iso.py`, `validate_prereqs.py`,
-`debloat_wim.py`) and the Windows servicing scripts (`apply_image_settings.py`,
-`invoke_system_cleanup.py`, `new_iso.py`, `remove_short_names.py`, `repair_wim.py`)
-are Python 3, stdlib-first, cross-platform where the
+`debloat_wim.py`) and the still-Python Windows servicing scripts (`apply_image_settings.py`,
+`new_iso.py`) are Python 3, stdlib-first, cross-platform where the
 underlying tools allow it. `scripts/custom_convert.sh` and `scripts/convert_config.sh`
 are the one exception — upstream-derived, patch-only, and stay bash. `scripts/utils.sh`
 also stays bash, solely because `custom_convert.sh` sources it (`REQUIRED_TOOLS`,
 `check_iso_tool`); do not add new Python consumers of it — use `pyutils.py` instead.
+`Invoke-SystemCleanup.ps1`, `Remove-ShortNames.ps1`, `Repair-Wim.ps1`, and `Mount-WimGui.ps1`
+are native PowerShell (converted back from Python by user request) — they dot-source
+`scripts/WinUtils.ps1` for logging/admin-check/DISM helpers, never duplicate those functions.
 
 ### Required shape
 
@@ -152,9 +159,11 @@ the Windows-servicing side) provides.
 ### Rules
 
 - Never add `sudo`/elevation to `build.py` or any Linux-pipeline script
-- Windows servicing scripts call `dism.exe` directly via `subprocess`; do not add a
-  PowerShell DISM module or `pywin32` dependency for something `dism.exe` already does
-- Syntax-check after edits: `python -m py_compile scripts/<changed>.py`
+- Windows servicing scripts call `dism.exe` directly (via `subprocess` in Python, via `&`/call
+  operator in PowerShell); do not add a PowerShell DISM *module* cmdlet or `pywin32` dependency
+  for something `dism.exe` already does
+- Syntax-check after edits: `python -m py_compile scripts/<changed>.py` for Python scripts,
+  or `pwsh -NoProfile -Command "[System.Management.Automation.Language.Parser]::ParseFile('scripts/<changed>.ps1', [ref]$null, [ref]$null)"` for PowerShell scripts
 - When editing `scripts/debloat_wim.py` or `config/debloat_list.txt`, verify the AppX keep-list is intact
 - CLI interface of `scripts/download_uup.py` is stable — do not rename flags or change positional arguments
 - Path traversal protection is mandatory in `download_uup.py`; all output paths must be validated against the intended output directory
@@ -178,25 +187,71 @@ the Windows-servicing side) provides.
 - UTF-8, no BOM
 - Validate before building: `xmllint --noout config/autounattend.xml`
 - Reference generator: https://schneegans.de/windows/unattend-generator/
+- No `ProductKey`/`UserData` element, deliberately: the windowsPE `Microsoft-Windows-Setup`
+  component has none. Edition selection instead happens via `dism.exe /Apply-Image`'s
+  `/Name:"Windows %OS_VERSION% Pro"` filter (windowsPE Order 20-21), which is how the schneegans
+  generator's own "generic key" mode picks an edition from a multi-edition install.wim/install.esd
+  without embedding any key at all. Never add a real or unverified product key back into this
+  file — if the generator's own output for your settings includes one, replace it with the
+  `/Name:` filter approach instead, or drop it and rely on the WIM already being scoped to one
+  edition (this repo's Linux pipeline exports a single edition via `custom_convert.sh`).
 
 ### `config/oem/SetupComplete.cmd`
 
 - CRLF line endings required (Windows CMD)
 - Runs on first Windows boot after installation
 
-### NTLite manual alternative (`config/ntlite-presets/`, `scripts/apply.reg`)
+### NTLite manual alternative (`config/ntlite-presets/`, `config/unattend-generator/`)
 
 Separate, manual, Windows-only workflow — not consumed by `build.py` or `debloat_wim.py`.
-For users who prefer NTLite's GUI over the automated Linux pipeline:
+For users who prefer NTLite's GUI over the automated Linux pipeline. **Mutually exclusive with
+the Linux pipeline per build**: NTLite generates its own unattend answer file (written to
+Panther/boot per the preset's `AnswerFileLocationPanther`/`AnswerFileLocationBoot`), which is a
+separate mechanism from `config/autounattend.xml` — Windows Setup reads whichever one physically
+ends up at the answer-file location, there's no merge. Never run `apply_image_settings.py` (or
+`custom_convert.sh`'s autounattend injection) against a WIM already serviced by NTLite with its
+own `<Unattended>` block: it silently overwrites Panther's `unattend.xml`, discarding NTLite's
+AutoLogon/OOBE/ProductKey settings (`apply_image_settings.py` now warns before doing this, but
+does not block it). NTLite also has its own native power-scheme import feature (`<PowerScheme>`,
+e.g. importing a custom `.pow` file); `config/unattend-generator/apply.reg`'s registry-based
+`ActivePowerScheme` write targets the same High Performance scheme, so importing both is redundant
+but not conflicting.
+
+**Building with NTLite, booting via `ventoy/answer/autounattend.xml`:** supported, but requires
+turning off *both* `AnswerFileLocationPanther` and `AnswerFileLocationBoot` in the NTLite preset.
+`ventoy/answer/autounattend.xml`'s windowsPE pass has no `<DiskConfiguration>`/`<ImageInstall>` —
+it works entirely by having Windows Setup discover it and run its custom `RunSynchronousCommand`
+chain (builds and executes a `pe.cmd` that does diskpart + `dism /Apply-Image` + `bcdboot`
+manually), which then copies itself into `Windows\Panther\unattend.xml` (windowsPE Order 23) to
+also drive the specialize/oobeSystem passes. Windows Setup only ever discovers *one* windowsPE
+answer file — if NTLite's own (`AnswerFileLocationBoot=true`) is also written to the boot media,
+it wins the race instead, and the pe.cmd chain never runs. With both flags off, NTLite's own
+`<Unattended>` block becomes inert everywhere, so its AutoLogon/OOBE settings are ported into
+`ventoy/answer/autounattend.xml` directly instead (`SkipAutoActivation`, `NetworkLocation`,
+`HideLocalAccountScreen`) — mechanically safe since none of NTLite's `RemoveComponents`/
+`Features`/Tweaks in this preset touch WinPE's own binaries (`dism.exe`/`diskpart.exe`/
+`bcdboot.exe`/etc.), only the installed OS (install.wim). No `ProductKey` is set or ported —
+see the note below.
+
+`config/unattend-generator/` mirrors the scripts embedded in the generator-URL comment at the top
+of `ventoy/answer/autounattend.xml` (SystemScript/FirstLogonScript entries) as standalone,
+readable files — kept in sync with that comment when the answer file is regenerated. `apply.reg`
+there is the NTLite manual-path companion (formerly `scripts/apply.reg`): it now also sets the
+High Performance `ActivePowerScheme`, matching the answer file's own tweak — no conflict with
+NTLite's native `<PowerScheme>` import is expected since the offline registry write and NTLite's
+import both target the same scheme.
 
 1. Mount the install.wim (UUP-converted or vanilla) in NTLite on Windows.
-2. Import `config/ntlite-presets/Win11-25H2.xml` (current target). `Clean10.xml` targets
+2. Import `config/ntlite-presets/win11.xml` (current target). `win10.xml` targets
    Windows 10 and is kept for reference only.
-3. Import `scripts/apply.reg` via NTLite's Registry tab (or `regedit`/`chntpw` against the
-   mounted hive) to add the bypasses the preset's own `LabConfig` tweaks don't cover
+3. Import `config/unattend-generator/apply.reg` via NTLite's Registry tab (or `regedit`/`chntpw`
+   against the mounted hive) to add the bypasses the preset's own `LabConfig` tweaks don't cover
    (`BypassCPUCheck`, `BypassStorageCheck`, `BypassSecureBootCheck`, `BypassNRO`,
    `OOBEBypassNRO`, `BypassMSARequirement`, and the `MoSetup` bypasses) — the preset only
    sets `BypassRAMCheck`/`BypassTPMCheck`.
+4. Optional: in NTLite's Post-Setup > Commands, add `config/ntlite-presets/InstallApps.cmd`
+   with timing "After Logon" to install software via `winget` on first logon. Edit the
+   `PACKAGES` list inside the file before importing; it logs to `%TEMP%\InstallApps.log`.
 
 The presets' `RemoveComponents` AppX entries that map to real bloatware packages have been
 mined into `config/debloat_list.txt`/`config/component_groups.json` so the automated

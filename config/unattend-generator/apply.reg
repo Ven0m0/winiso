@@ -17,3 +17,16 @@ Windows Registry Editor Version 5.00
 "BypassTPMCheck"=dword:00000001
 "BypassSecureBootCheck"=dword:00000001
 "AllowUpgradesWithUnsupportedTPMOrCPU"=dword:00000001
+
+[HKEY_CURRENT_USER\Control Panel\UnsupportedHardwareNotificationCache]
+"SV2"=dword:00000000
+
+[HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Control\FileSystem]
+"NtfsDisable8dot3NameCreation"=dword:00000001
+"NtfsDisableCompression"=dword:00000001
+"NtfsDisableEncryption"=dword:00000001
+"LongPathsEnabled"=dword:00000001
+"DisableDeleteNotification"=dword:00000001
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Power\PowerSettings]
+"ActivePowerScheme"="8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c"

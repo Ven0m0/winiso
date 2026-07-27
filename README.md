@@ -255,9 +255,11 @@ Generate from [Schneegans Unattend Generator](https://schneegans.de/windows/unat
 ## Alternative: NTLite (manual, Windows-only)
 
 Prefer NTLite's GUI over this repo's automated Linux pipeline? Mount the WIM in NTLite and
-import `config/ntlite-presets/Win11-25H2.xml`, then import `scripts/apply.reg` (via NTLite's
-Registry tab or `regedit`) for the setup bypasses the preset doesn't include. See
-`AGENTS.md` for the full breakdown. Neither file is used by `build.py`/`debloat_wim.py`.
+import `config/ntlite-presets/win11.xml`, then import `config/unattend-generator/apply.reg` (via
+NTLite's Registry tab or `regedit`) for the setup bypasses the preset doesn't include. Optionally add
+`config/ntlite-presets/InstallApps.cmd` under Post-Setup > Commands (timing "After Logon") to
+install your own software via `winget` on first logon. See `AGENTS.md` for the full breakdown.
+None of these files are used by `build.py`/`debloat_wim.py`.
 
 ## Requirements
 

@@ -30,6 +30,26 @@ from win_utils import (
     write_success,
 )
 
+HIGH_PERFORMANCE_GUID = "8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c"
+
+# ponytail: on Modern Standby hardware this scheme is hidden/absent and Windows falls back to
+# Balanced (SetupComplete.cmd's runtime "powercfg /setactive" hits the same wall); upgrade to
+# "powercfg /duplicatescheme" if that ever needs handling.
+OFFLINE_SYSTEM_VALUES = (
+    (
+        "ControlSet001\\Control\\FileSystem",
+        "NtfsDisable8dot3NameCreation",
+        "REG_DWORD",
+        "1",
+    ),
+    (
+        "ControlSet001\\Control\\Power\\User\\PowerSchemes",
+        "ActivePowerScheme",
+        "REG_SZ",
+        HIGH_PERFORMANCE_GUID,
+    ),
+)
+
 EDGE_PATHS = (
     "Program Files (x86)/Microsoft/Edge",
     "Program Files (x86)/Microsoft/EdgeCore",
@@ -305,6 +325,7 @@ def main() -> int:
     require_admin()
 
     script_dir = Path(__file__).resolve().parent
+    autounattend_src = script_dir.parent / "config" / "autounattend.xml"
 
     if not args.iso_path and not args.extract_path and not args.debloat:
         print("ERROR: Must specify either --iso-path, --extract-path, or --debloat")
@@ -378,9 +399,7 @@ def main() -> int:
                 "/Optimize",
             ]
         )
-        _ = shutil.copy(
-            script_dir / "autounattend.xml", boot_mount / "autounattend.xml"
-        )
+        _ = shutil.copy(autounattend_src, boot_mount / "autounattend.xml")
         write_success(f"Copied autounattend.xml to boot.wim index {idx}")
 
         invoke_dism(["/Unmount-Image", f"/MountDir:{boot_mount}", "/Commit"])
@@ -405,33 +424,41 @@ def main() -> int:
     write_step("Copying autounattend.xml...")
     panther_dir = install_mount / "Windows" / "Panther"
     panther_dir.mkdir(parents=True, exist_ok=True)
-    _ = shutil.copy(script_dir / "autounattend.xml", panther_dir / "unattend.xml")
-    _ = shutil.copy(script_dir / "autounattend.xml", extract_dir / "autounattend.xml")
+    existing_unattend = panther_dir / "unattend.xml"
+    if existing_unattend.is_file():
+        print(
+            f"[WARN] Overwriting existing {existing_unattend} — if this WIM was already "
+            "serviced by NTLite (or another answer-file source), its AutoLogon/OOBE/"
+            "ProductKey settings are about to be discarded."
+        )
+    _ = shutil.copy(autounattend_src, existing_unattend)
+    _ = shutil.copy(autounattend_src, extract_dir / "autounattend.xml")
 
-    write_step("Disabling 8.3 filename creation...")
+    write_step("Applying offline SYSTEM hive tweaks...")
     reg_hive_path = install_mount / "Windows" / "System32" / "Config" / "SYSTEM"
     temp_hive = "HKLM\\WIM_REG"
     _ = subprocess.run(
         ["reg", "load", temp_hive, str(reg_hive_path)], capture_output=True, check=False
     )
-    _ = subprocess.run(
-        [
-            "reg",
-            "add",
-            f"{temp_hive}\\ControlSet001\\Control\\FileSystem",
-            "/v",
-            "NtfsDisable8dot3NameCreation",
-            "/t",
-            "REG_DWORD",
-            "/d",
-            "1",
-            "/f",
-        ],
-        capture_output=True,
-        check=False,
-    )
+    for key_path, value_name, value_type, value_data in OFFLINE_SYSTEM_VALUES:
+        _ = subprocess.run(
+            [
+                "reg",
+                "add",
+                f"{temp_hive}\\{key_path}",
+                "/v",
+                value_name,
+                "/t",
+                value_type,
+                "/d",
+                value_data,
+                "/f",
+            ],
+            capture_output=True,
+            check=False,
+        )
     _ = subprocess.run(["reg", "unload", temp_hive], capture_output=True, check=False)
-    write_success("8.3 filename creation disabled")
+    write_success("8.3 filename creation disabled and High Performance power plan set")
 
     write_step("Injecting post-install scripts...")
     scripts_dir = install_mount / "Windows" / "Setup" / "Scripts"

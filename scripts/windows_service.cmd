@@ -131,6 +131,9 @@ reg add "HKLM\OFFLINE_SYSTEM\ControlSet001\Policies" /v "NtfsDisableCompression"
 :: Disable 8.3 name creation for new files
 reg add "HKLM\OFFLINE_SYSTEM\ControlSet001\Control\FileSystem" /v "NtfsDisable8dot3NameCreation" /t REG_DWORD /d 1 /f
 
+:: High performance power plan (active from specialize/OOBE onward)
+reg add "HKLM\OFFLINE_SYSTEM\ControlSet001\Control\Power\User\PowerSchemes" /v "ActivePowerScheme" /t REG_SZ /d "8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c" /f
+
 :: Insider updates without Insider Program (optional - for preview builds)
 :: reg add "HKLM\OFFLINE_SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v "BranchReadinessLevel" /t REG_DWORD /d 2 /f
 :: reg add "HKLM\OFFLINE_SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v "ManagePreviewBuilds" /t REG_DWORD /d 1 /f

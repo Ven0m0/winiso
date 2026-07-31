@@ -36,6 +36,7 @@ __MACOSX/
 .idea/
 *.iml
 *.sublime-workspace
+.claude/settings.local.json
 .omc/
 .serena/
 !.serena/project.yml

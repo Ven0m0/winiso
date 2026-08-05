@@ -11,7 +11,7 @@
 #   make help           - Show this help
 # =============================================================================
 
-.PHONY: all deps build build-pro build-nano build-pause clean help validate download validate-xml sign
+.PHONY: all deps build build-pro build-nano build-pause clean help validate download validate-xml validate-reg sign
 
 # Default target
 all: build
@@ -28,15 +28,28 @@ validate:
 	chmod +x scripts/validate_prereqs.py
 	./scripts/validate_prereqs.py
 
-# Validate autounattend.xml specifically
+# Validate autounattend.xml specifically (canonical source + the copy the Linux
+# pipeline injects, and that the two haven't drifted apart)
 validate-xml:
 	@echo "Validating autounattend.xml..."
-	@if [[ -f config/autounattend.xml ]]; then \
-		xmllint --noout config/autounattend.xml && echo "autounattend.xml is valid XML"; \
-	else \
-		echo "autounattend.xml not found"; \
+	@for f in ventoy/answer/autounattend.xml config/autounattend.xml; do \
+		if [[ ! -f "$$f" ]]; then \
+			echo "$$f not found"; \
+			exit 1; \
+		fi; \
+		xmllint --noout "$$f" && echo "$$f is valid XML"; \
+	done
+	@diff -q ventoy/answer/autounattend.xml config/autounattend.xml >/dev/null || { \
+		echo "config/autounattend.xml has drifted from ventoy/answer/autounattend.xml (the canonical source) - re-copy it"; \
 		exit 1; \
-	fi
+	}
+	@echo "config/autounattend.xml matches the canonical ventoy/answer/autounattend.xml"
+
+# Validate .reg headers, including .reg content embedded in autounattend.xml
+validate-reg:
+	@echo "Validating registry files..."
+	chmod +x scripts/validate_reg_files.py
+	./scripts/validate_reg_files.py
 
 # Download UUP files from uupdump.net
 download:

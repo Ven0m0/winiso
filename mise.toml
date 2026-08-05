@@ -161,10 +161,25 @@ run = "ruff ."
 # 2. Python stdlib: use python -c "import xml.etree.ElementTree as ET; ET.parse('config/autounattend.xml')"
 # 3. System tidy: install html-tidy (supports XML validation)
 # 4. pipx xmlschema: pipx install xmlschema  # for XSD schema validation
+# config/autounattend.xml is a copy of the canonical ventoy/answer/autounattend.xml - both are
+# checked, plus a diff, so the copy can't silently drift or go missing again.
 [tasks.lint-xml]
-description = "Lint XML config files (requires libxml2-utils or python)"
+description = "Lint XML config files and check config/autounattend.xml matches ventoy/answer/autounattend.xml"
 run = [
-  "xmllint --noout config/autounattend.xml 2>/dev/null || python3 -c \"import xml.etree.ElementTree as ET; ET.parse('config/autounattend.xml'); print('XML valid')\""
+  "xmllint --noout ventoy/answer/autounattend.xml config/autounattend.xml 2>/dev/null || python3 -c \"import xml.etree.ElementTree as ET; ET.parse('ventoy/answer/autounattend.xml'); ET.parse('config/autounattend.xml'); print('XML valid')\"",
+  "diff -u ventoy/answer/autounattend.xml config/autounattend.xml",
+]
+
+# .reg headers: standalone *.reg files and .reg content embedded in autounattend.xml
+[tasks.lint-reg]
+description = "Validate .reg file headers (standalone + embedded in autounattend.xml)"
+run = ["python3 scripts/validate_reg_files.py"]
+
+# PSScriptAnalyzer over the Windows-side PowerShell helper scripts
+[tasks.lint-ps]
+description = "Lint PowerShell scripts with PSScriptAnalyzer (requires PowerShell 7+)"
+run = [
+  "pwsh -NoProfile -Command \"Import-Module PSScriptAnalyzer; $r = Get-ChildItem -Recurse -Include *.ps1,*.psm1,*.psd1 -File | Where-Object { $_.FullName -notmatch '[\\\\/]\\.git[\\\\/]' } | ForEach-Object { Invoke-ScriptAnalyzer -Path $_.FullName -Settings ./PSScriptAnalyzerSettings.psd1 }; if ($r) { $r | Format-Table -AutoSize; exit 1 }\"",
 ]
 
 # Biome: fast JS/TS/JSON/HTML/CSS linter and formatter

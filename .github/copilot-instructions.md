@@ -27,7 +27,9 @@ Use this file as the quick bootstrap, then read `AGENTS.md` for the canonical re
 ```bash
 for f in scripts/*.py scripts/files/*.py; do python3 -m py_compile "$f"; done
 bash -n scripts/custom_convert.sh scripts/convert_config.sh scripts/utils.sh
-xmllint --noout config/autounattend.xml
+xmllint --noout ventoy/answer/autounattend.xml config/autounattend.xml
+diff -u ventoy/answer/autounattend.xml config/autounattend.xml  # config/ is a copy of the canonical ventoy/answer/ file
+python3 scripts/validate_reg_files.py                           # .reg headers, standalone + embedded in autounattend.xml
 uvx --with pytest pytest tests/
 ```
 

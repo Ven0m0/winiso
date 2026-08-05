@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- `scripts/validate_reg_files.py` and `make validate-reg` — validates the
+  `Windows Registry Editor Version 5.00` header on every standalone `.reg` file
+  (`config/unattend-generator/apply.reg`) and on the `.reg` content embedded via
+  `<Extensions><File path="...reg">` inside `ventoy/answer/autounattend.xml` and
+  `config/autounattend.xml`, plus an informational (non-fatal) scan for security-sensitive
+  value changes (UAC, service-disable, RPC) — same checks as `Ven0m0/Win`'s `reg-validate.yml`,
+  extended to also parse the two files' embedded reg blocks since neither is a standalone
+  `.reg` file on disk.
+- `PSScriptAnalyzerSettings.psd1` at repo root (same ruleset as `Ven0m0/Win`) plus
+  `--severity Warning --include-rules ...` args on the existing (previously argument-less)
+  `py-psscriptanalyzer` pre-commit hook, a `lint-powershell` job in
+  `.github/workflows/lint-and-format.yml` (`windows-latest`, `Invoke-ScriptAnalyzer -Settings`),
+  and a `mise run lint-ps` task — covers `scripts/*.ps1`, `config/unattend-generator/system.ps1`,
+  `uupdump/files/get_aria2.ps1`. All pass cleanly against current scripts with zero findings.
+- `lint-xml` now also validates `ventoy/answer/autounattend.xml` (the canonical source, not just
+  its `config/autounattend.xml` copy) and fails on `diff` if the two have drifted apart — in the
+  Makefile, `.github/workflows/lint-and-format.yml`, `.github/workflows/copilot-setup-steps.yml`,
+  and `mise run lint-xml`. Prevents a repeat of the `config/autounattend.xml` deletion below.
 - `scripts/Mount-WimGui.ps1` — native Windows GUI (`System.Windows.Forms`, no external
   dependencies) for mounting a WIM: an `OpenFileDialog` to pick the `.wim` and a
   `FolderBrowserDialog` to pick (or create) the mount folder, then runs `dism.exe /Mount-Image`.
@@ -143,6 +161,15 @@ All notable changes to this project will be documented in this file.
 - Updated the repository Python toolchain to 3.13 and switched CI/bootstrap Python provisioning to uv-managed Python.
 
 ### Fixed
+- Restored `config/autounattend.xml`, deleted in a prior commit (`df3035c`) without updating any
+  of its ~15 references across `Makefile`, `.github/workflows/*.yml`,
+  `.github/copilot-instructions.md`, `mise.toml`, `AGENTS.md`, `README.md`,
+  `docs/autounattend.md`, and `scripts/custom_convert.sh`/`validate_prereqs.py`. Since
+  `custom_convert.sh`'s autounattend-injection step treats a missing file as skip-not-fail, the
+  Linux build pipeline was silently producing ISOs with no answer file at all — falling back to
+  fully manual/interactive Windows Setup — with no error anywhere in the chain. Re-copied from
+  the canonical `ventoy/answer/autounattend.xml` (UTF-8, no BOM, matches `AGENTS.md`'s
+  invariant); see Added below for the drift check that now catches this class of bug in CI.
 - `scripts/apply_image_settings.py` referenced `scripts/autounattend.xml` as the source for all
   three autounattend-copy steps (boot.wim indexes, Panther `unattend.xml`, ISO root) — that file
   never existed; the real one lives at `config/autounattend.xml`. Every one of those

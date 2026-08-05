@@ -44,7 +44,7 @@ repos:
       - id: forbid-submodules
 
   - repo: https://github.com/renovatebot/pre-commit-hooks
-    rev: 44.9.2
+    rev: 44.11.6
     hooks:
       - id: renovate-config-validator
 
@@ -72,6 +72,11 @@ repos:
     rev: v0.3.1 # Use the latest version
     hooks:
       - id: py-psscriptanalyzer # Lint your PowerShell
+        args:
+          - "--severity"
+          - "Warning"
+          - "--include-rules"
+          - "PSAvoidGlobalAliases,PSAvoidUsingConvertToSecureStringWithPlainText,PSAvoidUsingEmptyCatchBlock,PSAvoidUsingInvokeExpression,PSAvoidUsingPositionalParameters,PSAvoidUsingUsernameAndPasswordParams,PSUseBOMForUnicodeEncodedFile,PSUseCorrectCasing,PSProvideCommentHelp,PSReservedCmdletChar,PSReservedParams,PSUseApprovedVerbs,PSUseCmdletCorrectly,PSUseConsistentIndentation,PSUseConsistentWhitespace,PSUseSupportsShouldProcess,PSUseVerbosityForRequestedLevel"
         exclude: ^uupdump/
       - id: py-psscriptanalyzer-format # Format your PowerShell
         exclude: ^uupdump/

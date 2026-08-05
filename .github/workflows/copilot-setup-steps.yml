@@ -74,7 +74,13 @@ jobs:
           done
 
       - name: Validate XML configuration
-        run: xmllint --noout config/autounattend.xml
+        run: |
+          xmllint --noout ventoy/answer/autounattend.xml
+          xmllint --noout config/autounattend.xml
+          diff -u ventoy/answer/autounattend.xml config/autounattend.xml
+
+      - name: Validate registry files
+        run: python3 scripts/validate_reg_files.py
 
       - name: Run Python unit tests
         run: uvx --with pytest pytest tests/

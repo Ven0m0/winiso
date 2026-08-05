@@ -69,4 +69,53 @@ jobs:
           sudo apt-get install -yqq --no-install-recommends libxml2-utils
 
       - name: Check XML syntax
-        run: xmllint --noout config/autounattend.xml
+        run: |
+          xmllint --noout ventoy/answer/autounattend.xml
+          xmllint --noout config/autounattend.xml
+
+      - name: Check config/autounattend.xml matches canonical ventoy/answer/autounattend.xml
+        run: diff -u ventoy/answer/autounattend.xml config/autounattend.xml
+
+  lint-reg:
+    name: Lint Registry Files
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+
+      - name: Validate .reg headers (standalone + embedded in autounattend.xml)
+        run: python3 scripts/validate_reg_files.py
+
+  lint-powershell:
+    name: PSScriptAnalyzer
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+
+      - name: Install PSScriptAnalyzer
+        shell: pwsh
+        run: |
+          if (-not (Get-Module -ListAvailable -Name PSScriptAnalyzer)) {
+            Install-Module -Name PSScriptAnalyzer -Scope CurrentUser -Force -SkipPublisherCheck -AllowClobber
+          }
+
+      - name: Run PSScriptAnalyzer
+        shell: pwsh
+        run: |
+          Set-StrictMode -Version Latest
+          $ErrorActionPreference = 'Continue'
+
+          $psFiles = Get-ChildItem -Recurse -Include *.ps1, *.psm1, *.psd1 -File |
+            Where-Object { $_.FullName -notmatch '\\node_modules\\|\\\.git\\' }
+
+          $results = foreach ($f in $psFiles) {
+            Invoke-ScriptAnalyzer -Path $f.FullName -Settings .\PSScriptAnalyzerSettings.psd1
+          }
+
+          if ($results) {
+            $results | Format-Table ScriptName, Line, RuleName, Severity, Message -AutoSize | Out-String -Width 200 | Write-Host
+            Write-Host "PSScriptAnalyzer found $($results.Count) issue(s)"
+            exit 1
+          }
+          Write-Host "No PSScriptAnalyzer issues found"

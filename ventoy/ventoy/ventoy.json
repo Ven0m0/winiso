@@ -1,27 +1,40 @@
 {
-  "control": [
-    { "VTOY_MAX_SEARCH_LEVEL": "1" },
-    { "VTOY_DEFAULT_SEARCH_ROOT": "/iso" }
-  ],
-  "theme": {
-	"gfxmode": "max",
-    "file": [
-      "/themes/miku/theme.txt",
-      "/themes/celeste/theme.txt",
-      "/themes/cachyos/theme.txt"
+    "control":[
+        { "VTOY_MAX_SEARCH_LEVEL": "1" },
+        { "VTOY_DEFAULT_SEARCH_ROOT": "/iso" }
     ],
-    "fonts": [
-      "/themes/celeste/RenogareRegular20.pf2",
-      "/themes/cachyos/terminus-18.pf2",
-      "/themes/cachyos/ubuntu_regular_20.pf2"
+    "theme":{
+		"gfxmode": "max",
+        "file":[
+            "/ventoy/themes/miku/theme.txt",
+            "/ventoy/themes/cachyos/theme.txt",
+            "/ventoy/themes/celeste/theme.txt"
+        ],
+        "fonts":[
+            "/ventoy/themes/cachyos/ubuntu_regular_20.pf2",
+            "/ventoy/themes/cachyos/terminus-18.pf2",
+            "/ventoy/themes/celeste/RenogareRegular20.pf2",
+			"/themes/celeste/terminus-14.pf2"
+        ]
+    },
+    "auto_install":[
+        {
+            "image": "/iso/win11_stock.iso",
+            "template":[
+                "/answer/autounattend.xml"
+            ]
+        },
+        {
+            "image": "/iso/win11_titus.iso",
+            "template":[
+                "/answer/autounattend.xml"
+            ]
+        },
+        {
+            "image": "/iso/tiny11.iso",
+            "template":[
+                "/answer/autounattend.xml"
+            ]
+        }
     ]
-  },
-  "auto_install": [
-    {
-      "image": "/iso/win11-stock.iso",
-      "template": [
-        "/answer/autounattend.xml"
-      ]
-    }
-  ]
 }

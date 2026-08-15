@@ -11,6 +11,7 @@ uup_files/*
 !uup_files/.gitkeep
 .uup_cache/
 **/.uup_cache/
+uupdump/uup_download_macos.sh
 
 # ─── Logs & traces ────────────────────────────────────────────────────────────
 *.log
@@ -41,16 +42,6 @@ __MACOSX/
 .serena/
 !.serena/project.yml
 .codegraph/
-hipocampus.config.json
-MEMORY.md
-USER.md
-SCRATCHPAD*.md
-WORKING*.md
-TASK-QUEUE.md
-memory/
-knowledge/
-plans/
-tenants/
 
 # ─── Python cache ─────────────────────────────────────────────────────────────
 __pycache__/

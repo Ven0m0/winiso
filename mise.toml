@@ -11,7 +11,6 @@ experimental = true
 color = true
 yes = true
 auto_install = true
-lockfile = true
 
 [settings.python]
 uv_venv_auto = "create|source"
@@ -24,22 +23,12 @@ uvx = true
 cli_telemetry_optout = true
 
 [tools]
-powershell = "latest"
-python = "3.14"
-uv = "latest"
-ruff = "latest"
-ty = "latest"
-prek = "latest"
-"pipx:pytest" = "latest"
-"pipx:basedpyright" = "latest"
-"pipx:py-psscriptanalyzer" = "latest"
-ripgrep = "latest"
 # xmllint: system package (libxml2-utils on Debian/Ubuntu, libxml2 on Arch/Fedora)
 # biome: JS/TS/JSON/HTML/CSS linter - use bunx @biomejs/biome
 
 [env]
 PROJECT_ROOT = "{{config_root}}"
-UV_PYTHON = { value = "{{ tools.python.path }}", tools = true }
+# UV_PYTHON = { value = "{{ tools.python.path }}", tools = true }
 UV_LINK_MODE = "symlink"
 _.python.venv = { path = ".venv", create = true, uv_create_args = ["--seed", "--system-site-packages"] }
 

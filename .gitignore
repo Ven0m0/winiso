@@ -12,6 +12,7 @@ uup_files/*
 .uup_cache/
 **/.uup_cache/
 uupdump/uup_download_macos.sh
+uupdump/files/convert_config_macos
 
 # ─── Logs & traces ────────────────────────────────────────────────────────────
 *.log

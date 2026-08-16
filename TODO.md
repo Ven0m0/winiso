@@ -4,6 +4,7 @@
 - [ ] implement features of [zISOTweaker](https://github.com/zoicware/zISOTweaker) and [Optimize-Windows](https://github.com/ShivamXD6/Optimize-Windows)
 - [ ] compare autounattend approach against [UnattendedWinstall](https://github.com/memstechtips/UnattendedWinstall)
 - [ ] merge "https://github.com/deffz-finesse/windows-unattended-debloat"
+- [ ] take heavy inspiration from "https://github.com/d3adconnection/Win11CleanInstall"
 
 ##  API & Download
 <category name="api" items="6" priority="high">

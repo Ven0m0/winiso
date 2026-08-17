@@ -9,6 +9,7 @@ Makefile    text eol=lf
 # ─── Windows scripts (must keep CRLF so cmd.exe executes correctly) ───────────
 *.cmd       text eol=crlf
 *.bat       text eol=crlf
+ventoy/answer/autounattend.xml text eol=crlf
 
 # ─── XML / config ─────────────────────────────────────────────────────────────
 # autounattend.xml is Windows-consumed; keep LF in repo but note Windows setup

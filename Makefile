@@ -11,7 +11,7 @@
 #   make help           - Show this help
 # =============================================================================
 
-.PHONY: all deps build build-pro build-nano build-pause clean help validate download validate-xml validate-reg sign
+.PHONY: all deps build build-pro build-nano build-pause clean help validate download validate-xml validate-reg validate-debloat sign
 
 # Default target
 all: build
@@ -28,28 +28,24 @@ validate:
 	chmod +x scripts/validate_prereqs.py
 	./scripts/validate_prereqs.py
 
-# Validate autounattend.xml specifically (canonical source + the copy the Linux
-# pipeline injects, and that the two haven't drifted apart)
+# Validate all XML config files: well-formedness, UTF-8-no-BOM, and that
+# config/autounattend.xml (a symlink) resolves to the canonical ventoy/answer copy
 validate-xml:
-	@echo "Validating autounattend.xml..."
-	@for f in ventoy/answer/autounattend.xml config/autounattend.xml; do \
-		if [[ ! -f "$$f" ]]; then \
-			echo "$$f not found"; \
-			exit 1; \
-		fi; \
-		xmllint --noout "$$f" && echo "$$f is valid XML"; \
-	done
-	@diff -q ventoy/answer/autounattend.xml config/autounattend.xml >/dev/null || { \
-		echo "config/autounattend.xml has drifted from ventoy/answer/autounattend.xml (the canonical source) - re-copy it"; \
-		exit 1; \
-	}
-	@echo "config/autounattend.xml matches the canonical ventoy/answer/autounattend.xml"
+	@echo "Validating XML config files..."
+	chmod +x scripts/validate_xml.py
+	./scripts/validate_xml.py
 
 # Validate .reg headers, including .reg content embedded in autounattend.xml
 validate-reg:
 	@echo "Validating registry files..."
 	chmod +x scripts/validate_reg_files.py
 	./scripts/validate_reg_files.py
+
+# Validate debloat glob patterns (syntax, duplicates, keep-list collisions)
+validate-debloat:
+	@echo "Validating debloat patterns..."
+	chmod +x scripts/validate_debloat.py
+	./scripts/validate_debloat.py
 
 # Download UUP files from uupdump.net
 download:
@@ -126,7 +122,8 @@ help:
 	@echo "  2. Run 'make download' to get UUP files (or download manually)"
 	@echo "  3. (Optional) Edit config/autounattend.xml"
 	@echo "  4. (Optional) Edit config/debloat_list.txt"
-	@echo "  5. Run 'make validate' to check everything is ready"
+	@echo "  5. Run 'make validate-debloat' to check debloat patterns"
+	@echo "  6. Run 'make validate' to check everything is ready"
 	@echo ""
 	@echo "Environment Variables:"
 	@echo "  TARGET_EDITION       - Preferred edition (default: ProfessionalWorkstation)"

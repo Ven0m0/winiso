@@ -10,6 +10,7 @@ Usage:
     python scripts/apply_image_settings.py --iso-path <path> [--skip-iso]
     python scripts/apply_image_settings.py --extract-path <path>
     python scripts/apply_image_settings.py --debloat --mount-dir <path> --wim-path <path>
+    python scripts/apply_image_settings.py --iso-path <path> --driver-path <drivers_dir>
 """
 
 import argparse
@@ -253,6 +254,14 @@ def remove_capabilities(mount_dir: Path) -> None:
             )
 
 
+def inject_drivers(mount_dir: Path, driver_path: Path) -> None:
+    write_step(f"Injecting drivers from {driver_path}...")
+    invoke_dism(
+        [f"/Image:{mount_dir}", "/Add-Driver", f"/Driver:{driver_path}", "/Recurse"]
+    )
+    write_success("Drivers injected")
+
+
 def mount_iso(iso_path: Path) -> str:
     result = subprocess.run(
         [
@@ -320,6 +329,11 @@ def main() -> int:
     parser.add_argument("--wim-path")
     parser.add_argument("--skip-iso", action="store_true")
     parser.add_argument("--debloat", action="store_true")
+    parser.add_argument(
+        "--driver-path",
+        help="Directory of driver packages (.inf) to inject into install.wim via "
+        "dism /Add-Driver /Recurse",
+    )
     args = parser.parse_args()
 
     require_admin()
@@ -336,6 +350,10 @@ def main() -> int:
     if args.iso_path and args.extract_path:
         print("ERROR: Cannot specify both --iso-path and --extract-path")
         return 1
+
+    driver_path = Path(args.driver_path) if args.driver_path else None
+    if driver_path and not driver_path.is_dir():
+        write_error_exit(f"Driver path not found: {driver_path}")
 
     mount_dir = (
         Path(args.mount_dir) if args.mount_dir else Path(win_config.DEFAULT_MOUNT_DIR)
@@ -420,6 +438,9 @@ def main() -> int:
         ]
     )
     write_success(f"Mounted install.wim index {win_config.INSTALL_WIM_INDEX}")
+
+    if driver_path:
+        inject_drivers(install_mount, driver_path)
 
     write_step("Copying autounattend.xml...")
     panther_dir = install_mount / "Windows" / "Panther"

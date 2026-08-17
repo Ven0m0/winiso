@@ -64,7 +64,7 @@ config/unattend-generator/apply.reg # Manual TPM/RAM/CPU/SecureBoot bypass + 8.3
 config/unattend-generator/after-logon.cmd # Reference copy of the generator's FirstLogonScript0 (winget installs + powercfg) — not called by any script
 config/unattend-generator/system.ps1 # Reference copy of the generator's SystemScript1 (disables Defender realtime/behavior monitoring) — not called by any script
 
-ventoy/answer/                      # Canonical autounattend.xml source; config/autounattend.xml is a copy of it
+ventoy/answer/                      # Canonical autounattend.xml source; config/autounattend.xml is a symlink to it
 
 tests/test_download_uup.py          # Unit tests (40+ cases, unittest + mock)
 tests/test_security.py              # Path traversal validation tests
@@ -92,7 +92,7 @@ make validate   # Check tools, disk space, UUP files, config
 make build      # Full pipeline (ISO written to output/ — runtime dir, not committed)
 make sign ISO=output/Win11.iso [GPG=1 KEY=<key-id>]  # SHA256/SHA512 (+ optional GPG) for a built ISO
 make clean      # Remove build artifacts
-make validate-xml  # xmllint check of config/autounattend.xml only
+make validate-xml  # validates every *.xml file (well-formed, UTF-8 no BOM) + autounattend symlink sync
 ```
 
 Equivalent `mise` tasks exist in `mise.toml` (`mise run install-deps`, `mise run test`, `mise run lint`, `mise run lint-xml`, `mise run lint-biome`, `mise run pwsh-install`) — use whichever entrypoint fits; both call the same underlying scripts/tools.

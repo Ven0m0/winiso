@@ -68,13 +68,8 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -yqq --no-install-recommends libxml2-utils
 
-      - name: Check XML syntax
-        run: |
-          xmllint --noout ventoy/answer/autounattend.xml
-          xmllint --noout config/autounattend.xml
-
-      - name: Check config/autounattend.xml matches canonical ventoy/answer/autounattend.xml
-        run: diff -u ventoy/answer/autounattend.xml config/autounattend.xml
+      - name: Validate XML config files
+        run: python3 scripts/validate_xml.py
 
   lint-reg:
     name: Lint Registry Files

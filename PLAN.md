@@ -8,6 +8,20 @@ tracks only real remaining work. `TODO.md` still describes the old shell
 pipeline and speculative features; treat it as historical until refreshed.
 
 ## Recently completed
+- **Debloat pattern validator** — `scripts/validate_debloat.py` checks
+  `config/debloat_list.txt` (plus `.uup-groups`-selected component patterns)
+  for invalid glob syntax, duplicates, and collisions with the protected AppX
+  keep-list. Wired into `make validate-debloat` / `mise run lint-debloat`,
+  kept separate from `make validate` like `validate-xml`/`validate-reg`.
+- **Driver injection** — `apply_image_settings.py --driver-path <dir>` runs
+  `dism /Image:<mount> /Add-Driver /Driver:<dir> /Recurse` against the mounted
+  install.wim before the answer-file/registry steps.
+- **`tests/test_security.py` expanded** — added 5 tests exercising the real
+  `download_uup._resolve_output_dir()` (normal, subdir, `..` traversal,
+  absolute-outside, and the `<root>_secret` prefix exploit) instead of only a
+  standalone mock of its logic. Added `.coveragerc` (`source = scripts`,
+  excludes `if __name__ == "__main__":`). `download_uup.py` measured at 90%
+  coverage, already past the 80% target — no further coverage work queued.
 - **Profile wiring** — `build.py` now accepts `--profile`/`PROFILE` (loads
   `config/profiles.json`, sets `TARGET_EDITION` from `profile["edition"]`)
   and `--edition` (highest-precedence override). Dropped the dead
@@ -40,12 +54,8 @@ pipeline and speculative features; treat it as historical until refreshed.
 (nothing queued — see Next below)
 
 ## Next (small, unstarted)
-- Debloat pattern validator (`scripts/validate_debloat.py`) — validate glob
-  patterns / catch typos before applying to a WIM.
-- Driver injection via DISM `/Add-Driver`.
 - Language pack support.
 - QEMU boot smoke test for produced ISOs.
-- Expand `tests/test_security.py` (2 tests today) + add a coverage config.
 
 ## Someday / maybe (not planned — YAGNI until requested)
 Delta downloads, mirror sources, build history cache, multi-edition ISO,

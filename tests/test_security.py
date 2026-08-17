@@ -3,8 +3,12 @@ import sys
 import unittest
 from pathlib import Path
 
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
 # Add the scripts directory to sys.path
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
+
+import download_uup
 
 
 class TestSecurity(unittest.TestCase):
@@ -52,6 +56,31 @@ class TestSecurity(unittest.TestCase):
             is_safe(prefix_exploit_path, project_root),
             f"Path {prefix_exploit_path} should be detected as traversal from {project_root}",
         )
+
+    def test_resolve_output_dir_normal(self):
+        """download_uup._resolve_output_dir() accepts paths under the project root."""
+        result = download_uup._resolve_output_dir("uup_files")
+        self.assertIsNotNone(result)
+        assert result is not None
+        self.assertTrue(result.is_relative_to(PROJECT_ROOT))
+
+    def test_resolve_output_dir_subdir(self):
+        result = download_uup._resolve_output_dir("uup_files/subdir")
+        self.assertIsNotNone(result)
+
+    def test_resolve_output_dir_traversal_rejected(self):
+        """Direct '..' traversal must be rejected."""
+        self.assertIsNone(download_uup._resolve_output_dir("../outside"))
+
+    def test_resolve_output_dir_absolute_outside_rejected(self):
+        """An absolute path outside the project root must be rejected."""
+        self.assertIsNone(download_uup._resolve_output_dir("/tmp/definitely_outside"))
+
+    def test_resolve_output_dir_prefix_exploit_rejected(self):
+        """A sibling directory sharing the project root as a string prefix
+        (e.g. '<root>_secret') must not be treated as inside the root."""
+        prefix_exploit = str(PROJECT_ROOT) + "_secret"
+        self.assertIsNone(download_uup._resolve_output_dir(prefix_exploit))
 
     def test_no_sudo_usage(self):
         """

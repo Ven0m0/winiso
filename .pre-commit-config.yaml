@@ -32,7 +32,6 @@ repos:
         args: [--allow-multiple-documents]
       - id: check-json
       - id: check-toml
-      - id: check-xml
       - id: fix-byte-order-marker
         exclude: ^CLAUDE\.md$
       - id: mixed-line-ending
@@ -43,8 +42,17 @@ repos:
       - id: check-shebang-scripts-are-executable
       - id: forbid-submodules
 
+  - repo: local
+    hooks:
+      - id: validate-xml
+        name: Validate XML config files
+        entry: python3 scripts/validate_xml.py
+        language: system
+        files: \.xml$
+        pass_filenames: true
+
   - repo: https://github.com/renovatebot/pre-commit-hooks
-    rev: 44.30.4
+    rev: 44.32.2
     hooks:
       - id: renovate-config-validator
 

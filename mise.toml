@@ -145,24 +145,23 @@ run = "pytest tests/"
 description = "Lint the code"
 run = "ruff ."
 
-# XML linting options:
-# 1. System xmllint (recommended): install libxml2-utils via system package manager
-# 2. Python stdlib: use python -c "import xml.etree.ElementTree as ET; ET.parse('config/autounattend.xml')"
-# 3. System tidy: install html-tidy (supports XML validation)
-# 4. pipx xmlschema: pipx install xmlschema  # for XSD schema validation
-# config/autounattend.xml is a copy of the canonical ventoy/answer/autounattend.xml - both are
-# checked, plus a diff, so the copy can't silently drift or go missing again.
+# Validates every *.xml file (well-formed via xmllint if installed, else stdlib
+# ElementTree; UTF-8 no-BOM), plus that config/autounattend.xml (a symlink) resolves to
+# the canonical ventoy/answer/autounattend.xml - a canary for a broken/unresolved
+# symlink (e.g. a checkout without symlink support).
 [tasks.lint-xml]
-description = "Lint XML config files and check config/autounattend.xml matches ventoy/answer/autounattend.xml"
-run = [
-  "xmllint --noout ventoy/answer/autounattend.xml config/autounattend.xml 2>/dev/null || python3 -c \"import xml.etree.ElementTree as ET; ET.parse('ventoy/answer/autounattend.xml'); ET.parse('config/autounattend.xml'); print('XML valid')\"",
-  "diff -u ventoy/answer/autounattend.xml config/autounattend.xml",
-]
+description = "Validate all XML config files (scripts/validate_xml.py)"
+run = ["python3 scripts/validate_xml.py"]
 
 # .reg headers: standalone *.reg files and .reg content embedded in autounattend.xml
 [tasks.lint-reg]
 description = "Validate .reg file headers (standalone + embedded in autounattend.xml)"
 run = ["python3 scripts/validate_reg_files.py"]
+
+# Debloat glob patterns: syntax, duplicates, protected AppX keep-list collisions
+[tasks.lint-debloat]
+description = "Validate config/debloat_list.txt patterns before applying to a WIM"
+run = ["python3 scripts/validate_debloat.py"]
 
 # PSScriptAnalyzer over the Windows-side PowerShell helper scripts
 [tasks.lint-ps]

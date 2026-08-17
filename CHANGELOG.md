@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- `scripts/validate_xml.py` and a `validate-xml` local pre-commit hook — validates every
+  `*.xml` file in the repo (well-formed via `xmllint` if installed, else stdlib
+  `ElementTree`; UTF-8 without BOM) and that `config/autounattend.xml` (a symlink)
+  resolves to `ventoy/answer/autounattend.xml`. Replaces the ad hoc bash/`xmllint`
+  logic previously duplicated across `Makefile`, `mise.toml`, and
+  `.github/workflows/lint-and-format.yml` (now all call the script), and covers
+  `config/ntlite-presets/*.xml`, which nothing validated before. Also drops the generic
+  `pre-commit-hooks` `check-xml` hook, superseded by the stricter local one.
+- `ventoy/answer/autounattend.xml` (and its `config/autounattend.xml` copy): `unattend-04.cmd`
+  now also runs `fsutil behavior set disable8dot3`/`disablecompression`,
+  `Dism /Online /Cleanup-Image /StartComponentCleanup`, and `powercfg /S` (High Performance) on
+  first logon, matching `config/unattend-generator/after-logon.cmd` (which previously had these
+  4 commands with no equivalent in the answer file). Also fixed a
+  `disablecompression 0` typo in `after-logon.cmd` that contradicted the `NtfsDisableCompression=1`
+  already set by `apply.reg`.
+- `scripts/validate_debloat.py` and `make validate-debloat` / `mise run lint-debloat` —
+  validates `config/debloat_list.txt` glob patterns (plus any `.uup-groups`-selected
+  component-group patterns) for invalid syntax, duplicates, and collisions with the
+  protected AppX keep-list, before they're ever applied to a WIM.
+- `apply_image_settings.py --driver-path <dir>` — injects a directory of driver
+  packages into the mounted `install.wim` via `dism /Add-Driver /Recurse`.
+- 5 new tests in `tests/test_security.py` exercising the real
+  `download_uup._resolve_output_dir()` path-traversal guard (previously only a
+  standalone mock of the same logic was tested), plus `.coveragerc` scoping
+  coverage to `scripts/`.
 - `scripts/validate_reg_files.py` and `make validate-reg` — validates the
   `Windows Registry Editor Version 5.00` header on every standalone `.reg` file
   (`config/unattend-generator/apply.reg`) and on the `.reg` content embedded via
@@ -95,6 +120,12 @@ All notable changes to this project will be documented in this file.
 - Added component groups (T017): `config/component_groups.json` with 8 toggleable groups (gaming, productivity, social, telemetry, media, system, news, oem), `load_component_groups()`, `list_component_groups()`, `get_component_group()`, `validate_component_groups()`, `collect_component_patterns()`, `write_component_groups_for_build()`, and `display_component_groups()` helpers, plus `--groups`, `--list-groups`, and `--write-groups` CLI flags. Profiles now declare a `component_groups` list that is auto-persisted to `.uup-groups` for the build pipeline.
 
 ### Changed
+- `config/autounattend.xml` is now a symlink to `ventoy/answer/autounattend.xml` instead of a
+  separate copy — the two files can no longer drift apart by construction. `make validate-xml` /
+  `mise run lint-xml` keep the same diff check, now repurposed as a canary for a broken or
+  unresolved symlink (e.g. a checkout without symlink support, the same class of issue already
+  known to affect `CLAUDE.md` on Windows). `scripts/custom_convert.sh`, `apply_image_settings.py`,
+  and the other consumers read the path unchanged and follow the symlink transparently.
 - Converted `invoke_system_cleanup.py`, `remove_short_names.py`, and `repair_wim.py` back to
   PowerShell (`Invoke-SystemCleanup.ps1`, `Remove-ShortNames.ps1`, `Repair-Wim.ps1`), matching
   their pre-Python-conversion originals ("Cleanup.cmd"/"Invoke-SystemCleanup.ps1", "8.3 strip

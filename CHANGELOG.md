@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Pinned `shellcheck`, `shfmt`, `ty`, and `powershell` in `mise.toml`'s `[tools]` (alongside
+  `python`/`uv`/`ruff`, previously undeclared there despite `AGENTS.md` documenting them as
+  mise-managed). New `mise run lint-shell` (shellcheck + shfmt over all 3 maintained bash
+  scripts, extending coverage to `custom_convert.sh`, which CI's narrower job skips) and
+  `mise run pwsh-install` (bootstraps the PSScriptAnalyzer module; `lint-ps` now depends on
+  it). `mise run lint` now runs `ruff check` + `ruff format --check` + `ty check
+  scripts/download_uup.py` instead of a bare `ruff .`, matching `AGENTS.md`'s documented lint
+  and type-check commands.
 - `scripts/validate_xml.py` and a `validate-xml` local pre-commit hook — validates every
   `*.xml` file in the repo (well-formed via `xmllint` if installed, else stdlib
   `ElementTree`; UTF-8 without BOM) and that `config/autounattend.xml` (a symlink)

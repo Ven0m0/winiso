@@ -64,4 +64,6 @@ build/
 .Trashes
 ehthumbs.db
 Thumbs.db
-desktop.ini
+Desktop.ini
+*.lnk
+$RECYCLE.BIN/

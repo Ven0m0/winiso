@@ -23,8 +23,16 @@ uvx = true
 cli_telemetry_optout = true
 
 [tools]
+python = "3.14"
+uv = "latest"
+ruff = "latest"
+ty = "latest"
+shellcheck = "latest"
+shfmt = "latest"
+powershell = "latest"
 # xmllint: system package (libxml2-utils on Debian/Ubuntu, libxml2 on Arch/Fedora)
 # biome: JS/TS/JSON/HTML/CSS linter - use bunx @biomejs/biome
+# PSScriptAnalyzer: PowerShell module, not mise-manageable - `mise run pwsh-install` bootstraps it
 
 [env]
 PROJECT_ROOT = "{{config_root}}"
@@ -142,8 +150,22 @@ description = "Run tests"
 run = "pytest tests/"
 
 [tasks.lint]
-description = "Lint the code"
-run = "ruff ."
+description = "Lint + format-check Python (ruff) and type-check download_uup.py (ty)"
+run = [
+  "ruff check scripts tests",
+  "ruff format --check scripts tests",
+  "ty check scripts/download_uup.py"
+]
+
+# shellcheck + shfmt over the maintained bash entrypoints (custom_convert.sh is
+# upstream-derived/patch-only but already carries its own shellcheck-disable
+# comments, so it's linted here too, unlike the narrower CI job)
+[tasks.lint-shell]
+description = "Lint bash scripts with shellcheck + shfmt"
+run = [
+  "shellcheck scripts/custom_convert.sh scripts/convert_config.sh scripts/utils.sh",
+  "shfmt -d scripts/custom_convert.sh scripts/convert_config.sh scripts/utils.sh"
+]
 
 # Validates every *.xml file (well-formed via xmllint if installed, else stdlib
 # ElementTree; UTF-8 no-BOM), plus that config/autounattend.xml (a symlink) resolves to
@@ -163,9 +185,17 @@ run = ["python3 scripts/validate_reg_files.py"]
 description = "Validate config/debloat_list.txt patterns before applying to a WIM"
 run = ["python3 scripts/validate_debloat.py"]
 
+# Bootstrap the PSScriptAnalyzer module (not mise-manageable; it's a PS Gallery module)
+[tasks.pwsh-install]
+description = "Install PSScriptAnalyzer PowerShell module (CurrentUser scope)"
+run = [
+  "pwsh -NoProfile -Command \"if (-not (Get-Module -ListAvailable -Name PSScriptAnalyzer)) { Install-Module -Name PSScriptAnalyzer -Scope CurrentUser -Force -SkipPublisherCheck -AllowClobber }\"",
+]
+
 # PSScriptAnalyzer over the Windows-side PowerShell helper scripts
 [tasks.lint-ps]
 description = "Lint PowerShell scripts with PSScriptAnalyzer (requires PowerShell 7+)"
+depends = ["pwsh-install"]
 run = [
   "pwsh -NoProfile -Command \"Import-Module PSScriptAnalyzer; $r = Get-ChildItem -Recurse -Include *.ps1,*.psm1,*.psd1 -File | Where-Object { $_.FullName -notmatch '[\\\\/]\\.git[\\\\/]' } | ForEach-Object { Invoke-ScriptAnalyzer -Path $_.FullName -Settings ./PSScriptAnalyzerSettings.psd1 }; if ($r) { $r | Format-Table -AutoSize; exit 1 }\"",
 ]

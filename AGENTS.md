@@ -1,7 +1,6 @@
 # AGENTS.md — Debloated Windows 11 ISO Builder
 
-Canonical agent guide. `.github/copilot-instructions.md` is a short summary that defers here.
-`CLAUDE.md` is a symlink to this file — edit `AGENTS.md`, not `CLAUDE.md`.
+Canonical agent guide. `CLAUDE.md` is a symlink to this file — edit `AGENTS.md`, not `CLAUDE.md`.
 
 ---
 
@@ -45,10 +44,13 @@ scripts/pyutils.py                  # Shared logging/tool-check helpers (import 
 scripts/validate_prereqs.py         # Pre-build checks (tools, disk space, UUP files)
 scripts/sign_iso.py                 # SHA256/SHA512 checksums + optional GPG signature for the built ISO
 scripts/windows_service.cmd         # Optional Windows-side DISM servicing (standalone batch, no Python needed)
-scripts/apply_image_settings.py     # ISO extraction, unattend injection, debloat (Windows-side)
+scripts/apply_image_settings.py     # ISO extraction, unattend injection, debloat, --driver-path injection (Windows-side)
 scripts/win_config.py               # Windows servicing config (mount dir, oscdimg path, volume label)
 scripts/win_utils.py                # Shared Windows servicing helpers (dism.exe/oscdimg wrappers)
 scripts/new_iso.py                  # oscdimg ISO builder (Windows-side)
+scripts/validate_xml.py             # XML validator: well-formed, UTF-8 no-BOM, autounattend symlink sync (make/mise validate-xml)
+scripts/validate_debloat.py         # config/debloat_list.txt validator: syntax, duplicates, keep-list collisions (make validate-debloat)
+scripts/validate_reg_files.py       # .reg header validator: standalone files + embedded reg blocks in autounattend.xml (make validate-reg)
 scripts/WinUtils.ps1                # Shared PowerShell helpers (dism.exe wrappers) — dot-source this, never copy
 scripts/Invoke-SystemCleanup.ps1    # Live-OS disk cleanup helper (Windows-side, PowerShell)
 scripts/Remove-ShortNames.ps1       # 8.3 short-name stripping for install.wim (Windows-side, PowerShell); GUI folder pickers, no boot.wim/Winre.wim handling
@@ -63,6 +65,7 @@ config/ntlite-presets/InstallApps.cmd # Winget app installer for NTLite's Post-S
 config/unattend-generator/apply.reg # Manual TPM/RAM/CPU/SecureBoot bypass + 8.3/power-plan tweaks — companion to the NTLite alternative path, not called by any script
 config/unattend-generator/after-logon.cmd # Reference copy of the generator's FirstLogonScript0 (winget installs + powercfg) — not called by any script
 config/unattend-generator/system.ps1 # Reference copy of the generator's SystemScript1 (disables Defender realtime/behavior monitoring) — not called by any script
+config/component_groups.json        # Named AppX package groups mined from NTLite presets, consumed by validate_debloat.py's `.uup-groups` selection
 
 ventoy/answer/                      # Canonical autounattend.xml source; config/autounattend.xml is a symlink to it
 
@@ -70,8 +73,8 @@ tests/test_download_uup.py          # Unit tests (40+ cases, unittest + mock)
 tests/test_security.py              # Path traversal validation tests
 docs/autounattend.md                # Autounattend customisation guide
 
-PLAN.md                             # 54 tasks, 4 priority tiers, ~660h total
-TODO.md                             # 50-item feature roadmap (v5.0)
+PLAN.md                             # Real remaining work (Next / Someday-maybe)
+TODO.md                             # Unevaluated external-repo inspiration links
 CHANGELOG.md                        # Contributor-facing change log
 mise.toml                           # Dev env (Python 3.14, ruff, uv, shellcheck)
 ```
@@ -92,10 +95,12 @@ make validate   # Check tools, disk space, UUP files, config
 make build      # Full pipeline (ISO written to output/ — runtime dir, not committed)
 make sign ISO=output/Win11.iso [GPG=1 KEY=<key-id>]  # SHA256/SHA512 (+ optional GPG) for a built ISO
 make clean      # Remove build artifacts
-make validate-xml  # validates every *.xml file (well-formed, UTF-8 no BOM) + autounattend symlink sync
+make validate-xml     # validates every *.xml file (well-formed, UTF-8 no BOM) + autounattend symlink sync
+make validate-reg     # validates .reg headers (standalone files + embedded in autounattend.xml)
+make validate-debloat # validates config/debloat_list.txt: syntax, duplicates, keep-list collisions
 ```
 
-Equivalent `mise` tasks exist in `mise.toml` (`mise run install-deps`, `mise run test`, `mise run lint`, `mise run lint-xml`, `mise run lint-biome`, `mise run pwsh-install`) — use whichever entrypoint fits; both call the same underlying scripts/tools.
+Equivalent `mise` tasks exist in `mise.toml` (`mise run install-deps`, `mise run test`, `mise run lint`, `mise run lint-shell`, `mise run lint-ps`, `mise run lint-xml`, `mise run lint-biome`, `mise run pwsh-install`) — use whichever entrypoint fits; both call the same underlying scripts/tools.
 
 ### Build Variants
 
@@ -148,9 +153,10 @@ Every pipeline script:
 
 ```python
 from pyutils import log_info, log_success, log_warn, log_error, log_debug
-check_tool(name)                 # returns True/False, logs result
-check_required_tools(tools)      # returns count of missing tools
-check_iso_tool()                 # checks for genisoimage or mkisofs
+
+check_tool(name)  # returns True/False, logs result
+check_required_tools(tools)  # returns count of missing tools
+check_iso_tool()  # checks for genisoimage or mkisofs
 ```
 
 Do not add new logging functions or styles — use what `pyutils.py` (or `win_utils.py` on
@@ -266,17 +272,21 @@ by glob, it doesn't do DISM feature removal.
 
 ```bash
 python3 -m pytest tests/ -v                                # All tests
-python3 -m pytest tests/ --cov --cov-report=term-missing  # With coverage report
-for f in scripts/*.py scripts/files/*.py; do python3 -m py_compile "$f"; done  # Python syntax check
+python3 -m pytest tests/ --cov --cov-report=term-missing  # With coverage report (.coveragerc scopes to scripts/)
+for f in scripts/*.py; do python3 -m py_compile "$f"; done  # Python syntax check
 bash -n scripts/custom_convert.sh scripts/convert_config.sh scripts/utils.sh  # Remaining shell syntax check
 xmllint --noout config/autounattend.xml                    # XML validation
 ruff check scripts/ tests/                                 # Python lint
+python3 scripts/validate_xml.py       # Same check as make/mise validate-xml, over every *.xml file
+python3 scripts/validate_debloat.py   # Same check as make/mise validate-debloat
+python3 scripts/validate_reg_files.py # Same check as make/mise validate-reg
 ```
 
 `make validate` runs the full prereq check but requires the `uup_files/` runtime directory to be populated with downloaded UUP packages — do not run in CI without them.
 
-Current test coverage: ~60% of `scripts/download_uup.py`. Target: 80% (T006).
-Uncovered paths: `_process_selected_build`, `_prepare_output_directory`, `_prepare_download_list`, `_run_aria2_download` (happy path).
+Current test coverage: ~90% of `scripts/download_uup.py` (up from 60% after adding coverage for
+`_process_selected_build`, `_prepare_output_directory`, `_prepare_download_list`,
+`_run_aria2_download`, and 5 path-traversal tests against the real `_resolve_output_dir()` guard).
 
 ---
 
@@ -286,10 +296,10 @@ Workflows in `.github/workflows/`:
 
 | File | Triggers | Checks |
 |------|----------|--------|
-| `lint-and-format.yml` | push, PR | ShellCheck, Ruff, xmllint |
+| `lint-and-format.yml` | push, PR | ShellCheck, Ruff, xmllint, PSScriptAnalyzer |
 | `test-matrix.yml` | push, PR | pytest on Python 3.13 + 3.14 |
-| `build-and-deploy.yml` | push to main | Full ISO build |
-| `copilot-setup-steps.yml` | Copilot | Dev environment setup |
+
+No ISO-build or Copilot-setup workflow exists — building the ISO is a local-only `make build` step, not run in CI.
 
 When editing workflows: use minimal `permissions`, pin action refs to exact SHA or version tag, only install tools the repo actually uses.
 
@@ -327,10 +337,22 @@ stays plain pre-commit-compatible — `pre-commit run --all-files` / `pre-commit
 identically against the same file for contributors without prek. Renovate keeps hook `rev:`
 pins current via its `pre-commit` manager (`renovate.json`).
 
-Tools managed by `mise.toml`: `python 3.14`, `uv`, `ruff`, `ty`, `basedpyright`,
-`shellcheck`, `shfmt`, `actionlint`, `ripgrep`, `fd`, `powershell` (needed only for
-`Mount-DiskImage`/`Dismount-DiskImage` inside `apply_image_settings.py`; DISM itself is
-invoked via `dism.exe`, not the PowerShell DISM module).
+Tools managed by `mise.toml`: `python 3.14`, `uv`, `ruff`, `ty`, `shellcheck`, `shfmt`,
+`powershell` (needed only for `Mount-DiskImage`/`Dismount-DiskImage` inside
+`apply_image_settings.py`; DISM itself is invoked via `dism.exe`, not the PowerShell DISM
+module). `basedpyright` is pre-commit-managed only (pinned via `.pre-commit-config.yaml`,
+scoped to `scripts/download_uup.py`), not a mise tool. `PSScriptAnalyzer` is a PowerShell
+Gallery module, bootstrapped by `mise run pwsh-install` rather than mise itself; its ruleset
+lives in `PSScriptAnalyzerSettings.psd1` at the repo root.
+
+```bash
+mise run lint         # ruff check + ruff format --check + ty check (scripts/download_uup.py)
+mise run lint-shell    # shellcheck + shfmt -d over scripts/{custom_convert,convert_config,utils}.sh
+mise run lint-ps       # PSScriptAnalyzer over every *.ps1/*.psm1/*.psd1 (bootstraps the module first)
+mise run lint-xml      # scripts/validate_xml.py — well-formed, UTF-8 no-BOM, autounattend symlink sync
+mise run lint-reg      # scripts/validate_reg_files.py — .reg headers, standalone + embedded
+mise run lint-debloat  # scripts/validate_debloat.py — config/debloat_list.txt syntax/dupes/keep-list
+```
 
 System packages (install via `make deps` / `setup_env.py`):
 `xmllint`, `aria2c`, `cabextract`, `wimlib-imagex`, `chntpw`, `genisoimage` or `mkisofs`.
@@ -339,13 +361,9 @@ System packages (install via `make deps` / `setup_env.py`):
 
 ## Plan & Roadmap
 
-- `PLAN.md` — 54 tasks, 4 priority tiers, ~660h total
-- `TODO.md` — 50-item feature roadmap (v5.0, 10 categories)
-- Priority 1 (0-30d): T003 type hints, T005 log_debug, T006 coverage to 80%
-- Priority 2 (30-90d): T007-T015 API + build features
-- Priority 3 (90-180d): T020-T041 debloat, post-install, testing
-- Priority 4 (180+d): T042-T056 architecture, AI, new features
+- `PLAN.md` — real remaining work (Next / Someday-maybe); completed work lives in `CHANGELOG.md`, not here
+- `TODO.md` — unevaluated external-repo inspiration links only
 
 ---
 
-*Updated: 2026-05-15*
+*Updated: 2026-08-17*

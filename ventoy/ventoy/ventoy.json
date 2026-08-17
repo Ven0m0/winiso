@@ -4,34 +4,21 @@
         { "VTOY_DEFAULT_SEARCH_ROOT": "/iso" }
     ],
     "theme":{
-		"gfxmode": "max",
         "file":[
             "/ventoy/themes/miku/theme.txt",
             "/ventoy/themes/cachyos/theme.txt",
             "/ventoy/themes/celeste/theme.txt"
         ],
+        "gfxmode": "max",
         "fonts":[
             "/ventoy/themes/cachyos/ubuntu_regular_20.pf2",
             "/ventoy/themes/cachyos/terminus-18.pf2",
-            "/ventoy/themes/celeste/RenogareRegular20.pf2",
-			"/themes/celeste/terminus-14.pf2"
+            "/ventoy/themes/celeste/RenogareRegular20.pf2"
         ]
     },
     "auto_install":[
         {
-            "image": "/iso/win11_stock.iso",
-            "template":[
-                "/answer/autounattend.xml"
-            ]
-        },
-        {
-            "image": "/iso/win11_titus.iso",
-            "template":[
-                "/answer/autounattend.xml"
-            ]
-        },
-        {
-            "image": "/iso/tiny11.iso",
+            "parent": "/iso",
             "template":[
                 "/answer/autounattend.xml"
             ]

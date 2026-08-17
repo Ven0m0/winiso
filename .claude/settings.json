@@ -10,6 +10,21 @@
 					}
 				]
 			}
+		],
+		"PostToolUse": [
+			{
+				"matcher": "Edit|Write",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "python3 .claude/hooks/check_invariants.py"
+					},
+					{
+						"type": "command",
+						"command": "python3 .claude/hooks/py_lint_touched.py"
+					}
+				]
+			}
 		]
 	},
 	"permissions": {

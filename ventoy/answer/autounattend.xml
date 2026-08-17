@@ -1141,6 +1141,18 @@ $scripts = @(
 	{
 		reg.exe import "C:\Windows\Setup\Scripts\unattend-03.reg";
 	};
+	{
+		reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" /v EnableFirstLogonAnimation /t REG_DWORD /d 0 /f;
+	};
+	{
+		reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\UserProfileEngagement" /v ScoobeSystemSettingEnabled /t REG_DWORD /d 0 /f;
+	};
+	{
+		reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Device Installer" /v DisableCoInstallers /t REG_DWORD /d 1 /f;
+	};
+	{
+		reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\DriverSearching" /v SearchOrderConfig /t REG_DWORD /d 0 /f;
+	};
 );
 
 &amp; {
@@ -1342,6 +1354,15 @@ $scripts = @(
 	};
 	{
 		reg.exe add "HKU\DefaultUser\Software\Microsoft\Windows\CurrentVersion\RunOnce" /v "UnattendedSetup" /t REG_SZ /d "powershell.exe -WindowStyle \""Normal\"" -ExecutionPolicy \""Unrestricted\"" -NoProfile -File \""C:\Windows\Setup\Scripts\UserOnce.ps1\""" /f;
+	};
+	{
+		reg.exe add "HKU\DefaultUser\System\GameConfigStore" /v GameDVR_Enabled /t REG_DWORD /d 0 /f;
+	};
+	{
+		reg.exe add "HKU\DefaultUser\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v LaunchTo /t REG_DWORD /d 1 /f;
+	};
+	{
+		reg.exe add "HKU\DefaultUser\Software\Microsoft\Windows\CurrentVersion\Search" /v BingSearchEnabled /t REG_DWORD /d 0 /f;
 	};
 );
 

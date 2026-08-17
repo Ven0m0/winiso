@@ -101,15 +101,32 @@ reg add "HKU\.DEFAULT\Software\Microsoft\Windows\CurrentVersion\BackgroundAccess
 :: -----------------------------------------------------------------------------
 :: UI/UX Tweaks
 :: -----------------------------------------------------------------------------
+:: Classic context menu, ShowTaskViewButton and BingSearchEnabled are per-user
+:: values -- they live in ventoy/answer/autounattend.xml's DefaultUser.ps1/
+:: UserOnce.ps1 (which write to the loaded default-user hive / real HKCU), not
+:: here. HKU\.DEFAULT is the SYSTEM account's own hive; a real user never reads it.
 echo [%DATE% %TIME%] Applying UI/UX tweaks... >> "%LOGFILE%"
-:: Enable Classic Context Menu
-reg add "HKU\.DEFAULT\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32" /f /ve >> "%LOGFILE%" 2>&1
-:: Hide Task View Button
-reg add "HKU\.DEFAULT\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v "ShowTaskViewButton" /t REG_DWORD /d 0 /f >> "%LOGFILE%" 2>&1
-:: Disable Bing Search in Start Menu
-reg add "HKU\.DEFAULT\Software\Microsoft\Windows\CurrentVersion\Search" /v "BingSearchEnabled" /t REG_DWORD /d 0 /f >> "%LOGFILE%" 2>&1
 :: Hide "Recommended" section in Start Menu (best effort)
 reg add "HKLM\SOFTWARE\Microsoft\PolicyManager\current\device\Start" /v "HideRecommendedSection" /t REG_DWORD /d 1 /f >> "%LOGFILE%" 2>&1
+
+:: -----------------------------------------------------------------------------
+:: Windows Update: defer feature updates only, not quality/security updates
+:: -----------------------------------------------------------------------------
+echo [%DATE% %TIME%] Deferring feature updates... >> "%LOGFILE%"
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v "DeferFeatureUpdates" /t REG_DWORD /d 1 /f >> "%LOGFILE%" 2>&1
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v "DeferFeatureUpdatesPeriodInDays" /t REG_DWORD /d 30 /f >> "%LOGFILE%" 2>&1
+
+:: -----------------------------------------------------------------------------
+:: Disable legacy Remote Assistance (not Remote Desktop/RDP)
+:: -----------------------------------------------------------------------------
+echo [%DATE% %TIME%] Disabling Remote Assistance... >> "%LOGFILE%"
+reg add "HKLM\SYSTEM\CurrentControlSet\Control\Remote Assistance" /v "fAllowToGetHelp" /t REG_DWORD /d 0 /f >> "%LOGFILE%" 2>&1
+
+:: -----------------------------------------------------------------------------
+:: Disable Customer Experience Improvement Program
+:: -----------------------------------------------------------------------------
+echo [%DATE% %TIME%] Disabling CEIP... >> "%LOGFILE%"
+reg add "HKLM\SOFTWARE\Microsoft\SQMClient\Windows" /v "CEIPEnable" /t REG_DWORD /d 0 /f >> "%LOGFILE%" 2>&1
 
 :: -----------------------------------------------------------------------------
 :: Clean up temporary files

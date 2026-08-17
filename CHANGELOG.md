@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Evaluated the four external repos tracked in `TODO.md` (zISOTweaker, Optimize-Windows,
+  UnattendedWinstall, windows-unattended-debloat, Win11CleanInstall) and merged the genuinely
+  new tweaks: `*549981C3F5F10*` added to `config/debloat_list.txt`/`component_groups.json`
+  (fixes a dead `*Cortana*`-only glob — the real WindowsApps folder uses the numeric package
+  family), and new OOBE-timing/first-boot registry values in `ventoy/answer/autounattend.xml`
+  (`EnableFirstLogonAnimation`, `ScoobeSystemSettingEnabled`, `DisableCoInstallers`,
+  `SearchOrderConfig`, `GameDVR_Enabled`, `LaunchTo`, `BingSearchEnabled`) and
+  `config/oem/SetupComplete.cmd` (`DeferFeatureUpdates`, Remote Assistance off, CEIP off).
+  Most other tweaks from those repos were already covered by the existing
+  schneegans-generator-based answer file. See `TODO.md` for the full evaluation verdict,
+  including what was deliberately rejected (Defender/UAC/SMB-signing downgrades, first-logon
+  3rd-party installers, etc).
+
+### Fixed
+- `scripts/apply_image_settings.py`'s Windows-servicing AppX removal list was hardcoded and had
+  drifted from `config/debloat_list.txt` — it removed `Microsoft.WindowsStore*`,
+  `Microsoft.StorePurchaseApp*`, and `Microsoft.SecHealthUI*`, all violating the AGENTS.md AppX
+  keep-list (`*Store*`, `*Defender*`), which only `scripts/debloat_wim.py` enforced. It now
+  loads patterns from `config/debloat_list.txt` (+ component groups) via `debloat_wim`'s
+  existing helpers and filters through `is_protected_pattern()`, so both build stages share one
+  list and the keep-list applies to both. Net effect: the Windows servicing stage is now
+  *less* aggressive on packages `debloat_list.txt` deliberately keeps commented out
+  (`Microsoft.ScreenSketch`, `Microsoft.Windows.Photos`, `Microsoft.WindowsCalculator`,
+  `Microsoft.WindowsCamera`, `MicrosoftWindows.Client.WebExperience`) plus the three keep-list
+  violations above.
+- `config/oem/SetupComplete.cmd` wrote 3 of its "UI/UX tweaks" to `HKU\.DEFAULT` (the SYSTEM
+  account's own hive) instead of the new-user template — they never reached a real user
+  account. Two (`TaskbarEndTask`, `ShowTaskViewButton`) were already correctly set elsewhere in
+  `ventoy/answer/autounattend.xml`'s `DefaultUser.ps1`/`UserOnce.ps1`, so the dead duplicates
+  were removed; `BingSearchEnabled` was moved into `DefaultUser.ps1`'s `HKU\DefaultUser` hive
+  where it actually takes effect.
 - Pinned `shellcheck`, `shfmt`, `ty`, and `powershell` in `mise.toml`'s `[tools]` (alongside
   `python`/`uv`/`ruff`, previously undeclared there despite `AGENTS.md` documenting them as
   mise-managed). New `mise run lint-shell` (shellcheck + shfmt over all 3 maintained bash

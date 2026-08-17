@@ -16,7 +16,7 @@ No macOS support. No Windows required for the Linux build path.
 
 | Rule | Detail |
 |------|--------|
-| **AppX keep-list** | Never remove: `*Store*`, `*WebView*`, `*VCLibs*`, `*UI.Xaml*`, `*Defender*`, `*DesktopAppInstaller*` |
+| **AppX keep-list** | Never remove: `*Store*`, `*WebView*`, `*VCLibs*`, `*UI.Xaml*`, `*Defender*`, `*DesktopAppInstaller*`. Enforced via `debloat_wim.is_protected_pattern()` on both the Linux pipeline (`debloat_wim.py`) and the Windows servicing stage (`apply_image_settings.py`'s `get_appx_patterns()`), which both read `config/debloat_list.txt` as the single source of truth |
 | **Non-root** | `wimlib-imagex` runs as the current user via FUSE — never add `sudo` to the build pipeline |
 | **Flat UUP layout** | UUP files land in `uup_files/` as `*.cab` / `*.esd`, no subdirectories (`uup_files/` is a runtime directory, not committed) |
 | **Converter is upstream** | `scripts/custom_convert.sh` is patch-only; never rewrite its logic |
@@ -66,6 +66,8 @@ config/unattend-generator/apply.reg # Manual TPM/RAM/CPU/SecureBoot bypass + 8.3
 config/unattend-generator/after-logon.cmd # Reference copy of the generator's FirstLogonScript0 (winget installs + powercfg) — not called by any script
 config/unattend-generator/system.ps1 # Reference copy of the generator's SystemScript1 (disables Defender realtime/behavior monitoring) — not called by any script
 config/component_groups.json        # Named AppX package groups mined from NTLite presets, consumed by validate_debloat.py's `.uup-groups` selection
+config/profiles.json                # Named build profiles (minimal/standard/gaming/enterprise/dev), consumed by download_uup.py
+config/components.psd1              # PowerShell data file: extra packages/capabilities/features/apps for the NTLite manual path — not consumed by build.py/debloat_wim.py
 
 ventoy/answer/                      # Canonical autounattend.xml source; config/autounattend.xml is a symlink to it
 
@@ -74,7 +76,7 @@ tests/test_security.py              # Path traversal validation tests
 docs/autounattend.md                # Autounattend customisation guide
 
 PLAN.md                             # Real remaining work (Next / Someday-maybe)
-TODO.md                             # Unevaluated external-repo inspiration links
+TODO.md                             # External-repo inspiration: evaluation verdict (taken/rejected)
 CHANGELOG.md                        # Contributor-facing change log
 mise.toml                           # Dev env (Python 3.14, ruff, uv, shellcheck)
 ```

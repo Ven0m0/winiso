@@ -21,6 +21,7 @@ import sys
 from pathlib import Path
 
 import win_config
+from debloat_wim import is_protected_pattern, load_group_patterns, load_patterns
 from win_utils import (
     find_oscdimg,
     invoke_dism,
@@ -81,45 +82,18 @@ FEATURES_TO_DISABLE = (
 )
 FEATURES_TO_ENABLE = ("DirectPlay",)
 
-APPX_TO_REMOVE = (
-    "Clipchamp.Clipchamp*",
-    "Microsoft.549981C3F5F10*",
-    "Microsoft.BingNews*",
-    "Microsoft.BingWeather*",
-    "Microsoft.GamingApp*",
-    "Microsoft.GetHelp*",
-    "Microsoft.Getstarted*",
-    "Microsoft.MicrosoftOfficeHub*",
-    "Microsoft.MicrosoftSolitaireCollection*",
-    "Microsoft.MicrosoftStickyNotes*",
-    "Microsoft.Paint*",
-    "Microsoft.People*",
-    "Microsoft.PowerAutomateDesktop*",
-    "Microsoft.ScreenSketch*",
-    "Microsoft.SecHealthUI*",
-    "Microsoft.StorePurchaseApp*",
-    "Microsoft.Todos*",
-    "Microsoft.Windows.Photos*",
-    "Microsoft.WindowsAlarms*",
-    "Microsoft.WindowsCalculator*",
-    "Microsoft.WindowsCamera*",
-    "microsoft.windowscommunicationsapps*",
-    "Microsoft.WindowsFeedbackHub*",
-    "Microsoft.WindowsMaps*",
-    "Microsoft.WindowsNotepad*",
-    "Microsoft.WindowsSoundRecorder*",
-    "Microsoft.WindowsStore*",
-    "Microsoft.Xbox.TCUI*",
-    "Microsoft.XboxGameOverlay*",
-    "Microsoft.XboxGamingOverlay*",
-    "Microsoft.XboxIdentityProvider*",
-    "Microsoft.XboxSpeechToTextOverlay*",
-    "Microsoft.YourPhone*",
-    "Microsoft.ZuneMusic*",
-    "Microsoft.ZuneVideo*",
-    "MicrosoftCorporationII.QuickAssist*",
-    "MicrosoftWindows.Client.WebExperience*",
-)
+
+def get_appx_patterns() -> tuple[str, ...]:
+    """Loads AppX removal globs from config/debloat_list.txt (+ any component-group
+    patterns), the same source scripts/debloat_wim.py uses for the Linux pipeline,
+    so the Windows servicing stage can't drift from it and stays off the AppX
+    keep-list (Store/WebView/VCLibs/UI.Xaml/Defender/DesktopAppInstaller)."""
+    patterns = load_patterns()
+    for pattern in load_group_patterns():
+        if pattern not in patterns:
+            patterns.append(pattern)
+    return tuple(p for p in patterns if not is_protected_pattern(p))
+
 
 CAPABILITIES_TO_REMOVE = (
     "App.StepsRecorder*",
@@ -222,10 +196,11 @@ def set_features(mount_dir: Path) -> None:
 
 def remove_appx_packages(mount_dir: Path) -> None:
     print("Removing AppX Packages...")
+    appx_patterns = get_appx_patterns()
     for name in dism_get_names(
         mount_dir, ["/Get-ProvisionedAppxPackages"], "DisplayName"
     ):
-        if matches_any(name, APPX_TO_REMOVE):
+        if matches_any(name, appx_patterns):
             _ = subprocess.run(
                 [
                     "dism.exe",

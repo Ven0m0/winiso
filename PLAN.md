@@ -13,8 +13,7 @@ not here — do not duplicate finished items back into this file.
 ## Next (small, unstarted)
 - QEMU boot smoke test for produced ISOs.
 - DEBLOAT-001: smart debloat dependency checker (detect AppX removal
-  conflicts before applying). Blocks DEBLOAT-010 (selective pattern merge
-  from `ShivamXD6/Optimize-Windows`, see `TODO.md`).
+  conflicts before applying).
 
 ## Someday / maybe (not planned — YAGNI until requested)
 Multi-edition ISO, web dashboard, telemetry scoring, privacy dashboard,
@@ -25,8 +24,6 @@ benchmarks, security fuzzing, plugin system, WIM layering/diff, A/B
 partitions, secure boot signing, AI/ML recommend/predict/triage.
 
 ## Housekeeping
-- `.mise/tasks/` now holds only `install`; the rest of the tasks already live
-  in `mise.toml`. Low-priority: fold `install` in too or leave as-is.
 - No `pyproject.toml`/mypy/pytest config exists. Ruff is configured via
   `mise.toml`. `pyrightconfig.json` sets `typeCheckingMode: standard` and scopes
   `basedpyright` to `scripts/download_uup.py`, matching the pre-commit hook and

@@ -26,6 +26,20 @@ All notable changes to this project will be documented in this file.
   `additional_dependencies: [httpx, orjson]` so it can resolve the new imports.
 
 ### Added
+- Hyper-V ISO boot validation and an opt-in WinPE deploy/capture loop, ported from
+  [CleanWin11IsoMaker](https://github.com/pitomec/CleanWin11IsoMaker)'s `functions/hyperv.ps1`
+  and `functions/winpe.ps1`: `scripts/HyperVUtils.ps1` (shared VM/VHD helpers, dot-sources
+  `WinUtils.ps1`), `scripts/Test-IsoBoot.ps1` (`mise run test-iso` — boots the newest
+  `output/*.iso` in a throwaway Hyper-V VM under `Compliant` or `Bypass` TPM/SecureBoot/RAM
+  profiles and waits for the Hyper-V heartbeat integration service to confirm a full install
+  completed, saving a screenshot on timeout), and `scripts/Invoke-OnlineServicing.ps1` (manual,
+  ADK-gated: builds WinPE deployment/capture ISOs, installs a given `install.wim` into a VM for
+  interactive live tweaks + sysprep, recaptures it). New `scripts/winpe/{deployment,capture}/`
+  payload directory. Source repo's `offlineuninstall.ps1` (AppX/capability/package removal) and
+  start-menu-pin wipe were not ported — both are already covered by
+  `apply_image_settings.py`/`config/debloat_list.txt` and the answer file's
+  `LayoutModification.xml`; its MAS/TSforge activation injection and hardcoded `ProductKey` were
+  deliberately excluded as out of scope for this repo.
 - `pyproject.toml`: project metadata, `dev` dependency group (`pytest`, `pytest-cov`), and
   `[tool.pytest.ini_options]`/`[tool.coverage.*]` config (replaces `.coveragerc`). `uv.lock`
   pins the dev group. `mise run test`/`mise run coverage` and CI's `test-matrix.yml` now run

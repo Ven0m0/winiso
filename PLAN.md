@@ -1,5 +1,5 @@
 # Implementation Plan
-_Updated: 2026-08-17_
+_Updated: 2026-08-18_
 
 Linux-based builder for a debloated Windows 11 ISO. Pipeline is Python
 (`build.py`, `download_uup.py`, `debloat_wim.py`, `validate_prereqs.py`,
@@ -11,7 +11,8 @@ not here — do not duplicate finished items back into this file.
 (nothing queued — see Next below)
 
 ## Next (small, unstarted)
-- QEMU boot smoke test for produced ISOs.
+- QEMU boot smoke test for produced ISOs (Linux-host equivalent; Windows hosts
+  are now covered by `scripts/Test-IsoBoot.ps1` / `mise run test-iso`).
 - DEBLOAT-001: smart debloat dependency checker (detect AppX removal
   conflicts before applying).
 

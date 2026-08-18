@@ -86,6 +86,20 @@ build-pause = [
   "@if windows: pwsh -nop -c \"Write-Error 'build-pause requires the Linux build toolchain. Run this task from WSL or Git Bash.'; exit 1\""
 ]
 
+# Boot the newest output/*.iso in a Hyper-V VM and verify it installs end-to-end
+test-iso = [
+  "@if windows: pwsh -nop -File {{config_root}}/scripts/Test-IsoBoot.ps1",
+  "@if linux: pwsh -nop -c \"Write-Error 'test-iso requires Hyper-V on a Windows host.'; exit 1\"",
+  "@if darwin: pwsh -nop -c \"Write-Error 'test-iso requires Hyper-V on a Windows host.'; exit 1\""
+]
+
+# Deploy install.wim into a Hyper-V VM for live tweaks, then recapture it (manual, ADK-gated)
+online-service = [
+  "@if windows: pwsh -nop -c \"Write-Error 'online-service requires -InstallWimPath/-OutputWim; run scripts/Invoke-OnlineServicing.ps1 directly.'; exit 1\"",
+  "@if linux: pwsh -nop -c \"Write-Error 'online-service requires the Windows ADK and Hyper-V on a Windows host.'; exit 1\"",
+  "@if darwin: pwsh -nop -c \"Write-Error 'online-service requires the Windows ADK and Hyper-V on a Windows host.'; exit 1\""
+]
+
 # Clean artifacts (Linux/macOS)
 clean-unix = [
   "rm -rf {{config_root}}/scripts/ISODIR",

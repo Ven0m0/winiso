@@ -24,7 +24,7 @@ No macOS support. No Windows required for the Linux build path.
 | **XML encoding** | `config/autounattend.xml` must be UTF-8 without BOM |
 | **SetupComplete.cmd** | `config/oem/SetupComplete.cmd` must use CRLF line endings |
 | **No hardcoded paths** | All scripts derive paths from `SCRIPT_DIR` / `PROJECT_ROOT` |
-| **Servicing DISM-only** | Windows servicing scripts shell out to `dism.exe`; no PowerShell DISM module cmdlets |
+| **Servicing DISM-only** | Windows servicing scripts shell out to `dism.exe`; no PowerShell DISM module cmdlets. `HyperVUtils.ps1`/`Test-IsoBoot.ps1`/`Invoke-OnlineServicing.ps1` are the one carve-out: Hyper-V and Storage module cmdlets (`New-VM`, `New-VHD`, `Mount-VHD`, ...) are permitted there, since no `dism.exe` equivalent exists for VM/VHD lifecycle — the DISM-module ban on image mount/servicing itself still applies unchanged |
 
 ---
 
@@ -56,6 +56,11 @@ scripts/Invoke-SystemCleanup.ps1    # Live-OS disk cleanup helper (Windows-side,
 scripts/Remove-ShortNames.ps1       # 8.3 short-name stripping for install.wim (Windows-side, PowerShell); GUI folder pickers, no boot.wim/Winre.wim handling
 scripts/Repair-Wim.ps1              # DISM RestoreHealth against a reference image (Windows-side, PowerShell); GUI file/folder pickers, no hardcoded paths
 scripts/Mount-WimGui.ps1            # Native WinForms GUI to pick a WIM + mount folder and run dism /Mount-Image
+scripts/HyperVUtils.ps1             # Shared Hyper-V VM/VHD helpers (Windows-side, PowerShell); dot-source this, never copy
+scripts/Test-IsoBoot.ps1            # Boots output/*.iso in a throwaway Hyper-V VM, verifies install completes via heartbeat (Windows-side, PowerShell)
+scripts/Invoke-OnlineServicing.ps1  # Manual WinPE deploy/capture loop: installs install.wim into a VM for live tweaks, recaptures it (Windows-side, PowerShell; ADK-gated)
+scripts/winpe/deployment/           # WinPE deployment-stage payload (ApplyImage.bat, CreatePartitions-{UEFI,BIOS}.txt, install.cmd), copied onto WinPE_D.iso
+scripts/winpe/capture/capture.cmd   # WinPE capture-stage payload, copied onto WinPE_C.iso
 
 config/autounattend.xml             # Unattended Windows setup answers (UTF-8, no BOM)
 config/debloat_list.txt             # Bloatware glob patterns (grouped by category)
@@ -150,7 +155,10 @@ because `custom_convert.sh` sources it (`REQUIRED_TOOLS`, `check_iso_tool`); do 
 new Python consumers of it — use `pyutils.py` instead. `Invoke-SystemCleanup.ps1`,
 `Remove-ShortNames.ps1`, `Repair-Wim.ps1`, and `Mount-WimGui.ps1` are native PowerShell
 (converted back from Python by user request) — they dot-source `scripts/WinUtils.ps1`
-for logging/admin-check/DISM helpers, never duplicate those functions.
+for logging/admin-check/DISM helpers, never duplicate those functions. `Test-IsoBoot.ps1`
+and `Invoke-OnlineServicing.ps1` dot-source `scripts/HyperVUtils.ps1` (VM/VHD lifecycle
+helpers) instead, which itself dot-sources `WinUtils.ps1` for logging — never duplicate
+either file's functions.
 
 ### Required shape
 
@@ -272,6 +280,21 @@ pipeline covers them too (`*GamingApp*`, `*Client.AIX*`, `*CrossDevice*`, `*Outl
 stacks) were left out — `debloat_wim.py` only deletes `WindowsApps`/`AppRepository` folders
 by glob, it doesn't do DISM feature removal.
 
+### Online servicing manual alternative (`scripts/Invoke-OnlineServicing.ps1`)
+
+A second opt-in, manual, Windows-only workflow — never invoked from `build.py`. Ported from
+[CleanWin11IsoMaker](https://github.com/pitomec/CleanWin11IsoMaker)'s `functions/winpe.ps1` +
+`script.ps1`. Builds WinPE deployment/capture ISOs via the ADK, installs a given `install.wim`
+into a Hyper-V VM, pauses for interactive live tweaks (the operator drives the VM console
+directly, then runs `sysprep.bat` off the VM's `USB-B` scratch disk), and recaptures the result
+as a new `install.wim`. **Mutually exclusive per build with the offline pipeline's WIM**, the
+same way NTLite is above: it produces install.wim by installing-and-recapturing rather than
+offline servicing, so its output should be treated as a distinct artifact, not merged with a
+`debloat_wim.py`-serviced one. Requires the Windows ADK + WinPE add-on and Hyper-V; both are
+resolved by `scripts/HyperVUtils.ps1`/`Invoke-OnlineServicing.ps1` themselves — no separate
+install step is documented here since the ADK is not one of this repo's managed `mise.toml`
+tools (see Development Environment below).
+
 ---
 
 ## Testing
@@ -289,6 +312,18 @@ python3 scripts/validate_reg_files.py # Same check as make/mise validate-reg
 ```
 
 `make validate` runs the full prereq check but requires the `uup_files/` runtime directory to be populated with downloaded UUP packages — do not run in CI without them.
+
+`scripts/Test-IsoBoot.ps1` (`mise run test-iso` on Windows) boots the newest `output/*.iso` in a
+throwaway Hyper-V VM and waits for the Hyper-V heartbeat integration service to report `OK` —
+the earliest signal that transitively proves the ISO booted, `pe.cmd`'s disk assertions passed,
+`dism /Apply-Image` and `bcdboot` succeeded, and a full Windows install came up. Not run in CI
+(needs a Windows host with Hyper-V enabled and an already-built ISO). Two answer-file facts the
+harness works around rather than "simplifying" away: `ventoy/answer/autounattend.xml`'s
+`assert.vbs` (windowsPE Order ~8-16) refuses to proceed unless disk 0 is at least 100 GiB with
+zero existing partitions, so the test VM's disk is always sized above that floor regardless of
+`-Profile`; and the answer file's diskpart stage is preceded by a deliberate `pause` data-loss
+guard, which the harness clears by injecting `VK_RETURN` via `Msvm_Keyboard.TypeKey` rather than
+by removing the guard from the answer file itself.
 
 Current test coverage: ~90% of `scripts/download_uup.py` (up from 60% after adding coverage for
 `_process_selected_build`, `_prepare_output_directory`, `_prepare_download_list`,
@@ -374,4 +409,4 @@ System packages (install via `make deps` / `setup_env.py`):
 
 ---
 
-*Updated: 2026-08-17*
+*Updated: 2026-08-18*

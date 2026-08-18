@@ -37,7 +37,7 @@ $mountRoot = Select-Folder 'Select an empty folder to mount install.wim into'
 
 New-Item -ItemType Directory -Force -Path $mountRoot | Out-Null
 
-Invoke-Dism @('/CleanUp-Wim')
+Invoke-Dism @('/CleanUp-Wim', '/quiet')
 Invoke-8dot3Strip $isoRoot
 
 $installWim = Join-Path $isoRoot 'sources\install.wim'
@@ -49,6 +49,7 @@ Invoke-Dism @('/Mount-Image', "/ImageFile:$installWim", '/Index:1', "/MountDir:$
 Invoke-8dot3Strip $installMount
 
 & dism.exe "/Image:$installMount" /Optimize-ProvisionedAppxPackages | Out-Null
+Invoke-Dism @('/Cleanup-Image', "/Image=$installMount", '/StartComponentCleanup')
 Invoke-Dism @('/Cleanup-Image', "/Image=$installMount", '/StartComponentCleanup', '/ResetBase')
 
 Write-Step "Removing leftover *.LOG files"
@@ -59,7 +60,7 @@ Invoke-Dism @('/Unmount-Image', "/MountDir:$installMount", '/Commit')
 
 $installCleaned = Join-Path $isoRoot 'sources\install_cleaned.wim'
 Invoke-Dism @('/Export-Image', "/SourceImageFile:$installWim", '/SourceIndex:1', "/DestinationImageFile:$installCleaned", '/Compress:max', '/CheckIntegrity')
-Invoke-Dism @('/CleanUp-Wim')
+Invoke-Dism @('/CleanUp-Wim', '/quiet')
 
 Write-Success "install.wim processed -> $installCleaned"
 exit 0

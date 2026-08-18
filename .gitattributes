@@ -24,6 +24,10 @@ ventoy/answer/autounattend.xml text eol=crlf
 *.rst       text eol=lf
 LICENSE     text eol=lf
 
+# diskpart scripts under scripts/winpe/ are fed to diskpart.exe inside WinPE;
+# override the *.txt eol=lf rule above so they stay CRLF like their .bat/.cmd siblings.
+scripts/winpe/**/CreatePartitions-*.txt text eol=crlf
+
 # ─── Python ───────────────────────────────────────────────────────────────────
 *.py        text eol=lf
 

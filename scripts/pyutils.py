@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Shared logging and tool-check helpers for the build pipeline scripts."""
 
-import os
 import shutil
 import sys
 
@@ -31,11 +30,6 @@ def log_warn(msg: str) -> None:
 
 def log_error(msg: str) -> None:
     print(f"{RED}[ERROR]{NC} {msg}")
-
-
-def log_debug(msg: str) -> None:
-    if os.environ.get("LOG_LEVEL", "").lower() == "debug":
-        print(f"{CYAN}[DEBUG]{NC} {msg}")
 
 
 def check_tool(tool: str) -> bool:

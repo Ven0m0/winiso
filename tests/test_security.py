@@ -109,7 +109,7 @@ class TestSecurity(unittest.TestCase):
 
             try:
                 content = script.read_text()
-            except (UnicodeDecodeError, OSError):
+            except UnicodeDecodeError, OSError:
                 continue
 
             # Strip comments to avoid false positives in documentation

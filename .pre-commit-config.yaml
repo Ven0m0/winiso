@@ -16,6 +16,7 @@ repos:
     hooks:
       - id: basedpyright
         files: ^scripts/download_uup\.py$
+        additional_dependencies: [httpx, orjson]
   - repo: https://github.com/asottile/pyupgrade
     rev: v3.21.2
     hooks:

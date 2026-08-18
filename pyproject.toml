@@ -1,0 +1,41 @@
+[project]
+name = "winiso"
+version = "0.1.0"
+description = "Debloated Windows 11 ISO builder from UUP dump packages"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.14"
+dependencies = [
+    "httpx[http2]>=0.28.1",
+    "orjson>=3.12.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-cov>=6.0",
+    "deadcode>=2.4.1",
+    "mypy>=2.3.1",
+    "ruff>=0.16.3",
+    "ty>=0.0.72",
+    "vulture>=2.16",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["scripts"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+]
+
+[tool.mypy]
+python_version = "3.14"
+ignore_missing_imports = true
+
+[tool.vulture]
+min_confidence = 80

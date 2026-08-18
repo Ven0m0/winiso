@@ -793,7 +793,7 @@ DEBLOAT_SCRIPT="$(dirname "$0")/debloat_wim.py"
 WIM_FILE="ISODIR/sources/install.$type"
 if [[ -f "$DEBLOAT_SCRIPT" ]] && [[ -f "$WIM_FILE" ]]; then
   echo -e "${infoColor}""Running Debloater on $WIM_FILE...""$resetColor"
-  python3 "$DEBLOAT_SCRIPT" "$WIM_FILE"
+  "${PYTHON:-python3}" "$DEBLOAT_SCRIPT" "$WIM_FILE"
   if [[ $? -ne 0 ]]; then
     echo -e "${errorColor}""Debloating failed!""$resetColor"
     exit 1

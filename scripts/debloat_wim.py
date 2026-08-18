@@ -10,7 +10,6 @@ Features:
     - Case-insensitive matching
 """
 
-import json
 import os
 import re
 import subprocess
@@ -18,6 +17,7 @@ import sys
 import tempfile
 from pathlib import Path
 
+import orjson
 from pyutils import log_error, log_info, log_success, log_warn
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -158,8 +158,8 @@ def load_group_patterns() -> list[str]:
         return []
 
     try:
-        data = json.loads(COMPONENT_GROUPS_FILE.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
+        data = orjson.loads(COMPONENT_GROUPS_FILE.read_bytes())
+    except OSError, ValueError:
         log_warn(f"Failed to parse {COMPONENT_GROUPS_FILE}")
         return []
     groups = data.get("groups", {}) if isinstance(data, dict) else {}

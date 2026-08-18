@@ -4,16 +4,16 @@ Automates the download of UUP files from uupdump.net
 """
 
 import argparse
-import json
 import os
 import shutil
 import sys
 import time
 from pathlib import Path
 from typing import Any, Literal, cast, overload
-from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
-from urllib.request import Request, urlopen
+
+import httpx
+import orjson
 
 CACHE_DIR_NAME: str = ".uup_cache"
 DEFAULT_CACHE_TTL_SECONDS: int = 3600
@@ -83,6 +83,15 @@ class Colors:
 
 
 _url_cache: dict[str, str | dict[str, Any]] = {}
+_client: httpx.Client | None = None
+
+
+def _get_client() -> httpx.Client:
+    """Return the shared httpx client, creating it on first use."""
+    global _client
+    if _client is None:
+        _client = httpx.Client(http2=True, timeout=30.0, follow_redirects=True)
+    return _client
 
 
 def log_info(msg: str) -> None:
@@ -154,34 +163,36 @@ def fetch_url(
         return _url_cache[cache_key]
 
     try:
-        payload: bytes | None = None
+        client = _get_client()
         if data:
             payload = urlencode(data).encode("utf-8")
-        req = Request(url, headers=headers, data=payload)
-        with urlopen(req, timeout=30) as response:
-            text = response.read().decode("utf-8")
-            result: str | dict[str, Any] | None = text
+            response = client.post(url, headers=headers, content=payload)
+        else:
+            response = client.get(url, headers=headers)
+        response.raise_for_status()
+        text = response.text
+        result: str | dict[str, Any] | None = text
 
-            if return_json:
-                try:
-                    parsed = json.loads(text)
-                except json.JSONDecodeError as e:
-                    log_error(f"Failed to parse JSON response: {e}")
-                    return None
-                if not isinstance(parsed, dict):
-                    log_error("JSON response is not an object")
-                    return None
-                result = parsed
+        if return_json:
+            try:
+                parsed = orjson.loads(text)
+            except orjson.JSONDecodeError as e:
+                log_error(f"Failed to parse JSON response: {e}")
+                return None
+            if not isinstance(parsed, dict):
+                log_error("JSON response is not an object")
+                return None
+            result = parsed
 
-            if cache_key and result is not None:
-                _url_cache[cache_key] = result
+        if cache_key and result is not None:
+            _url_cache[cache_key] = result
 
-            return result
-    except HTTPError as e:
-        log_error(f"HTTP Error {e.code}: {e.reason}")
+        return result
+    except httpx.HTTPStatusError as e:
+        log_error(f"HTTP Error {e.response.status_code}: {e.response.reason_phrase}")
         return None
-    except URLError as e:
-        log_error(f"URL Error: {e.reason}")
+    except httpx.RequestError as e:
+        log_error(f"URL Error: {e}")
         return None
     except OSError as e:
         log_error(f"Network error fetching URL: {e}")
@@ -354,8 +365,8 @@ def get_api_version() -> dict[str, Any] | None:
         return None
 
     try:
-        data = json.loads(response)
-    except json.JSONDecodeError as e:
+        data = orjson.loads(response)
+    except orjson.JSONDecodeError as e:
         log_error(f"Failed to parse JSON response: {e}")
         return None
 
@@ -405,9 +416,8 @@ def cache_get(key: str, ttl_seconds: int = DEFAULT_CACHE_TTL_SECONDS) -> Any | N
         return None
 
     try:
-        with open(cache_file, encoding="utf-8") as f:
-            entry = json.load(f)
-    except (json.JSONDecodeError, OSError) as e:
+        entry = orjson.loads(cache_file.read_bytes())
+    except (orjson.JSONDecodeError, OSError) as e:
         log_warn(f"Cache read failed for {key}: {e}")
         try:
             cache_file.unlink(missing_ok=True)
@@ -433,8 +443,7 @@ def cache_set(key: str, data: Any) -> bool:
     cache_file = get_cache_dir() / _safe_cache_name(key)
     entry = {"timestamp": time.time(), "data": data}
     try:
-        with open(cache_file, "w", encoding="utf-8") as f:
-            json.dump(entry, f)
+        cache_file.write_bytes(orjson.dumps(entry))
         return True
     except (OSError, TypeError) as e:
         log_warn(f"Cache write failed for {key}: {e}")
@@ -803,7 +812,7 @@ def get_delta_store_path(store_dir: str | Path | None = None) -> Path:
             path = project_root / path
     try:
         path = path.resolve()
-    except (OSError, RuntimeError):
+    except OSError, RuntimeError:
         return path
     try:
         path.mkdir(parents=True, exist_ok=True)
@@ -842,8 +851,9 @@ def save_delta_manifest(
         "files": files,
     }
     try:
-        with open(manifest_path, "w", encoding="utf-8") as f:
-            json.dump(payload, f, indent=2, sort_keys=True)
+        manifest_path.write_bytes(
+            orjson.dumps(payload, option=orjson.OPT_INDENT_2 | orjson.OPT_SORT_KEYS)
+        )
         return manifest_path
     except (OSError, TypeError) as exc:
         log_error(f"Failed to save delta manifest for {build_id}: {exc}")
@@ -867,21 +877,20 @@ def load_delta_manifest(
 
     try:
         store_resolved = store_path.resolve()
-    except (OSError, RuntimeError):
+    except OSError, RuntimeError:
         return None
 
     try:
         manifest_path.relative_to(store_resolved)
-    except (ValueError, RuntimeError):
+    except ValueError, RuntimeError:
         log_error("Delta manifest path is outside the delta store")
         return None
 
     if not manifest_path.exists():
         return None
     try:
-        with open(manifest_path, encoding="utf-8") as f:
-            data: Any = json.load(f)
-    except (OSError, json.JSONDecodeError) as exc:
+        data: Any = orjson.loads(manifest_path.read_bytes())
+    except (OSError, orjson.JSONDecodeError) as exc:
         log_warn(f"Failed to read delta manifest for {build_id}: {exc}")
         return None
     if not isinstance(data, dict):
@@ -1252,13 +1261,12 @@ def get_profiles() -> dict[str, dict[str, Any]]:
 
     if profiles_path.exists():
         try:
-            with open(profiles_path, encoding="utf-8") as f:
-                data = json.load(f)
+            data = orjson.loads(profiles_path.read_bytes())
             if isinstance(data, dict):
                 profiles = data.get("profiles", PROFILES)
                 if isinstance(profiles, dict):
                     return profiles
-        except (json.JSONDecodeError, OSError):
+        except orjson.JSONDecodeError, OSError:
             log_warn("Failed to load profiles.json, using built-in profiles")
 
     return PROFILES
@@ -1274,13 +1282,12 @@ def get_pinned_build() -> dict[str, Any] | None:
         return None
 
     try:
-        with open(pin_path, encoding="utf-8") as f:
-            data = json.load(f)
-            if isinstance(data, dict) and "build_id" in data:
-                return data
-            log_warn("Invalid pin file: missing 'build_id'")
-            return None
-    except (json.JSONDecodeError, OSError) as e:
+        data = orjson.loads(pin_path.read_bytes())
+        if isinstance(data, dict) and "build_id" in data:
+            return data
+        log_warn("Invalid pin file: missing 'build_id'")
+        return None
+    except (orjson.JSONDecodeError, OSError) as e:
         log_warn(f"Failed to read pin file: {e}")
         return None
 
@@ -1302,8 +1309,7 @@ def save_pinned_build(
         data["edition"] = edition
 
     try:
-        with open(pin_path, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2)
+        pin_path.write_bytes(orjson.dumps(data, option=orjson.OPT_INDENT_2))
         log_success(f"Pinned build {build_id} to {pin_path}")
         return True
     except OSError as e:
@@ -1340,9 +1346,8 @@ def load_component_groups(path: str | None = None) -> dict[str, Any]:
     if path is None:
         path = COMPONENT_GROUPS_FILE
     try:
-        with open(path, encoding="utf-8") as f:
-            data: Any = json.load(f)
-    except (OSError, json.JSONDecodeError, ValueError) as exc:
+        data: Any = orjson.loads(Path(path).read_bytes())
+    except (OSError, orjson.JSONDecodeError, ValueError) as exc:
         log_warn(f"Could not load component groups from {path}: {exc}")
         return {}
     if not isinstance(data, dict):
@@ -1727,7 +1732,7 @@ def _handle_info_mode(args: argparse.Namespace) -> int | None:
         info = get_update_info(args.update_info)
         if info:
             print(f"\n{Colors.BOLD}Update Information:{Colors.RESET}\n")
-            print(f"  {json.dumps(info, indent=2)}")
+            print(f"  {orjson.dumps(info, option=orjson.OPT_INDENT_2).decode()}")
             return 0
         return 1
 
@@ -1787,7 +1792,7 @@ def _resolve_output_dir(output_arg: str) -> Path | None:
 
     try:
         output_dir.resolve().relative_to(project_root.resolve())
-    except (ValueError, RuntimeError):
+    except ValueError, RuntimeError:
         log_error(f"Path traversal attempt detected for output: {output_arg}")
         return None
 

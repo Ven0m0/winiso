@@ -38,7 +38,7 @@ scripts/custom_convert.sh           # UUP→WIM converter (upstream-derived, pat
 scripts/convert_config.sh           # Compression/editions config, sourced by custom_convert.sh (stays bash)
 scripts/utils.sh                    # Bash logging/tool-check helpers — kept only as custom_convert.sh's dependency
 scripts/debloat_wim.py              # AppX removal + offline registry hardening
-scripts/download_uup.py             # UUP API client (Python 3, stdlib-first)
+scripts/download_uup.py             # UUP API client (Python 3, httpx + orjson)
 scripts/setup_env.py                # Installs system dependencies (Linux only)
 scripts/pyutils.py                  # Shared logging/tool-check helpers (import this, never copy)
 scripts/validate_prereqs.py         # Pre-build checks (tools, disk space, UUP files)
@@ -133,15 +133,24 @@ Copy `install.wim` to a Windows machine, run `scripts/windows_service.cmd` again
 ## Pipeline Script Rules
 
 The Linux build pipeline (`build.py`, `setup_env.py`, `sign_iso.py`, `validate_prereqs.py`,
-`debloat_wim.py`) and the still-Python Windows servicing scripts (`apply_image_settings.py`,
-`new_iso.py`) are Python 3, stdlib-first, cross-platform where the
-underlying tools allow it. `scripts/custom_convert.sh` and `scripts/convert_config.sh`
-are the one exception — upstream-derived, patch-only, and stay bash. `scripts/utils.sh`
-also stays bash, solely because `custom_convert.sh` sources it (`REQUIRED_TOOLS`,
-`check_iso_tool`); do not add new Python consumers of it — use `pyutils.py` instead.
-`Invoke-SystemCleanup.ps1`, `Remove-ShortNames.ps1`, `Repair-Wim.ps1`, and `Mount-WimGui.ps1`
-are native PowerShell (converted back from Python by user request) — they dot-source
-`scripts/WinUtils.ps1` for logging/admin-check/DISM helpers, never duplicate those functions.
+`debloat_wim.py`) is Python 3, cross-platform where the underlying tools allow it.
+`download_uup.py`, `build.py`, and `debloat_wim.py` depend on `httpx` (HTTP/2 client,
+replacing `urllib`) and `orjson` (JSON, replacing stdlib `json`) — declared in
+`pyproject.toml`, installed via `uv sync`. Every `make`/`mise` target that runs one of
+these scripts goes through `uv run` (Makefile's `PY ?= uv run --`) so the deps are on
+the path; a system-wide interpreter still works via `make build PY=python3` as long as
+`httpx`/`orjson` are installed globally. `custom_convert.sh`'s `# DEBLOAT HOOK` reads
+`$PYTHON` (set by `build.py` to `sys.executable`) so the debloater runs under the same
+venv, falling back to plain `python3` when run standalone. The still-Python Windows
+servicing scripts (`apply_image_settings.py`, `new_iso.py`) stay stdlib-only — they run
+under a bare Windows `python.exe` with no venv, so they must never import `httpx`/`orjson`.
+`scripts/custom_convert.sh` and `scripts/convert_config.sh` are the one shell exception —
+upstream-derived, patch-only, and stay bash. `scripts/utils.sh` also stays bash, solely
+because `custom_convert.sh` sources it (`REQUIRED_TOOLS`, `check_iso_tool`); do not add
+new Python consumers of it — use `pyutils.py` instead. `Invoke-SystemCleanup.ps1`,
+`Remove-ShortNames.ps1`, `Repair-Wim.ps1`, and `Mount-WimGui.ps1` are native PowerShell
+(converted back from Python by user request) — they dot-source `scripts/WinUtils.ps1`
+for logging/admin-check/DISM helpers, never duplicate those functions.
 
 ### Required shape
 
@@ -268,8 +277,8 @@ by glob, it doesn't do DISM feature removal.
 ## Testing
 
 ```bash
-python3 -m pytest tests/ -v                                # All tests
-python3 -m pytest tests/ --cov --cov-report=term-missing  # With coverage report (.coveragerc scopes to scripts/)
+uv run --group dev pytest tests/ -v                                # All tests
+uv run --group dev pytest tests/ --cov --cov-report=term-missing  # With coverage report (pyproject.toml scopes to scripts/)
 for f in scripts/*.py; do python3 -m py_compile "$f"; done  # Python syntax check
 bash -n scripts/custom_convert.sh scripts/convert_config.sh scripts/utils.sh  # Remaining shell syntax check
 xmllint --noout config/autounattend.xml                    # XML validation
@@ -349,6 +358,8 @@ mise run lint-ps       # PSScriptAnalyzer over every *.ps1/*.psm1/*.psd1 (bootst
 mise run lint-xml      # scripts/validate_xml.py — well-formed, UTF-8 no-BOM, autounattend symlink sync
 mise run lint-reg      # scripts/validate_reg_files.py — .reg headers, standalone + embedded
 mise run lint-debloat  # scripts/validate_debloat.py — config/debloat_list.txt syntax/dupes/keep-list
+mise run typecheck-mypy # mypy over scripts/ — advisory, not a CI gate (ty + basedpyright are the gates)
+mise run deadcode      # vulture + deadcode over scripts/tests — advisory, not a CI gate
 ```
 
 System packages (install via `make deps` / `setup_env.py`):

@@ -9,6 +9,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import httpx
+
 # Add the scripts directory to sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 
@@ -389,44 +391,39 @@ class TestGetAvailableLanguages(unittest.TestCase):
 class TestFetchUrl(unittest.TestCase):
     def setUp(self):
         download_uup._url_cache.clear()
+        self.addCleanup(setattr, download_uup, "_client", None)
 
-    @patch("download_uup.urlopen")
-    def test_fetch_url_success_get(self, mock_urlopen):
-        mock_response = unittest.mock.MagicMock()
-        mock_response.read.return_value = b"success content"
-        mock_response.__enter__.return_value = mock_response
-        mock_urlopen.return_value = mock_response
+    def _use_handler(self, handler):
+        """Install an httpx client backed by the given MockTransport handler."""
+        download_uup._client = httpx.Client(transport=httpx.MockTransport(handler))
+
+    def test_fetch_url_success_get(self):
+        self._use_handler(lambda request: httpx.Response(200, text="success content"))
 
         result = download_uup.fetch_url("http://example.com")
 
         self.assertEqual(result, "success content")
-        mock_urlopen.assert_called_once()
 
-    @patch("download_uup.urlopen")
-    @patch("download_uup.Request")
-    def test_fetch_url_success_post(self, mock_request, mock_urlopen):
-        mock_response = unittest.mock.MagicMock()
-        mock_response.read.return_value = b"post success"
-        mock_response.__enter__.return_value = mock_response
-        mock_urlopen.return_value = mock_response
+    def test_fetch_url_success_post(self):
+        captured = {}
+
+        def handler(request):
+            captured["method"] = request.method
+            captured["content"] = request.content
+            return httpx.Response(200, text="post success")
+
+        self._use_handler(handler)
 
         data = {"key": "value"}
         result = download_uup.fetch_url("http://example.com", data=data)
 
         self.assertEqual(result, "post success")
-        mock_request.assert_called_once()
-        kwargs = mock_request.call_args.kwargs
-        self.assertEqual(kwargs["data"], b"key=value")
+        self.assertEqual(captured["method"], "POST")
+        self.assertEqual(captured["content"], b"key=value")
 
-    @patch("download_uup.urlopen")
     @patch("download_uup.log_error")
-    def test_fetch_url_http_error(self, mock_log_error, mock_urlopen):
-        from io import BytesIO
-        from urllib.error import HTTPError
-
-        mock_urlopen.side_effect = HTTPError(
-            "http://example.com", 404, "Not Found", {}, BytesIO(b"")
-        )
+    def test_fetch_url_http_error(self, mock_log_error):
+        self._use_handler(lambda request: httpx.Response(404, text="Not Found"))
 
         result = download_uup.fetch_url("http://example.com")
 
@@ -434,12 +431,12 @@ class TestFetchUrl(unittest.TestCase):
         mock_log_error.assert_called_once()
         self.assertIn("HTTP Error 404", mock_log_error.call_args[0][0])
 
-    @patch("download_uup.urlopen")
     @patch("download_uup.log_error")
-    def test_fetch_url_url_error(self, mock_log_error, mock_urlopen):
-        from urllib.error import URLError
+    def test_fetch_url_url_error(self, mock_log_error):
+        def handler(request):
+            raise httpx.ConnectError("reason")
 
-        mock_urlopen.side_effect = URLError("reason")
+        self._use_handler(handler)
 
         result = download_uup.fetch_url("http://example.com")
 
@@ -447,10 +444,12 @@ class TestFetchUrl(unittest.TestCase):
         mock_log_error.assert_called_once()
         self.assertIn("URL Error", mock_log_error.call_args[0][0])
 
-    @patch("download_uup.urlopen")
     @patch("download_uup.log_error")
-    def test_fetch_url_generic_exception(self, mock_log_error, mock_urlopen):
-        mock_urlopen.side_effect = Exception("generic error")
+    def test_fetch_url_generic_exception(self, mock_log_error):
+        def handler(request):
+            raise ValueError("generic error")
+
+        self._use_handler(handler)
 
         result = download_uup.fetch_url("http://example.com")
 
@@ -458,39 +457,49 @@ class TestFetchUrl(unittest.TestCase):
         mock_log_error.assert_called_once()
         self.assertIn("Unexpected error fetching URL", mock_log_error.call_args[0][0])
 
-    @patch("download_uup.urlopen")
     @patch("download_uup.log_error")
-    def test_fetch_url_timeout_error(self, mock_log_error, mock_urlopen):
+    def test_fetch_url_timeout_error(self, mock_log_error):
+        # httpx maps socket-level timeouts to httpx.TimeoutException, a
+        # RequestError subclass - not the builtin TimeoutError/OSError urllib
+        # used, so this now routes through the "URL Error" branch.
+        def handler(request):
+            raise httpx.TimeoutException("timed out")
 
-        mock_urlopen.side_effect = TimeoutError("timed out")
+        self._use_handler(handler)
 
         result = download_uup.fetch_url("http://example.com")
 
         self.assertIsNone(result)
         mock_log_error.assert_called_once()
-        self.assertIn("Network error fetching URL", mock_log_error.call_args[0][0])
+        self.assertIn("URL Error", mock_log_error.call_args[0][0])
 
-    @patch("download_uup.urlopen")
     @patch("download_uup.log_error")
-    def test_fetch_url_timeout_error_timeout(self, mock_log_error, mock_urlopen):
-        mock_urlopen.side_effect = TimeoutError("timed out")
+    def test_fetch_url_timeout_error_timeout(self, mock_log_error):
+        def handler(request):
+            raise httpx.TimeoutException("timed out")
+
+        self._use_handler(handler)
 
         result = download_uup.fetch_url("http://example.com")
 
         self.assertIsNone(result)
         mock_log_error.assert_called_once()
-        self.assertIn("Network error fetching URL", mock_log_error.call_args[0][0])
+        self.assertIn("URL Error", mock_log_error.call_args[0][0])
 
-    @patch("download_uup.urlopen")
     @patch("download_uup.log_error")
-    def test_fetch_url_connection_reset_error(self, mock_log_error, mock_urlopen):
-        mock_urlopen.side_effect = ConnectionResetError("Connection reset by peer")
+    def test_fetch_url_connection_reset_error(self, mock_log_error):
+        # httpx wraps a reset connection as httpx.RemoteProtocolError, also a
+        # RequestError subclass.
+        def handler(request):
+            raise httpx.RemoteProtocolError("Connection reset by peer")
+
+        self._use_handler(handler)
 
         result = download_uup.fetch_url("http://example.com")
 
         self.assertIsNone(result)
         mock_log_error.assert_called_once()
-        self.assertIn("Network error fetching URL", mock_log_error.call_args[0][0])
+        self.assertIn("URL Error", mock_log_error.call_args[0][0])
 
 
 class TestRunAria2Download(unittest.TestCase):
@@ -1800,45 +1809,39 @@ class TestCacheEdgeCases(unittest.TestCase):
 class TestFetchUrlBranches(unittest.TestCase):
     def setUp(self):
         download_uup._url_cache.clear()
+        self.addCleanup(setattr, download_uup, "_client", None)
 
     def tearDown(self):
         download_uup._url_cache.clear()
 
-    @patch("download_uup.urlopen")
-    def test_cache_hit(self, mock_urlopen):
+    def _use_handler(self, handler):
+        download_uup._client = httpx.Client(transport=httpx.MockTransport(handler))
+
+    def test_cache_hit(self):
+        def handler(request):
+            raise AssertionError("network should not be called on cache hit")
+
+        self._use_handler(handler)
         download_uup._url_cache["cached-url:False"] = "cached-value"
         result = download_uup.fetch_url("cached-url")
         self.assertEqual(result, "cached-value")
-        mock_urlopen.assert_not_called()
 
-    @patch("download_uup.urlopen")
     @patch("download_uup.log_error")
-    def test_json_decode_error(self, mock_log_error, mock_urlopen):
-        mock_response = MagicMock()
-        mock_response.read.return_value = b"not valid json"
-        mock_response.__enter__.return_value = mock_response
-        mock_urlopen.return_value = mock_response
+    def test_json_decode_error(self, mock_log_error):
+        self._use_handler(lambda request: httpx.Response(200, text="not valid json"))
         result = download_uup.fetch_url("http://example.com", return_json=True)
         self.assertIsNone(result)
         mock_log_error.assert_called()
 
-    @patch("download_uup.urlopen")
     @patch("download_uup.log_error")
-    def test_json_not_dict(self, mock_log_error, mock_urlopen):
-        mock_response = MagicMock()
-        mock_response.read.return_value = b'["a", "list"]'
-        mock_response.__enter__.return_value = mock_response
-        mock_urlopen.return_value = mock_response
+    def test_json_not_dict(self, mock_log_error):
+        self._use_handler(lambda request: httpx.Response(200, text='["a", "list"]'))
         result = download_uup.fetch_url("http://example.com", return_json=True)
         self.assertIsNone(result)
         mock_log_error.assert_called()
 
-    @patch("download_uup.urlopen")
-    def test_json_success_cached(self, mock_urlopen):
-        mock_response = MagicMock()
-        mock_response.read.return_value = b'{"a": 1}'
-        mock_response.__enter__.return_value = mock_response
-        mock_urlopen.return_value = mock_response
+    def test_json_success_cached(self):
+        self._use_handler(lambda request: httpx.Response(200, text='{"a": 1}'))
         result = download_uup.fetch_url("http://example.com", return_json=True)
         self.assertEqual(result, {"a": 1})
 

@@ -13,6 +13,12 @@
 
 .PHONY: all deps build build-pro build-nano build-pause clean help validate download validate-xml validate-reg validate-debloat sign
 
+# Interpreter for all scripts/*.py invocations. download_uup.py/build.py/
+# debloat_wim.py depend on httpx/orjson (see pyproject.toml), so this defaults
+# to `uv run` to guarantee those are on the path. Override for a system-wide
+# install: `make build PY=python3`.
+PY ?= uv run --
+
 # Default target
 all: build
 
@@ -20,56 +26,56 @@ all: build
 deps:
 	@echo "Installing dependencies..."
 	chmod +x scripts/setup_env.py
-	./scripts/setup_env.py
+	$(PY) scripts/setup_env.py
 
 # Validate prerequisites
 validate:
 	@echo "Validating prerequisites..."
 	chmod +x scripts/validate_prereqs.py
-	./scripts/validate_prereqs.py
+	$(PY) scripts/validate_prereqs.py
 
 # Validate all XML config files: well-formedness, UTF-8-no-BOM, and that
 # config/autounattend.xml (a symlink) resolves to the canonical ventoy/answer copy
 validate-xml:
 	@echo "Validating XML config files..."
 	chmod +x scripts/validate_xml.py
-	./scripts/validate_xml.py
+	$(PY) scripts/validate_xml.py
 
 # Validate .reg headers, including .reg content embedded in autounattend.xml
 validate-reg:
 	@echo "Validating registry files..."
 	chmod +x scripts/validate_reg_files.py
-	./scripts/validate_reg_files.py
+	$(PY) scripts/validate_reg_files.py
 
 # Validate debloat glob patterns (syntax, duplicates, keep-list collisions)
 validate-debloat:
 	@echo "Validating debloat patterns..."
 	chmod +x scripts/validate_debloat.py
-	./scripts/validate_debloat.py
+	$(PY) scripts/validate_debloat.py
 
 # Download UUP files from uupdump.net
 download:
 	@echo "Downloading UUP files..."
 	chmod +x scripts/download_uup.py
-	./scripts/download_uup.py
+	$(PY) scripts/download_uup.py
 
 # Build debloated ISO (default: Pro for Workstations, fallback Pro)
 build:
 	@echo "Building debloated Windows 11 ISO..."
 	chmod +x scripts/build.py
-	./scripts/build.py
+	$(PY) scripts/build.py
 
 # Build with Pro edition specifically
 build-pro:
 	@echo "Building Windows 11 Pro ISO..."
 	chmod +x scripts/build.py
-	TARGET_EDITION=Professional FALLBACK_EDITION=Professional ./scripts/build.py
+	TARGET_EDITION=Professional FALLBACK_EDITION=Professional $(PY) scripts/build.py
 
 # Build with Nano mode (extreme debloating)
 build-nano:
 	@echo "Building with Nano-style extreme debloating..."
 	chmod +x scripts/build.py
-	NANO=1 ./scripts/build.py
+	NANO=1 $(PY) scripts/build.py
 
 # Build and pause for Windows servicing stage
 # Use this when you want to run DISM cleanup, 8.3 stripping, etc. on Windows
@@ -78,7 +84,7 @@ build-pause:
 	@echo "When paused, copy ISODIR/sources/install.wim to a Windows machine"
 	@echo "and run scripts/windows_service.cmd against it."
 	chmod +x scripts/build.py
-	PAUSE_FOR_WINDOWS_STAGE=1 ./scripts/build.py
+	PAUSE_FOR_WINDOWS_STAGE=1 $(PY) scripts/build.py
 
 # Sign an ISO with SHA256/SHA512 checksums (and optionally GPG)
 # Usage: make sign ISO=output/Win11.iso [GPG=1 KEY=maintainer@example.com]
@@ -89,9 +95,9 @@ sign:
 	fi
 	chmod +x scripts/sign_iso.py
 	@if [[ "$(GPG)" == "1" ]]; then \
-		./scripts/sign_iso.py --gpg --key "$(KEY)" "$(ISO)"; \
+		$(PY) scripts/sign_iso.py --gpg --key "$(KEY)" "$(ISO)"; \
 	else \
-		./scripts/sign_iso.py "$(ISO)"; \
+		$(PY) scripts/sign_iso.py "$(ISO)"; \
 	fi
 
 # Clean build artifacts

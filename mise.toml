@@ -56,7 +56,7 @@ install-deps = [
 
 # Download UUP files
 download = [
-  "python {{config_root}}/scripts/download_uup.py"
+  "uv run -- {{config_root}}/scripts/download_uup.py"
 ]
 
 # Validate prerequisites
@@ -67,22 +67,22 @@ validate = [
 
 # Full build
 build = [
-  "@if linux: python3 {{config_root}}/scripts/build.py",
-  "@if darwin: python3 {{config_root}}/scripts/build.py",
+  "@if linux: uv run -- {{config_root}}/scripts/build.py",
+  "@if darwin: uv run -- {{config_root}}/scripts/build.py",
   "@if windows: pwsh -nop -c \"Write-Error 'build requires the Linux build toolchain. Run this task from WSL or Git Bash.'; exit 1\""
 ]
 
 # Build Pro edition
 build-pro = [
-  "@if linux: TARGET_EDITION=Professional FALLBACK_EDITION=Professional python3 {{config_root}}/scripts/build.py",
-  "@if darwin: TARGET_EDITION=Professional FALLBACK_EDITION=Professional python3 {{config_root}}/scripts/build.py",
+  "@if linux: TARGET_EDITION=Professional FALLBACK_EDITION=Professional uv run -- {{config_root}}/scripts/build.py",
+  "@if darwin: TARGET_EDITION=Professional FALLBACK_EDITION=Professional uv run -- {{config_root}}/scripts/build.py",
   "@if windows: pwsh -nop -c \"Write-Error 'build-pro requires the Linux build toolchain. Run this task from WSL or Git Bash.'; exit 1\""
 ]
 
 # Build with pause for Windows DISM stage
 build-pause = [
-  "@if linux: PAUSE_FOR_WINDOWS_STAGE=1 python3 {{config_root}}/scripts/build.py",
-  "@if darwin: PAUSE_FOR_WINDOWS_STAGE=1 python3 {{config_root}}/scripts/build.py",
+  "@if linux: PAUSE_FOR_WINDOWS_STAGE=1 uv run -- {{config_root}}/scripts/build.py",
+  "@if darwin: PAUSE_FOR_WINDOWS_STAGE=1 uv run -- {{config_root}}/scripts/build.py",
   "@if windows: pwsh -nop -c \"Write-Error 'build-pause requires the Linux build toolchain. Run this task from WSL or Git Bash.'; exit 1\""
 ]
 
@@ -102,12 +102,12 @@ clean-windows = [
 
 # List builds from API
 list-builds = [
-  "python {{config_root}}/scripts/download_uup.py --list"
+  "uv run -- {{config_root}}/scripts/download_uup.py --list"
 ]
 
 # Show API version
 api-version = [
-  "python {{config_root}}/scripts/download_uup.py --version"
+  "uv run -- {{config_root}}/scripts/download_uup.py --version"
 ]
 
 # Show available tasks
@@ -147,7 +147,11 @@ run = ["export DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes; apt-get up
 
 [tasks.test]
 description = "Run tests"
-run = "pytest tests/"
+run = "uv run --group dev pytest tests/"
+
+[tasks.coverage]
+description = "Run tests with coverage report"
+run = "uv run --group dev pytest tests/ --cov --cov-report=term-missing"
 
 [tasks.lint]
 description = "Lint + format-check Python (ruff) and type-check download_uup.py (ty)"
@@ -155,6 +159,19 @@ run = [
   "ruff check scripts tests",
   "ruff format --check scripts tests",
   "ty check scripts/download_uup.py"
+]
+
+# Not a CI gate - mypy is a second opinion alongside ty/basedpyright, reported not enforced
+[tasks.typecheck-mypy]
+description = "Advisory type-check with mypy (not a CI gate)"
+run = "uv run --group dev mypy scripts"
+
+# Not a CI gate - dead-code candidates need human review before deletion
+[tasks.deadcode]
+description = "Advisory dead-code scan with vulture + deadcode (not a CI gate)"
+run = [
+  "uv run --group dev vulture scripts tests",
+  "uv run --group dev deadcode scripts"
 ]
 
 # shellcheck + shfmt over the maintained bash entrypoints (custom_convert.sh is

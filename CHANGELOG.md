@@ -4,7 +4,32 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- `scripts/download_uup.py`, `scripts/build.py`, and `scripts/debloat_wim.py` now use `httpx`
+  (HTTP/2 client, replacing `urllib.request`) and `orjson` (replacing stdlib `json`) — both
+  declared as runtime dependencies in `pyproject.toml`. `fetch_url()` keeps its exact signature,
+  overloads, and error-message text; every `make`/`mise` target that runs one of these three
+  scripts now goes through `uv run` (`Makefile`'s `PY ?= uv run --`, overridable via
+  `make build PY=python3`) so the deps are guaranteed to be on the path.
+  `scripts/custom_convert.sh`'s `# DEBLOAT HOOK` now runs the debloater via `"${PYTHON:-python3}"`
+  (set to `sys.executable` by `build.py`) instead of a hardcoded `python3`, so it uses the same
+  venv. The Windows servicing scripts (`apply_image_settings.py`, `new_iso.py`) are unaffected —
+  they stay stdlib-only, no venv. `tests/test_download_uup.py`'s `TestFetchUrl`/
+  `TestFetchUrlBranches` classes now mock the network via `httpx.MockTransport` instead of
+  `urlopen`/`Request`; timeout and connection-reset cases now map to the "URL Error" log branch
+  (`httpx.RequestError` subclasses) instead of "Network error" (`OSError`), matching httpx's
+  error hierarchy.
+- `pyproject.toml`'s `dev` group drops `pytest-asyncio` (no async code); adds `[tool.mypy]` and
+  `[tool.vulture]` config. New advisory (non-CI-gating) mise tasks `typecheck-mypy` and
+  `deadcode` surface their output; the CI/lint gates remain ruff + `ty` + basedpyright on
+  `scripts/download_uup.py`. `.pre-commit-config.yaml`'s basedpyright hook gained
+  `additional_dependencies: [httpx, orjson]` so it can resolve the new imports.
+
 ### Added
+- `pyproject.toml`: project metadata, `dev` dependency group (`pytest`, `pytest-cov`), and
+  `[tool.pytest.ini_options]`/`[tool.coverage.*]` config (replaces `.coveragerc`). `uv.lock`
+  pins the dev group. `mise run test`/`mise run coverage` and CI's `test-matrix.yml` now run
+  `uv run --group dev pytest` instead of ephemeral `uvx --with pytest`.
 - Evaluated the four external repos tracked in `TODO.md` (zISOTweaker, Optimize-Windows,
   UnattendedWinstall, windows-unattended-debloat, Win11CleanInstall) and merged the genuinely
   new tweaks: `*549981C3F5F10*` added to `config/debloat_list.txt`/`component_groups.json`

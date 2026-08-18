@@ -17,7 +17,6 @@ Usage:
 """
 
 import argparse
-import json
 import os
 import shutil
 import subprocess
@@ -25,6 +24,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+import orjson
 from pyutils import log_error, log_info, log_success
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -38,8 +38,8 @@ def load_profile(name: str) -> dict[str, Any] | None:
     if not PROFILES_FILE.is_file():
         return None
     try:
-        data = json.loads(PROFILES_FILE.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
+        data = orjson.loads(PROFILES_FILE.read_bytes())
+    except OSError, ValueError:
         return None
     profiles = data.get("profiles", {}) if isinstance(data, dict) else {}
     return profiles.get(name) if isinstance(profiles, dict) else None
@@ -125,6 +125,9 @@ def main() -> int:
     env["PAUSE_FOR_WINDOWS_STAGE"] = os.environ.get("PAUSE_FOR_WINDOWS_STAGE", "0")
     env["NANO"] = os.environ.get("NANO", "0")
     env["WIMLIB_IMAGEX_IGNORE_CASE"] = "1"
+    # debloat_wim.py now imports orjson; the converter's DEBLOAT HOOK must run
+    # it with the same interpreter (venv) that build.py itself is running under.
+    env["PYTHON"] = sys.executable
 
     # custom_convert.sh is upstream-derived bash and stays as-is; run via bash.
     # Usage: custom_convert.sh [compression] [uups_directory] [create_virtual_editions]

@@ -43,6 +43,7 @@ __MACOSX/
 .serena/
 !.serena/project.yml
 .codegraph/
+.remember/
 
 # ─── Python cache ─────────────────────────────────────────────────────────────
 __pycache__/
@@ -55,6 +56,9 @@ __pycache__/
 dist/
 build/
 *.egg-info/
+.coverage
+htmlcov/
+!uv.lock
 
 # ─── OS-generated files ───────────────────────────────────────────────────────
 .DS_Store

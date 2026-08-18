@@ -15,11 +15,12 @@ paths:
 
 # Linux build pipeline rules
 
-- Pipeline scripts (`build.py`, `setup_env.py`, `sign_iso.py`, `validate_prereqs.py`, `debloat_wim.py`) are Python 3, stdlib-first; `import pyutils` for logging (`log_info`/`log_success`/`log_warn`/`log_error`) instead of adding new logging styles.
+- Pipeline scripts (`build.py`, `setup_env.py`, `sign_iso.py`, `validate_prereqs.py`, `debloat_wim.py`) are Python 3; `import pyutils` for logging (`log_info`/`log_success`/`log_warn`/`log_error`) instead of adding new logging styles.
+- `download_uup.py`, `build.py`, and `debloat_wim.py` use `httpx` (HTTP client) and `orjson` (JSON) — both declared in `pyproject.toml`, not stdlib `urllib`/`json`. New JSON/HTTP code in these three files should use them too. Everything else in the pipeline stays stdlib-first.
 - Derive paths from `Path(__file__).resolve().parent` (`SCRIPT_DIR`) or its parent (`PROJECT_ROOT`); do not introduce machine-specific absolute paths inside scripts.
 - Do not add `sudo`/elevation to `build.py` or any script in the Linux build pipeline.
-- Treat `scripts/custom_convert.sh` and `scripts/convert_config.sh` (which it sources) as upstream-derived and patch-only unless the task explicitly requires a converter change — these are the only scripts that stay bash.
+- Treat `scripts/custom_convert.sh` and `scripts/convert_config.sh` (which it sources) as upstream-derived and patch-only unless the task explicitly requires a converter change — these are the only scripts that stay bash. The one repo-owned exception is the `# DEBLOAT HOOK` block, which reads `$PYTHON` (set by `build.py` to `sys.executable`, falling back to plain `python3`) so the debloater runs under the same venv that has httpx/orjson installed.
 - `scripts/utils.sh` stays bash too, solely because `custom_convert.sh` sources it. Do not add new Python consumers of it — use `pyutils.py` instead.
-- When editing `Makefile`, keep `.PHONY`, the `chmod +x scripts/<script>.py` + `./scripts/<script>.py` invocation pattern, and `help` output aligned with the real targets.
+- When editing `Makefile`, keep `.PHONY`, the `chmod +x scripts/<script>.py` + `$(PY) scripts/<script>.py` invocation pattern (where `PY ?= uv run --`, overridable via `make build PY=python3`), and `help` output aligned with the real targets.
 - If a change touches `debloat_wim.py` or `config/debloat_list.txt`, preserve the protected AppX patterns listed in `AGENTS.md`.
 - Validate changed Python scripts with `python -m py_compile`; validate `custom_convert.sh`/`convert_config.sh` with `bash -n`. Run `make validate` only when local `uup_files/` inputs are present or the task specifically targets prerequisite validation.

@@ -35,5 +35,5 @@ jobs:
           enable-cache: true
           cache-python: true
 
-      - name: Run tests
-        run: uvx --with pytest pytest tests/
+      - name: Run tests with coverage
+        run: uv run --group dev pytest tests/ --cov --cov-report=term-missing

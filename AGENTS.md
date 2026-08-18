@@ -60,14 +60,13 @@ scripts/Mount-WimGui.ps1            # Native WinForms GUI to pick a WIM + mount 
 config/autounattend.xml             # Unattended Windows setup answers (UTF-8, no BOM)
 config/debloat_list.txt             # Bloatware glob patterns (grouped by category)
 config/oem/SetupComplete.cmd        # First-boot CMD script (CRLF required); injected via $OEM$ and directly by apply_image_settings.py
-config/ntlite-presets/*.xml         # NTLite presets — manual alternative path, not consumed by build.py/debloat_wim.py
-config/ntlite-presets/InstallApps.cmd # Winget app installer for NTLite's Post-Setup > Commands (After Logon) — not called by any script
+config/ntlite-presets/*.xml         # NTLite presets — manual alternative path, not consumed by scripts/debloat_wim.py
 config/unattend-generator/apply.reg # Manual TPM/RAM/CPU/SecureBoot bypass + 8.3/power-plan tweaks — companion to the NTLite alternative path, not called by any script
 config/unattend-generator/after-logon.cmd # Reference copy of the generator's FirstLogonScript0 (winget installs + powercfg) — not called by any script
 config/unattend-generator/system.ps1 # Reference copy of the generator's SystemScript1 (disables Defender realtime/behavior monitoring) — not called by any script
 config/component_groups.json        # Named AppX package groups mined from NTLite presets, consumed by validate_debloat.py's `.uup-groups` selection
 config/profiles.json                # Named build profiles (minimal/standard/gaming/enterprise/dev), consumed by download_uup.py
-config/components.psd1              # PowerShell data file: extra packages/capabilities/features/apps for the NTLite manual path — not consumed by build.py/debloat_wim.py
+config/components.psd1              # PowerShell data file: extra packages/capabilities/features/apps for the NTLite manual path — not consumed by scripts/debloat_wim.py
 
 ventoy/answer/                      # Canonical autounattend.xml source; config/autounattend.xml is a symlink to it
 
@@ -244,7 +243,7 @@ see the note below.
 `config/unattend-generator/` mirrors the scripts embedded in the generator-URL comment at the top
 of `ventoy/answer/autounattend.xml` (SystemScript/FirstLogonScript entries) as standalone,
 readable files — kept in sync with that comment when the answer file is regenerated. `apply.reg`
-there is the NTLite manual-path companion (formerly `scripts/apply.reg`): it now also sets the
+there is the NTLite manual-path companion (formerly `config/unattend-generator/apply.reg`): it now also sets the
 High Performance `ActivePowerScheme`, matching the answer file's own tweak — no conflict with
 NTLite's native `<PowerScheme>` import is expected since the offline registry write and NTLite's
 import both target the same scheme.
@@ -257,10 +256,6 @@ import both target the same scheme.
    (`BypassCPUCheck`, `BypassStorageCheck`, `BypassSecureBootCheck`, `BypassNRO`,
    `OOBEBypassNRO`, `BypassMSARequirement`, and the `MoSetup` bypasses) — the preset only
    sets `BypassRAMCheck`/`BypassTPMCheck`.
-4. Optional: in NTLite's Post-Setup > Commands, add `config/ntlite-presets/InstallApps.cmd`
-   with timing "After Logon" to install software via `winget` on first logon. Edit the
-   `PACKAGES` list inside the file before importing; it logs to `%TEMP%\InstallApps.log`.
-
 The presets' `RemoveComponents` AppX entries that map to real bloatware packages have been
 mined into `config/debloat_list.txt`/`config/component_groups.json` so the automated
 pipeline covers them too (`*GamingApp*`, `*Client.AIX*`, `*CrossDevice*`, `*OutlookPWA*`,

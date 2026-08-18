@@ -6,7 +6,8 @@
 				"hooks": [
 					{
 						"type": "command",
-						"command": "bash -c 'echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"(^|[^a-z])sudo( |$)\" && echo \"BLOCKED: sudo is not permitted in the build pipeline (AGENTS.md Hard Invariants)\" >&2 && exit 2 || exit 0'"
+						"command": "bash -c 'echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"(^|[^a-z])sudo( |$)\" && echo \"BLOCKED: sudo is not permitted in the build pipeline (AGENTS.md Hard Invariants)\" >&2 && exit 2 || exit 0'",
+						"timeout": 10
 					}
 				]
 			}
@@ -17,11 +18,13 @@
 				"hooks": [
 					{
 						"type": "command",
-						"command": "python3 .claude/hooks/check_invariants.py"
+						"command": "python3 .claude/hooks/check_invariants.py",
+						"timeout": 30
 					},
 					{
 						"type": "command",
-						"command": "python3 .claude/hooks/py_lint_touched.py"
+						"command": "python3 .claude/hooks/py_lint_touched.py",
+						"timeout": 30
 					}
 				]
 			}

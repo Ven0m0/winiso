@@ -1,3 +1,2 @@
 @echo off
 winget install -h --accept-package-agreements --accept-source-agreements --disable-interactivity --nowarn --force Git.Git abbodi1406.vcredist Microsoft.DotNet.DesktopRuntime.10 Chocolatey.Chocolatey activescott.lessmsi Gyan.FFmpeg aria2.aria2 jdx.mise 7zip.7zip astral-sh.uv Python.Python.3.14 Microsoft.PowerShell Microsoft.WindowsTerminal jdx.mise GitHub.cli Oven-sh.Bun Microsoft.DirectX sinelaw.fresh-editor OpenJS.NodeJS TechPowerUp.NVCleanstall GlennDelahoy.SnappyDriverInstallerOrigin topgrade-rs.topgrade Devolutions.UniGetUI ImputNet.Helium EpicGames.EpicGamesLauncher Valve.Steam SteelSeries.GG Bitwarden.Bitwarden AutoHotkey.AutoHotkey >> "%TEMP%\Apps.log" 2>&1
-iex "& {$(irm get.scoop.sh)} -RunAsAdmin"

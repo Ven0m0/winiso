@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <unattend xmlns="urn:schemas-microsoft-com:unattend" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
-	<!--https://schneegans.de/windows/unattend-generator/?LanguageMode=Unattended&UILanguage=en-US&Locale=en-US&Keyboard=00000409&GeoLocation=94&PEMode=Generated&Disable8Dot3Names=true&PauseBeforeFormatting=true&SkipIntegrityCheck=true&InstallFromMode=Automatic&PartitionMode=Unattended&TargetDisk=0&SystemSize=550&PartitionLayout=GPT&RecoveryMode=Partition&RecoverySize=1000&DiskAssertionMode=Generated&AssertMinSize=100&AssertMaxSize=4000&AssertNoPartitions=true&WindowsEditionMode=Generic&WindowsEdition=pro&ProcessorArchitecture=amd64&BypassRequirementsCheck=true&BypassNetworkCheck=true&UseConfigurationSet=true&ComputerNameMode=Custom&ComputerName=PC&TimeZoneMode=Explicit&TimeZone=W.+Europe+Standard+Time&UserAccountMode=Unattended&AccountName0=Ven0m0&AccountDisplayName0=&AccountPassword0=hermes01&AccountGroup0=Administrators&AutoLogonMode=Own&ObscurePasswords=true&PasswordExpirationMode=Unlimited&LockoutMode=Disabled&HideFiles=HiddenSystem&ShowFileExtensions=true&ClassicContextMenu=true&HideInfoTip=true&ShowEndTask=true&TaskbarSearch=Icon&TaskbarIconsMode=Empty&DisableWidgets=true&LeftTaskbar=true&HideTaskViewButton=true&DisableBingResults=true&StartTilesMode=Empty&StartPinsMode=Empty&DisableSac=true&DisableSmartScreen=true&DisableFastStartup=true&EnableLongPaths=true&HardenSystemDriveAcl=true&DeleteJunctions=true&AllowPowerShellScripts=true&DisableLastAccess=true&PreventAutomaticReboot=true&TurnOffSystemSounds=true&DisableAppSuggestions=true&PreventDeviceEncryption=true&HideEdgeFre=true&DisableEdgeStartupBoost=true&DisablePointerPrecision=true&DeleteWindowsOld=true&DisableAutomaticRestartSignOn=true&DisableWpbt=true&PreventDeviceApps=true&EffectsMode=Custom&ThumbnailsOrIcon=true&DragFullWindows=true&FontSmoothing=true&DesktopIconsMode=Custom&IconControlPanel=true&IconRecycleBin=true&StartFoldersMode=Custom&StartFolderPersonalFolder=true&StartFolderSettings=true&CoreIsolationMode=Disabled&WifiMode=Skip&ExpressSettings=DisableAll&LockKeysMode=Configure&CapsLockInitial=Off&CapsLockBehavior=Toggle&NumLockInitial=Off&NumLockBehavior=Toggle&ScrollLockInitial=Off&ScrollLockBehavior=Toggle&StickyKeysMode=Disabled&ColorMode=Custom&SystemColorTheme=Dark&AppsColorTheme=Dark&AccentColor=%238b00d6&WallpaperMode=Default&LockScreenMode=Default&Remove3DViewer=true&RemoveBingSearch=true&RemoveCamera=true&RemoveClipchamp=true&RemoveClock=true&RemoveCopilot=true&RemoveCortana=true&RemoveDevHome=true&RemoveWindowsHello=true&RemoveFamily=true&RemoveFeedbackHub=true&RemoveGameAssist=true&RemoveGetHelp=true&RemoveHandwriting=true&RemoveInternetExplorer=true&RemoveMailCalendar=true&RemoveMaps=true&RemoveMathInputPanel=true&RemoveMixedReality=true&RemoveNews=true&RemoveOffice365=true&RemoveOneDrive=true&RemoveOneNote=true&RemoveOneSync=true&RemoveOutlook=true&RemovePaint3D=true&RemovePeople=true&RemovePowerAutomate=true&RemoveQuickAssist=true&RemoveRecall=true&RemoveSkype=true&RemoveSnippingTool=true&RemoveSolitaire=true&RemoveSpeech=true&RemoveStepsRecorder=true&RemoveStickyNotes=true&RemoveTeams=true&RemoveGetStarted=true&RemoveToDo=true&RemoveVoiceRecorder=true&RemoveWallet=true&RemoveWeather=true&RemoveFaxAndScan=true&RemoveWindowsMediaPlayer=true&RemoveWordPad=true&RemoveYourPhone=true&SystemScript0=powercfg+%2Fh+off&SystemScriptType0=Cmd&SystemScript1=Set-MpPreference+-DisableRealtimeMonitoring+%24true%3B%0D%0ASet-MpPreference+-DisableBehaviorMonitoring+%24true%3B&SystemScriptType1=Ps1&SystemScript2=Windows+Registry+Editor+Version+5.00%0D%0A%0D%0A%5BHKEY_LOCAL_MACHINE%5CSYSTEM%5CSetup%5CLabConfig%5D%0D%0A%22BypassCPUCheck%22%3Ddword%3A00000001%0D%0A%22BypassStorageCheck%22%3Ddword%3A00000001%0D%0A%22BypassRAMCheck%22%3Ddword%3A00000001%0D%0A%22BypassTPMCheck%22%3Ddword%3A00000001%0D%0A%22BypassSecureBootCheck%22%3Ddword%3A00000001%0D%0A%22BypassNRO%22%3Ddword%3A00000001%0D%0A%22OOBEBypassNRO%22%3Ddword%3A00000001%0D%0A%22BypassMSARequirement%22%3Ddword%3A00000001%0D%0A%0D%0A%5BHKEY_LOCAL_MACHINE%5CSYSTEM%5CSetup%5CMoSetup%5D%0D%0A%22BypassCPUCheck%22%3Ddword%3A00000001%0D%0A%22BypassStorageCheck%22%3Ddword%3A00000001%0D%0A%22BypassRAMCheck%22%3Ddword%3A00000001%0D%0A%22BypassTPMCheck%22%3Ddword%3A00000001%0D%0A%22BypassSecureBootCheck%22%3Ddword%3A00000001%0D%0A%22AllowUpgradesWithUnsupportedTPMOrCPU%22%3Ddword%3A00000001%0D%0A%0D%0A%5BHKEY_CURRENT_USER%5CControl+Panel%5CUnsupportedHardwareNotificationCache%5D%0D%0A%22SV2%22%3Ddword%3A00000000%0D%0A%0D%0A%5BHKEY_LOCAL_MACHINE%5CSYSTEM%5CControlSet001%5CControl%5CFileSystem%5D%0D%0A%22NtfsDisable8dot3NameCreation%22%3Ddword%3A00000001%0D%0A%22NtfsDisableCompression%22%3Ddword%3A00000001%0D%0A%22NtfsDisableEncryption%22%3Ddword%3A00000001%0D%0A%22LongPathsEnabled%22%3Ddword%3A00000001%0D%0A%22DisableDeleteNotification%22%3Ddword%3A00000001%0D%0A%0D%0A%5BHKEY_LOCAL_MACHINE%5CSOFTWARE%5CPolicies%5CMicrosoft%5CPower%5CPowerSettings%5D%0D%0A%22ActivePowerScheme%22%3D%228c5e7fda-e8bf-4a96-9a85-a6e23a8c635c%22%0D%0A&SystemScriptType2=Reg&FirstLogonScript0=%40echo+off%0D%0Awinget+install+-h+%2D%2Daccept-package-agreements+%2D%2Daccept-source-agreements+%2D%2Ddisable-interactivity+%2D%2Dnowarn+%2D%2Dforce+Git.Git+7zip.7zip+astral-sh.uv+Python.Python.3.14+Microsoft.PowerShell+Microsoft.WindowsTerminal+jdx.mise+GitHub.cli+Oven-sh.Bun+Microsoft.DirectX+sinelaw.fresh-editor+OpenJS.NodeJS+TechPowerUp.NVCleanstall+GlennDelahoy.SnappyDriverInstallerOrigin+Rustlang.Rustup+Mozilla.sccache+topgrade-rs.topgrade+Devolutions.UniGetUI+Microsoft.VisualStudio.BuildTools+VSCodium.VSCodium+PrismLauncher.PrismLauncher+ImputNet.Helium+Gyan.FFmpeg.Essentials+EpicGames.EpicGamesLauncher+Valve.Steam+SteelSeries.GG+abbodi1406.vcredist+aria2.aria2%0D%0Apowercfg+%2Fh+off+%3ENUL+2%3E%261%0D%0Afsutil+behavior+set+disable8dot3+1+%3ENUL+2%3E%261%0D%0Afsutil+behavior+set+disablecompression+1+%3ENUL+2%3E%261%0D%0ADism+%2FOnline+%2FCleanup-Image+%2FStartComponentCleanup%0D%0Apowercfg+%2FS+8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c&FirstLogonScriptType0=Cmd&FirstLogonScript1=iex+%22%26+%7B%24%28irm+get.scoop.sh%29%7D+-RunAsAdmin%22&FirstLogonScriptType1=Ps1&FirstLogonScript2=Windows+Registry+Editor+Version+5.00%0D%0A%0D%0A%3B+Restore+the+classic+context+menu%0D%0A%5BHKEY_CURRENT_USER%5CSoftware%5CClasses%5CCLSID%5C%7B86ca1aa0-34aa-4e8b-a509-50c905bae2a2%7D%5CInprocServer32%5D%0D%0A%40%3D%22%22%0D%0A%0D%0A%3B+Disable+core+isolation+%28VBS%29%0D%0A%5BHKEY_LOCAL_MACHINE%5CSYSTEM%5CCurrentControlSet%5CControl%5CDeviceGuard%5CScenarios%5CHypervisorEnforcedCodeIntegrity%5D%0D%0A%22Enabled%22%3Ddword%3A00000000%0D%0A%0D%0A%5BHKEY_LOCAL_MACHINE%5CSYSTEM%5CCurrentControlSet%5CControl%5CDeviceGuard%5D%0D%0A%22EnableVirtualizationBasedSecurity%22%3Ddword%3A00000000%0D%0A%22RequirePlatformSecurityFeatures%22%3Ddword%3A00000000%0D%0A%0D%0A%5BHKEY_LOCAL_MACHINE%5CSYSTEM%5CCurrentControlSet%5CControl%5CDeviceGuard%5CScenarios%5CKernelShadowStacks%5D%0D%0A%22Enabled%22%3Ddword%3A00000000%0D%0A%0D%0A%5BHKEY_LOCAL_MACHINE%5CSYSTEM%5CCurrentControlSet%5CControl%5CDeviceGuard%5CScenarios%5CCredentialGuard%5D%0D%0A%22Enabled%22%3Ddword%3A00000000%0D%0A%0D%0A%3B+Disable+suggested+actions%0D%0A%5BHKEY_CURRENT_USER%5CSoftware%5CMicrosoft%5CWindows%5CCurrentVersion%5CSmartActionPlatform%5CSmartClipboard%5D%0D%0A%22Disabled%22%3Ddword%3A00000001%0D%0A%0D%0A%3B+Disable+search+highlights%0D%0A%5BHKEY_CURRENT_USER%5CSoftware%5CMicrosoft%5CWindows%5CCurrentVersion%5CSearchSettings%5D%0D%0A%22IsDynamicSearchBoxEnabled%22%3Ddword%3A00000000%0D%0A%0D%0A%3B+Disable+storage+sense%0D%0A%5BHKEY_LOCAL_MACHINE%5CSOFTWARE%5CPolicies%5CMicrosoft%5CWindows%5CStorageSense%5D%0D%0A%22AllowStorageSenseGlobal%22%3Ddword%3A00000000%0D%0A%0D%0A%3B+Explorer%3A+leftmost+taskbar%2C+disable+snap+layout%2Fbar%2C+start+menu+tips%2C+Copilot+button%0D%0A%5BHKEY_CURRENT_USER%5CSoftware%5CMicrosoft%5CWindows%5CCurrentVersion%5CExplorer%5CAdvanced%5D%0D%0A%22TaskbarAl%22%3Ddword%3A00000000%0D%0A%22EnableSnapBar%22%3Ddword%3A00000000%0D%0A%22EnableSnapAssistFlyout%22%3Ddword%3A00000000%0D%0A%22Start_IrisRecommendations%22%3Ddword%3A00000000%0D%0A%22Start_Layout%22%3Ddword%3A00000001%0D%0A%22ShowCopilotButton%22%3Ddword%3A00000000%0D%0A%0D%0A%3B+Disable+OneDrive+noti%0D%0A%5BHKEY_CURRENT_USER%5CSoftware%5CMicrosoft%5CWindows%5CCurrentVersion%5CNotifications%5CSettings%5CMicrosoft.SkyDrive.Desktop%5D%0D%0A%22Enabled%22%3Ddword%3A00000000%0D%0A%0D%0A%3B+Content+delivery%3A+disable+whats-new%2C+suggested+content%2C+pre-installed+apps%0D%0A%5BHKEY_CURRENT_USER%5CSoftware%5CMicrosoft%5CWindows%5CCurrentVersion%5CContentDeliveryManager%5D%0D%0A%22SubscribedContent-310093Enabled%22%3Ddword%3A00000000%0D%0A%22SubscribedContent-338393Enabled%22%3Ddword%3A00000000%0D%0A%22SubscribedContent-353694Enabled%22%3Ddword%3A00000000%0D%0A%22SubscribedContent-353696Enabled%22%3Ddword%3A00000000%0D%0A%22OemPreInstalledAppsEnabled%22%3Ddword%3A00000000%0D%0A%22PreInstalledAppsEnabled%22%3Ddword%3A00000000%0D%0A%22SilentInstalledAppsEnabled%22%3Ddword%3A00000000%0D%0A%22SoftLandingEnabled%22%3Ddword%3A00000000%0D%0A%22ContentDeliveryAllowed%22%3Ddword%3A00000000%0D%0A%22PreInstalledAppsEverEnabled%22%3Ddword%3A00000000%0D%0A%22SubscribedContentEnabled%22%3Ddword%3A00000000%0D%0A%0D%0A%3B+Enable+action+center%0D%0A%5BHKEY_CURRENT_USER%5CSOFTWARE%5CPolicies%5CMicrosoft%5CWindows%5CExplorer%5D%0D%0A%22DisableNotificationCenter%22%3D-%0D%0A%0D%0A%3B+Disable+account+noti%0D%0A%5BHKEY_CURRENT_USER%5CSoftware%5CMicrosoft%5CWindows%5CCurrentVersion%5CSystemSettings%5CAccountNotifications%5D%0D%0A%22EnableAccountNotifications%22%3Ddword%3A00000000%0D%0A%0D%0A%3B+Disable+win+11+system+requirements%0D%0A%5BHKEY_CURRENT_USER%5CControl+Panel%5CUnsupportedHardwareNotificationCache%5D%0D%0A%22SV2%22%3Ddword%3A00000000%0D%0A%0D%0A%5BHKEY_LOCAL_MACHINE%5CSYSTEM%5CSetup%5CLabConfig%5D%0D%0A%22BypassCPUCheck%22%3Ddword%3A00000001%0D%0A%22BypassStorageCheck%22%3Ddword%3A00000001%0D%0A%22BypassRAMCheck%22%3Ddword%3A00000001%0D%0A%22BypassTPMCheck%22%3Ddword%3A00000001%0D%0A%22BypassSecureBootCheck%22%3Ddword%3A00000001%0D%0A%22BypassNRO%22%3Ddword%3A00000001%0D%0A%22OOBEBypassNRO%22%3Ddword%3A00000001%0D%0A%22BypassMSARequirement%22%3Ddword%3A00000001%0D%0A%0D%0A%5BHKEY_LOCAL_MACHINE%5CSYSTEM%5CSetup%5CMoSetup%5D%0D%0A%22BypassCPUCheck%22%3Ddword%3A00000001%0D%0A%22BypassStorageCheck%22%3Ddword%3A00000001%0D%0A%22BypassRAMCheck%22%3Ddword%3A00000001%0D%0A%22BypassTPMCheck%22%3Ddword%3A00000001%0D%0A%22BypassSecureBootCheck%22%3Ddword%3A00000001%0D%0A%22AllowUpgradesWithUnsupportedTPMOrCPU%22%3Ddword%3A00000001%0D%0A%0D%0A%3B+Disable+show+recently+added+apps+and+recommendations%0D%0A%5BHKEY_CURRENT_USER%5CSoftware%5CMicrosoft%5CWindows%5CCurrentVersion%5CStart%5D%0D%0A%22ShowRecentList%22%3Ddword%3A00000000%0D%0A%22RightCompanionToggledOpen%22%3Ddword%3A00000000%0D%0A%0D%0A%3B+Disable+ai+insights%0D%0A%5BHKEY_CURRENT_USER%5CSoftware%5CMicrosoft%5Cinput%5CSettings%5D%0D%0A%22InsightsEnabled%22%3Ddword%3A00000000%0D%0A%0D%0A%3B+Remove+pinned+items+in+network+and+sound+flyout%0D%0A%5BHKEY_CURRENT_USER%5CControl+Panel%5CQuick+Actions%5CControl+Center%5CUnpinned%5D%0D%0A%22Microsoft.QuickAction.BlueLightReduction%22%3Dhex%280%29%3A%0D%0A%22Microsoft.QuickAction.Accessibility%22%3Dhex%280%29%3A%0D%0A%22Microsoft.QuickAction.NearShare%22%3Dhex%280%29%3A%0D%0A%22Microsoft.QuickAction.Cast%22%3Dhex%280%29%3A%0D%0A%22Microsoft.QuickAction.ProjectL2%22%3Dhex%280%29%3A%0D%0A%0D%0A%3B+Disable+Windows+AI%0D%0A%5BHKEY_LOCAL_MACHINE%5CSoftware%5CPolicies%5CMicrosoft%5CWindows%5CWindowsCopilot%5D%0D%0A%22TurnOffWindowsCopilot%22%3Ddword%3A00000001%0D%0A%0D%0A%5BHKEY_LOCAL_MACHINE%5CSOFTWARE%5CPolicies%5CMicrosoft%5CWindows%5CWindowsAI%5D%0D%0A%22DisableAIDataAnalysis%22%3Ddword%3A00000001%0D%0A%22AllowRecallEnablement%22%3Ddword%3A00000000%0D%0A%22DisableClickToDo%22%3Ddword%3A00000001%0D%0A%0D%0A%5BHKEY_LOCAL_MACHINE%5CSoftware%5CMicrosoft%5CWindows%5CShell%5CCopilot%5CBingChat%5D%0D%0A%22IsUserEligible%22%3Ddword%3A00000000%0D%0A%0D%0A%5BHKEY_LOCAL_MACHINE%5CSOFTWARE%5CMicrosoft%5CWindows%5CCurrentVersion%5CPolicies%5CPaint%5D%0D%0A%22DisableGenerativeFill%22%3Ddword%3A00000001%0D%0A%22DisableCocreator%22%3Ddword%3A00000001%0D%0A%22DisableImageCreator%22%3Ddword%3A00000001%0D%0A%0D%0A%5BHKEY_LOCAL_MACHINE%5CSOFTWARE%5CPolicies%5CWindowsNotepad%5D%0D%0A%22DisableAIFeatures%22%3Ddword%3A00000001%0D%0A%0D%0A%3B+Disable+Edge+Copilot+sidebar%0D%0A%5BHKEY_LOCAL_MACHINE%5CSoftware%5CPolicies%5CMicrosoft%5CEdge%5D%0D%0A%22HubsSidebarEnabled%22%3Ddword%3A00000000%0D%0A%0D%0A%3B+Disable+AI+in+Notepad+%28per-user+companion+to+the+machine+policy+above%29%0D%0A%5BHKEY_CURRENT_USER%5CSoftware%5CMicrosoft%5CNotepad%5D%0D%0A%22EnableCowriter%22%3Ddword%3A00000000%0D%0A%0D%0A%3B+Disable+AI+in+Photos%0D%0A%5BHKEY_CURRENT_USER%5CSoftware%5CMicrosoft%5CWindows%5CCurrentVersion%5CPhotos%5D%0D%0A%22EnableAIFeatures%22%3Ddword%3A00000000%0D%0A%0D%0A%3B+Disable+background+apps+win+11%0D%0A%5BHKEY_CURRENT_USER%5CSoftware%5CMicrosoft%5CWindows%5CCurrentVersion%5CBackgroundAccessApplications%5D%0D%0A%22GlobalUserDisabled%22%3Ddword%3A00000001%0D%0A%0D%0A%3B+Enable+end+task+in+taskbar+right+click+menu%0D%0A%5BHKEY_CURRENT_USER%5CSoftware%5CMicrosoft%5CWindows%5CCurrentVersion%5CExplorer%5CAdvanced%5CTaskbarDeveloperSettings%5D%0D%0A%22TaskbarEndTask%22%3Ddword%3A00000001%0D%0A%0D%0A%3B+Disable+SnippingTool+Noti%0D%0A%5BHKEY_CURRENT_USER%5CSoftware%5CMicrosoft%5CWindows%5CCurrentVersion%5CNotifications%5CSettings%5CMicrosoft.ScreenSketch_8wekyb3d8bbwe%21App%5D%0D%0A%22Enabled%22%3Ddword%3A00000000%0D%0A%0D%0A%3B+Disable+Share+App+Experiences%0D%0A%5BHKEY_CURRENT_USER%5CSoftware%5CMicrosoft%5CWindows%5CCurrentVersion%5CCDP%5D%0D%0A%22RomeSdkChannelUserAuthzPolicy%22%3Ddword%3A00000000%0D%0A%22NearShareChannelUserAuthzPolicy%22%3Ddword%3A00000000%0D%0A%22CdpSessionUserAuthzPolicy%22%3Ddword%3A00000000%0D%0A%0D%0A%3B+Set+Wallpaper+to+Solid+Color+%2811%29%0D%0A%5BHKEY_CURRENT_USER%5CSoftware%5CMicrosoft%5CWindows%5CCurrentVersion%5CExplorer%5CWallpapers%5D%0D%0A%22BackgroundType%22%3Ddword%3A00000001%0D%0A%0D%0A%3B+Disable+Prompt+For+Location+Privacy%0D%0A%5BHKEY_CURRENT_USER%5CSoftware%5CMicrosoft%5CWindows%5CCurrentVersion%5CCapabilityAccessManager%5CConsentStore%5Clocation%5D%0D%0A%22ShowGlobalPrompts%22%3Ddword%3A00000000%0D%0A%0D%0A%3B+Disable+User+Choice+Driver%0D%0A%5BHKEY_LOCAL_MACHINE%5CSYSTEM%5CControlSet001%5CServices%5CUCPD%5D%0D%0A%22Start%22%3Ddword%3A00000004%0D%0A%0D%0A%3B+Disable+Phone+Companion+in+Start+Menu%0D%0A%5BHKEY_CURRENT_USER%5CSoftware%5CMicrosoft%5CWindows%5CCurrentVersion%5CStart%5CCompanions%5CMicrosoft.YourPhone_8wekyb3d8bbwe%5D%0D%0A%22IsEnabled%22%3Ddword%3A00000000%0D%0A%22IsAvailable%22%3Ddword%3A00000000%0D%0A%0D%0A%3B+Disable+Cross+Device+Resume%0D%0A%5BHKEY_CURRENT_USER%5CSoftware%5CMicrosoft%5CWindows%5CCurrentVersion%5CCrossDeviceResume%5CConfiguration%5D%0D%0A%22IsResumeAllowed%22%3Ddword%3A00000000%0D%0A%22IsOneDriveResumeAllowed%22%3Ddword%3A00000000%0D%0A%0D%0A%3B+Disable+Dynamic+Lighting%0D%0A%5BHKEY_CURRENT_USER%5CSoftware%5CMicrosoft%5CLighting%5D%0D%0A%22AmbientLightingEnabled%22%3Ddword%3A00000000%0D%0A%22ControlledByForegroundApp%22%3Ddword%3A00000000%0D%0A%0D%0A%3B+100%25+DPI+%26+disable+per-process+DPI+scaling+for+apps%0D%0A%5BHKEY_CURRENT_USER%5CControl+Panel%5CDesktop%5D%0D%0A%22LogPixels%22%3D%2200000096%22%0D%0A%22Win8DpiScaling%22%3D%2200000000%22%0D%0A%22EnablePerProcessSystemDPI%22%3D%2200000000%22%0D%0A%22MenuShowDelay%22%3D%220%22%0D%0A%0D%0A%5BHKEY_CURRENT_USER%5CControl+Panel%5CDesktop%5CWindowMetrics%5D%0D%0A%22AppliedDPI%22%3D%2200000096%22%0D%0A%0D%0A%3B+Mouse%3A+turn+off+enhance+pointer+precision%0D%0A%5BHKEY_CURRENT_USER%5CControl+Panel%5CMouse%5D%0D%0A%22MouseSensitivity%22%3D%2210%22%0D%0A%22SmoothMouseXCurve%22%3Dhex%3A%5C%0D%0A%0900%2C00%2C00%2C00%2C00%2C00%2C00%2C00%2C%5C%0D%0A%09C0%2CCC%2C0C%2C00%2C00%2C00%2C00%2C00%2C%5C%0D%0A%0980%2C99%2C19%2C00%2C00%2C00%2C00%2C00%2C%5C%0D%0A%0940%2C66%2C26%2C00%2C00%2C00%2C00%2C00%2C%5C%0D%0A%0900%2C33%2C33%2C00%2C00%2C00%2C00%2C00%0D%0A%22SmoothMouseYCurve%22%3Dhex%3A%5C%0D%0A%0900%2C00%2C00%2C00%2C00%2C00%2C00%2C00%2C%5C%0D%0A%0900%2C00%2C38%2C00%2C00%2C00%2C00%2C00%2C%5C%0D%0A%0900%2C00%2C70%2C00%2C00%2C00%2C00%2C00%2C%5C%0D%0A%0900%2C00%2CA8%2C00%2C00%2C00%2C00%2C00%2C%5C%0D%0A%0900%2C00%2CE0%2C00%2C00%2C00%2C00%2C00%0D%0A%0D%0A%5BHKEY_USERS%5C.DEFAULT%5CControl+Panel%5CMouse%5D%0D%0A%22MouseSpeed%22%3D%220%22%0D%0A%22MouseThreshold1%22%3D%220%22%0D%0A%22MouseThreshold2%22%3D%220%22%0D%0A%0D%0A%3B+Filterkeys+setter%0D%0A%5BHKEY_CURRENT_USER%5CControl+Panel%5CAccessibility%5CKeyboard+Response%5D%0D%0A%22DelayBeforeAcceptance%22%3D%220%22%0D%0A%22BounceTime%22%3D%220%22%0D%0A%0D%0A%3B+Disable+nvidia+tray+icon%0D%0A%5BHKEY_CURRENT_USER%5CSoftware%5CNVIDIA+Corporation%5CNvTray%5D%0D%0A%22StartOnLogin%22%3Ddword%3A00000000%0D%0A%0D%0A%3B+Nvidia+enable+old+sharpening%0D%0A%5BHKEY_LOCAL_MACHINE%5CSYSTEM%5CCurrentControlSet%5CServices%5Cnvlddmkm%5CFTS%5D%0D%0A%22EnableGR535%22%3Ddword%3A00000000%0D%0A%0D%0A%5BHKEY_CURRENT_USER%5CSoftware%5CMicrosoft%5CWindows%5CCurrentVersion%5CVideoSettings%5D%0D%0A%22VideoQualityOnBattery%22%3Ddword%3A00000001%0D%0A%0D%0A%3B+Turn+off+notifications+network+usage%0D%0A%5BHKEY_LOCAL_MACHINE%5CSOFTWARE%5CPolicies%5CMicrosoft%5CWindows%5CCurrentVersion%5CPushNotifications%5D%0D%0A%22NoCloudApplicationNotification%22%3Ddword%3A00000001%0D%0A%0D%0A%3B+Always+unload+dlls%0D%0A%5BHKEY_LOCAL_MACHINE%5CSoftware%5CMicrosoft%5CWindows%5CCurrentVersion%5CExplorer%5D%0D%0A%22AlwaysUnloadDLL%22%3Ddword%3A00000001%0D%0A%0D%0A%3B+Disable+%22-+shortcut%22+text+for+shortcuts%0D%0A%5BHKEY_CURRENT_USER%5CSOFTWARE%5CMicrosoft%5CWindows%5CCurrentVersion%5CExplorer%5D%0D%0A%22link%22%3Dhex%3A00%2C00%2C00%2C00%0D%0A%0D%0A%3B+Use+the+latest+.NET+Framework+version%0D%0A%5BHKEY_LOCAL_MACHINE%5CSOFTWARE%5CMicrosoft%5C.NETFramework%5D%0D%0A%22OnlyUseLatestCLR%22%3Ddword%3A00000001%0D%0A%0D%0A%5BHKEY_LOCAL_MACHINE%5CSOFTWARE%5CWOW6432Node%5CMicrosoft%5C.NETFramework%5D%0D%0A%22OnlyUseLatestCLR%22%3Ddword%3A00000001%0D%0A%0D%0A%3B+Resolves+a+memory+leak+in+Windows+10+%28Ndu+service%29%0D%0A%5BHKEY_LOCAL_MACHINE%5CSYSTEM%5CControlSet001%5CServices%5CNdu%5D%0D%0A%22Start%22%3Ddword%3A00000004%0D%0A%0D%0A%3B+Disable+mitigations%0D%0A%5BHKEY_LOCAL_MACHINE%5CSYSTEM%5CCurrentControlSet%5CControl%5CSession+Manager%5CMemory+Management%5D%0D%0A%22FeatureSettings%22%3Ddword%3A00000001%0D%0A%22FeatureSettingsOverrideMask%22%3Ddword%3A00000003%0D%0A%22FeatureSettingsOverride%22%3Ddword%3A00000003%0D%0A%0D%0A%3B+Turn+on+Game+Mode+registry%0D%0A%5BHKEY_CURRENT_USER%5CSoftware%5CMicrosoft%5CGameBar%5D%0D%0A%22AllowAutoGameMode%22%3Ddword%3A00000001%0D%0A%22AutoGameModeEnabled%22%3Ddword%3A00000001%0D%0A%0D%0A%3B+HW+scheduling+on%0D%0A%5BHKEY_LOCAL_MACHINE%5CSYSTEM%5CCurrentControlSet%5CControl%5CGraphicsDrivers%5D%0D%0A%22HwSchMode%22%3Ddword%3A00000002%0D%0A%0D%0A%3B+Prefer+IPv4+over+IPv6%0D%0A%5BHKEY_LOCAL_MACHINE%5CSYSTEM%5CCurrentControlSet%5CServices%5CTcpip6%5CParameters%5D%0D%0A%22DisabledComponents%22%3Ddword%3A00000020%0D%0A%0D%0A%3B+Enable+network+card+onboard+processor%0D%0A%5BHKEY_LOCAL_MACHINE%5CSYSTEM%5CCurrentControlSet%5CServices%5CTcpip%5CParameters%5D%0D%0A%22DisableTaskOffload%22%3Ddword%3A00000000%0D%0A%0D%0A%3B+SSD+tweaks%0D%0A%5BHKEY_LOCAL_MACHINE%5CSOFTWARE%5CPolicies%5CMicrosoft%5CWindows%5CNvCache%5D%0D%0A%22OptimizeBootAndResume%22%3Ddword%3A00000001%0D%0A%22EnablePowerModeState%22%3Ddword%3A00000000%0D%0A%22EnableNvCache%22%3Ddword%3A00000001%0D%0A%22EnableSolidStateMode%22%3Ddword%3A00000001%0D%0A%0D%0A%5BHKEY_LOCAL_MACHINE%5CSYSTEM%5CCurrentControlSet%5CPolicies%5D%0D%0A%22NtfsDisableCompression%22%3Ddword%3A00000001%0D%0A%22NtfsDisableEncryption%22%3Ddword%3A00000001%0D%0A%22NtfsEncryptPagingFile%22%3Ddword%3A00000000%0D%0A%22NtfsDefaultTier%22%3Ddword%3A00000002%0D%0A%22NtfsForceNonPagedPoolAllocation%22%3Ddword%3A00000001%0D%0A%22NtfsParallelFlushWorkers%22%3Ddword%3A00000000%0D%0A%22NtfsDisable8dot3NameCreation%22%3Ddword%3A00000001%0D%0A%22NtfsEnableTxfDeprecatedFunctionality%22%3Ddword%3A00000000%0D%0A%0D%0A%5BHKEY_LOCAL_MACHINE%5CSYSTEM%5CControlSet001%5CControl%5CFileSystem%5D%0D%0A%22NtfsDisable8dot3NameCreation%22%3Ddword%3A00000001%0D%0A%22NtfsDisableCompression%22%3Ddword%3A00000001%0D%0A%22NtfsDisableEncryption%22%3Ddword%3A00000001%0D%0A%22LongPathsEnabled%22%3Ddword%3A00000001%0D%0A%22DisableDeleteNotification%22%3Ddword%3A00000001%0D%0A%0D%0A%5BHKEY_LOCAL_MACHINE%5CSOFTWARE%5CPolicies%5CMicrosoft%5CWindows%5CPsched%5D%0D%0A%22NonBestEffortLimit%22%3Ddword%3A00000000%0D%0A%22TimerResolution%22%3Ddword%3A00000001%0D%0A%0D%0A%3B+Prefetch+and+logging%0D%0A%5BHKEY_LOCAL_MACHINE%5CSYSTEM%5CCurrentControlSet%5CControl%5CSession+Manager%5CMemory+Management%5CPrefetchParameters%5D%0D%0A%22EnablePrefetcher%22%3Ddword%3A00000000%0D%0A%22EnableBoottrace%22%3Ddword%3A00000000%0D%0A%22SfTracingState%22%3Ddword%3A00000000%0D%0A%0D%0A%3B+Fix+ctfmon%0D%0A%5BHKEY_LOCAL_MACHINE%5CSOFTWARE%5CMicrosoft%5CInput%5D%0D%0A%22InputServiceEnabledForCCI%22%3Ddword%3A00000000&FirstLogonScriptType2=Reg&AppLockerMode=Skip-->
+	<!--https://schneegans.de/windows/unattend-generator/?LanguageMode=Unattended&UILanguage=en-US&Locale=en-US&Keyboard=00000409&GeoLocation=94&PEMode=Generated&Disable8Dot3Names=true&PauseBeforeFormatting=true&SkipIntegrityCheck=true&InstallFromMode=Interactive&PartitionMode=Unattended&TargetDisk=0&PartitionLayout=GPT&SystemSize=550&RecoveryMode=Partition&RecoverySize=1000&DiskAssertionMode=Generated&AssertMinSize=60&AssertMaxSize=4000&AssertNoPartitions=true&ProcessorArchitecture=amd64&BypassRequirementsCheck=true&BypassNetworkCheck=true&UseConfigurationSet=true&ComputerNameMode=Custom&ComputerName=PC&TimeZoneMode=Explicit&TimeZone=W.+Europe+Standard+Time&UserAccountMode=Unattended&AccountName0=Ven0m0&AccountDisplayName0=&AccountPassword0=hermes01&AccountGroup0=Administrators&AutoLogonMode=Own&ObscurePasswords=true&PasswordExpirationMode=Unlimited&LockoutMode=Disabled&HideFiles=HiddenSystem&ShowFileExtensions=true&ClassicContextMenu=true&HideInfoTip=true&ShowEndTask=true&TaskbarSearch=Icon&TaskbarIconsMode=Empty&DisableWidgets=true&LeftTaskbar=true&HideTaskViewButton=true&DisableBingResults=true&StartTilesMode=Empty&StartPinsMode=Empty&DisableSac=true&DisableSmartScreen=true&DisableFastStartup=true&EnableLongPaths=true&HardenSystemDriveAcl=true&DeleteJunctions=true&AllowPowerShellScripts=true&DisableLastAccess=true&PreventAutomaticReboot=true&TurnOffSystemSounds=true&DisableAppSuggestions=true&PreventDeviceEncryption=true&HideEdgeFre=true&DisableEdgeStartupBoost=true&DisablePointerPrecision=true&DeleteWindowsOld=true&DisableAutomaticRestartSignOn=true&DisableWpbt=true&PreventDeviceApps=true&EffectsMode=Custom&ThumbnailsOrIcon=true&DragFullWindows=true&FontSmoothing=true&DesktopIconsMode=Custom&IconControlPanel=true&IconRecycleBin=true&StartFoldersMode=Custom&StartFolderPersonalFolder=true&StartFolderSettings=true&CoreIsolationMode=Disabled&WifiMode=Skip&ExpressSettings=DisableAll&LockKeysMode=Configure&CapsLockInitial=Off&CapsLockBehavior=Toggle&NumLockInitial=Off&NumLockBehavior=Toggle&ScrollLockInitial=Off&ScrollLockBehavior=Toggle&StickyKeysMode=Disabled&ColorMode=Custom&SystemColorTheme=Dark&AppsColorTheme=Dark&AccentColor=%238b00d6&WallpaperMode=Default&LockScreenMode=Default&Remove3DViewer=true&RemoveBingSearch=true&RemoveCamera=true&RemoveClipchamp=true&RemoveClock=true&RemoveCopilot=true&RemoveCortana=true&RemoveDevHome=true&RemoveWindowsHello=true&RemoveFamily=true&RemoveFeedbackHub=true&RemoveGameAssist=true&RemoveGetHelp=true&RemoveHandwriting=true&RemoveInternetExplorer=true&RemoveMailCalendar=true&RemoveMaps=true&RemoveMathInputPanel=true&RemoveMixedReality=true&RemoveZuneVideo=true&RemoveNews=true&RemoveOffice365=true&RemoveOneDrive=true&RemoveOneNote=true&RemoveOneSync=true&RemoveOutlook=true&RemovePaint3D=true&RemovePeople=true&RemovePowerAutomate=true&RemovePowerShellISE=true&RemoveQuickAssist=true&RemoveRecall=true&RemoveSkype=true&RemoveSnippingTool=true&RemoveSolitaire=true&RemoveSpeech=true&RemoveStepsRecorder=true&RemoveStickyNotes=true&RemoveTeams=true&RemoveGetStarted=true&RemoveToDo=true&RemoveVoiceRecorder=true&RemoveWallet=true&RemoveWeather=true&RemoveFaxAndScan=true&RemoveWindowsMediaPlayer=true&RemoveWordPad=true&RemoveYourPhone=true&SystemScript0=%40echo+off%0D%0Apowercfg+%2Fh+off+%3ENUL+2%3E%261%0D%0Apowercfg+%2FS+8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c+%3ENUL+2%3E%261%0D%0Afsutil+behavior+set+disable8dot3+1+%3ENUL+2%3E%261%0D%0Afsutil+behavior+set+disablecompression+1+%3ENUL+2%3E%261%0D%0Afsutil+behavior+set+disableEncryption+1+%3ENUL+2%3E%261%0D%0Afsutil+behavior+set+disableLastAccess+1+%3ENUL+2%3E%261%0D%0A&SystemScriptType0=Cmd&SystemScript1=Set-MpPreference+-DisableRealtimeMonitoring+%24true%3B%0D%0ASet-MpPreference+-DisableBehaviorMonitoring+%24true%3B&SystemScriptType1=Ps1&SystemScript2=Windows+Registry+Editor+Version+5.00%0D%0A%0D%0A%5BHKEY_LOCAL_MACHINE%5CSYSTEM%5CSetup%5CLabConfig%5D%0D%0A%22BypassCPUCheck%22%3Ddword%3A00000001%0D%0A%22BypassStorageCheck%22%3Ddword%3A00000001%0D%0A%22BypassRAMCheck%22%3Ddword%3A00000001%0D%0A%22BypassTPMCheck%22%3Ddword%3A00000001%0D%0A%22BypassSecureBootCheck%22%3Ddword%3A00000001%0D%0A%22BypassNRO%22%3Ddword%3A00000001%0D%0A%22OOBEBypassNRO%22%3Ddword%3A00000001%0D%0A%22BypassMSARequirement%22%3Ddword%3A00000001%0D%0A%0D%0A%5BHKEY_LOCAL_MACHINE%5CSYSTEM%5CSetup%5CMoSetup%5D%0D%0A%22BypassCPUCheck%22%3Ddword%3A00000001%0D%0A%22BypassStorageCheck%22%3Ddword%3A00000001%0D%0A%22BypassRAMCheck%22%3Ddword%3A00000001%0D%0A%22BypassTPMCheck%22%3Ddword%3A00000001%0D%0A%22BypassSecureBootCheck%22%3Ddword%3A00000001%0D%0A%22AllowUpgradesWithUnsupportedTPMOrCPU%22%3Ddword%3A00000001%0D%0A%0D%0A%5BHKEY_CURRENT_USER%5CControl+Panel%5CUnsupportedHardwareNotificationCache%5D%0D%0A%22SV2%22%3Ddword%3A00000000%0D%0A%0D%0A%5BHKEY_LOCAL_MACHINE%5CSYSTEM%5CControlSet001%5CControl%5CFileSystem%5D%0D%0A%22NtfsDisable8dot3NameCreation%22%3Ddword%3A00000001%0D%0A%22NtfsDisableCompression%22%3Ddword%3A00000001%0D%0A%22NtfsDisableEncryption%22%3Ddword%3A00000001%0D%0A%22LongPathsEnabled%22%3Ddword%3A00000001%0D%0A%22DisableDeleteNotification%22%3Ddword%3A00000001%0D%0A%0D%0A%5BHKEY_LOCAL_MACHINE%5CSOFTWARE%5CPolicies%5CMicrosoft%5CPower%5CPowerSettings%5D%0D%0A%22ActivePowerScheme%22%3D%228c5e7fda-e8bf-4a96-9a85-a6e23a8c635c%22%0D%0A&SystemScriptType2=Reg&FirstLogonScript0=%40echo+off%0D%0Awinget+install+-h+%2D%2Daccept-package-agreements+%2D%2Daccept-source-agreements+%2D%2Ddisable-interactivity+%2D%2Dnowarn+%2D%2Dforce+Git.Git+abbodi1406.vcredist+Microsoft.DotNet.DesktopRuntime.10+Chocolatey.Chocolatey+activescott.lessmsi+Gyan.FFmpeg+aria2.aria2+jdx.mise+7zip.7zip+astral-sh.uv+Python.Python.3.14+Microsoft.PowerShell+Microsoft.WindowsTerminal+jdx.mise+GitHub.cli+Oven-sh.Bun+Microsoft.DirectX+sinelaw.fresh-editor+OpenJS.NodeJS+TechPowerUp.NVCleanstall+GlennDelahoy.SnappyDriverInstallerOrigin+topgrade-rs.topgrade+Devolutions.UniGetUI+ImputNet.Helium+EpicGames.EpicGamesLauncher+Valve.Steam+SteelSeries.GG+Bitwarden.Bitwarden+AutoHotkey.AutoHotkey+%3E%3E+%22%25TEMP%25%5CApps.log%22+2%3E%261%0D%0A&FirstLogonScriptType0=Cmd&FirstLogonScript1=iex+%22%26+%7B%24%28irm+get.scoop.sh%29%7D+-RunAsAdmin%22&FirstLogonScriptType1=Ps1&FirstLogonScript2=Windows+Registry+Editor+Version+5.00%0D%0A%0D%0A%5BHKEY_LOCAL_MACHINE%5CSYSTEM%5CSetup%5CLabConfig%5D%0D%0A%22BypassCPUCheck%22%3Ddword%3A00000001%0D%0A%22BypassStorageCheck%22%3Ddword%3A00000001%0D%0A%22BypassRAMCheck%22%3Ddword%3A00000001%0D%0A%22BypassTPMCheck%22%3Ddword%3A00000001%0D%0A%22BypassSecureBootCheck%22%3Ddword%3A00000001%0D%0A%22BypassNRO%22%3Ddword%3A00000001%0D%0A%22OOBEBypassNRO%22%3Ddword%3A00000001%0D%0A%22BypassMSARequirement%22%3Ddword%3A00000001%0D%0A%0D%0A%5BHKEY_LOCAL_MACHINE%5CSYSTEM%5CSetup%5CMoSetup%5D%0D%0A%22BypassCPUCheck%22%3Ddword%3A00000001%0D%0A%22BypassStorageCheck%22%3Ddword%3A00000001%0D%0A%22BypassRAMCheck%22%3Ddword%3A00000001%0D%0A%22BypassTPMCheck%22%3Ddword%3A00000001%0D%0A%22BypassSecureBootCheck%22%3Ddword%3A00000001%0D%0A%22AllowUpgradesWithUnsupportedTPMOrCPU%22%3Ddword%3A00000001%0D%0A%0D%0A%5BHKEY_CURRENT_USER%5CControl+Panel%5CUnsupportedHardwareNotificationCache%5D%0D%0A%22SV2%22%3Ddword%3A00000000%0D%0A%0D%0A%5BHKEY_LOCAL_MACHINE%5CSYSTEM%5CControlSet001%5CControl%5CFileSystem%5D%0D%0A%22NtfsDisable8dot3NameCreation%22%3Ddword%3A00000001%0D%0A%22NtfsDisableCompression%22%3Ddword%3A00000001%0D%0A%22NtfsDisableEncryption%22%3Ddword%3A00000001%0D%0A%22LongPathsEnabled%22%3Ddword%3A00000001%0D%0A%22DisableDeleteNotification%22%3Ddword%3A00000001%0D%0A%0D%0A%5BHKEY_LOCAL_MACHINE%5CSOFTWARE%5CPolicies%5CMicrosoft%5CPower%5CPowerSettings%5D%0D%0A%22ActivePowerScheme%22%3D%228c5e7fda-e8bf-4a96-9a85-a6e23a8c635c%22&FirstLogonScriptType2=Reg&AppLockerMode=Skip-->
 	<settings pass="offlineServicing"></settings>
 	<settings pass="windowsPE">
 		<component name="Microsoft-Windows-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
@@ -43,47 +43,47 @@
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>10</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:echo:Fail ^^^"Could not locate disk 0 (^^^" ^^^&amp; Err.Description ^^^&amp; ^^^"^^^).^^^"&amp;echo:echo:End If&amp;echo:echo:actual = CInt( drive.Size / 1024 / 1024 / 1024 ^^^)&amp;echo:echo:expected = 100)</Path>
+					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:echo:Fail ^^^"Could not locate disk 0 (^^^" ^^^&amp; Err.Description ^^^&amp; ^^^"^^^).^^^"&amp;echo:echo:End If&amp;echo:echo:actual = CInt(drive.Size / 1024 / 1024 / 1024^^^)&amp;echo:echo:expected = 60&amp;echo:echo:If actual ^^^&lt; expected Then)</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>11</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:echo:If actual ^^^&lt; expected Then&amp;echo:echo:Fail ^^^"Size of disk 0 is expected to be at least ^^^" ^^^&amp; expected ^^^&amp; ^^^" GiB, but actually is ^^^" ^^^&amp; actual ^^^&amp; ^^^" GiB.^^^"&amp;echo:echo:End If)</Path>
+					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:echo:Fail ^^^"Size of disk 0 is expected to be at least ^^^" ^^^&amp; expected ^^^&amp; ^^^" GiB, but actually is ^^^" ^^^&amp; actual ^^^&amp; ^^^" GiB.^^^"&amp;echo:echo:End If&amp;echo:echo:actual = CInt(drive.Size / 1024 / 1024 / 1024^^^))</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>12</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:echo:actual = CInt( drive.Size / 1024 / 1024 / 1024 ^^^)&amp;echo:echo:expected = 4000&amp;echo:echo:If actual ^^^&gt; expected Then)</Path>
+					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:echo:expected = 4000&amp;echo:echo:If actual ^^^&gt; expected Then&amp;echo:echo:Fail ^^^"Size of disk 0 is expected to be at most ^^^" ^^^&amp; expected ^^^&amp; ^^^" GiB, but actually is ^^^" ^^^&amp; actual ^^^&amp; ^^^" GiB.^^^"&amp;echo:echo:End If)</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>13</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:echo:Fail ^^^"Size of disk 0 is expected to be at most ^^^" ^^^&amp; expected ^^^&amp; ^^^" GiB, but actually is ^^^" ^^^&amp; actual ^^^&amp; ^^^" GiB.^^^"&amp;echo:echo:End If&amp;echo:echo:actual = drive.Partitions&amp;echo:echo:If actual ^^^&gt; 0 Then)</Path>
+					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:echo:actual = drive.Partitions&amp;echo:echo:If actual ^^^&gt; 0 Then&amp;echo:echo:Fail ^^^"There are already ^^^" ^^^&amp; actual ^^^&amp; ^^^" partitions on disk 0.^^^"&amp;echo:echo:End If)</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>14</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:echo:Fail ^^^"There are already ^^^" ^^^&amp; actual ^^^&amp; ^^^" partitions on disk 0.^^^"&amp;echo:echo:End If&amp;echo:echo:WScript.Echo ^^^"Disk assertions were satisfied.^^^"&amp;echo:echo:WScript.Quit 0&amp;echo:^))</Path>
+					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:echo:WScript.Echo ^^^"Disk assertions were satisfied.^^^"&amp;echo:echo:WScript.Quit 0&amp;echo:^)&amp;echo:call :print ^"Running disk assertions^")</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>15</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:call :print ^"Running disk assertions^"&amp;echo:cscript.exe //E:vbscript ^"X:\assert.vbs^" //Nologo ^|^| call :fail ^"Disk assertion failed. Windows Setup will halt to avoid potential data loss.^"&amp;echo:^&gt;X:\diskpart.txt ()</Path>
+					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:cscript.exe //E:vbscript ^"X:\assert.vbs^" //Nologo ^|^| call :fail ^"Disk assertion failed. Windows Setup will halt to avoid potential data loss.^"&amp;echo:^&gt;X:\diskpart.txt (&amp;echo:echo:SELECT DISK=0&amp;echo:echo:CLEAN)</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>16</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:echo:SELECT DISK=0&amp;echo:echo:CLEAN&amp;echo:echo:CONVERT GPT&amp;echo:echo:CREATE PARTITION EFI SIZE=550&amp;echo:echo:FORMAT QUICK FS=FAT32 LABEL=^^^"System^^^"&amp;echo:echo:ASSIGN LETTER=S&amp;echo:echo:CREATE PARTITION MSR SIZE=16)</Path>
+					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:echo:CONVERT GPT&amp;echo:echo:CREATE PARTITION EFI SIZE=550&amp;echo:echo:FORMAT QUICK FS=FAT32 LABEL=^^^"System^^^"&amp;echo:echo:ASSIGN LETTER=S&amp;echo:echo:CREATE PARTITION MSR SIZE=16&amp;echo:echo:CREATE PARTITION PRIMARY)</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>17</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:echo:CREATE PARTITION PRIMARY&amp;echo:echo:SHRINK MINIMUM=1000&amp;echo:echo:FORMAT QUICK FS=NTFS LABEL=^^^"Windows^^^"&amp;echo:echo:ASSIGN LETTER=W&amp;echo:echo:CREATE PARTITION PRIMARY)</Path>
+					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:echo:SHRINK MINIMUM=1000&amp;echo:echo:FORMAT QUICK FS=NTFS LABEL=^^^"Windows^^^"&amp;echo:echo:ASSIGN LETTER=W&amp;echo:echo:CREATE PARTITION PRIMARY&amp;echo:echo:FORMAT QUICK FS=NTFS LABEL=^^^"Recovery^^^"&amp;echo:echo:ASSIGN LETTER=R)</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>18</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:echo:FORMAT QUICK FS=NTFS LABEL=^^^"Recovery^^^"&amp;echo:echo:ASSIGN LETTER=R&amp;echo:echo:SET ID=^^^"de94bba4-06d1-4d40-a16a-bfd50179d6ac^^^"&amp;echo:echo:GPT ATTRIBUTES=0x8000000000000001&amp;echo:^))</Path>
+					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:echo:SET ID=^^^"de94bba4-06d1-4d40-a16a-bfd50179d6ac^^^"&amp;echo:echo:GPT ATTRIBUTES=0x8000000000000001&amp;echo:^)&amp;echo:call :print ^"diskpart will now partition and format your disk^"&amp;echo:pause)</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>19</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:call :print ^"diskpart will now partition and format your disk^"&amp;echo:pause&amp;echo:diskpart.exe /s X:\diskpart.txt ^|^| call :fail ^"diskpart.exe encountered an error.^")</Path>
+					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:diskpart.exe /s X:\diskpart.txt ^|^| call :fail ^"diskpart.exe encountered an error.^"&amp;echo:dism.exe /Get-WimInfo /WimFile:^"^%IMAGE_FILE^%^"&amp;echo:echo:&amp;echo::choice)</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>20</Order>
-					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:set ^"IMG_PARAM=/Name:^"Windows ^%OS_VERSION^% Pro^"^"&amp;echo:call :print ^"Applying Windows image to target disk^")</Path>
+					<Path>cmd.exe /c &gt;&gt;X:\pe.cmd (echo:set /p ^"CHOICE=Enter index of the image you want to install: ^" ^|^| goto :choice&amp;echo:set ^"IMG_PARAM=/Index:^%CHOICE^%^"&amp;echo:call :print ^"Applying Windows image to target disk^")</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>21</Order>
@@ -154,11 +154,11 @@
 			<RunSynchronous>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>1</Order>
-					<Path>powershell.exe -WindowStyle "Normal" -NoLogo -NoProfile -Command "$xml = [xml]::new(); $xml.Load('C:\Windows\Panther\unattend.xml'); $sb = [scriptblock]::Create( $xml.unattend.Extensions.ExtractScript ); Invoke-Command -ScriptBlock $sb -ArgumentList $xml;"</Path>
+					<Path>powershell.exe -WindowStyle "Normal" -NoProfile -Command "$xml = [xml]::new(); $xml.Load('C:\Windows\Panther\unattend.xml'); $sb = [scriptblock]::Create( $xml.unattend.Extensions.ExtractScript ); Invoke-Command -ScriptBlock $sb -ArgumentList $xml;"</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>2</Order>
-					<Path>powershell.exe -WindowStyle "Normal" -ExecutionPolicy "Unrestricted" -NoLogo -NoProfile -File "C:\Windows\Setup\Scripts\Specialize.ps1"</Path>
+					<Path>powershell.exe -WindowStyle "Normal" -ExecutionPolicy "Unrestricted" -NoProfile -File "C:\Windows\Setup\Scripts\Specialize.ps1"</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>3</Order>
@@ -166,7 +166,7 @@
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>4</Order>
-					<Path>powershell.exe -WindowStyle "Normal" -ExecutionPolicy "Unrestricted" -NoLogo -NoProfile -File "C:\Windows\Setup\Scripts\DefaultUser.ps1"</Path>
+					<Path>powershell.exe -WindowStyle "Normal" -ExecutionPolicy "Unrestricted" -NoProfile -File "C:\Windows\Setup\Scripts\DefaultUser.ps1"</Path>
 				</RunSynchronousCommand>
 				<RunSynchronousCommand wcm:action="add">
 					<Order>5</Order>
@@ -216,7 +216,7 @@
 			<FirstLogonCommands>
 				<SynchronousCommand wcm:action="add">
 					<Order>1</Order>
-					<CommandLine>powershell.exe -WindowStyle "Normal" -ExecutionPolicy "Unrestricted" -NoLogo -NoProfile -File "C:\Windows\Setup\Scripts\FirstLogon.ps1"</CommandLine>
+					<CommandLine>powershell.exe -WindowStyle "Normal" -ExecutionPolicy "Unrestricted" -NoProfile -File "C:\Windows\Setup\Scripts\FirstLogon.ps1"</CommandLine>
 				</SynchronousCommand>
 			</FirstLogonCommands>
 		</component>
@@ -224,8 +224,8 @@
 	<Extensions xmlns="https://schneegans.de/windows/unattend-generator/">
 		<Build>
 			<Commit>
-				<Hash>662d88d15a50a4a28cccd648f24c3bd52ba56882</Hash>
-				<GitHubUrl>https://github.com/cschneegans/unattend-generator/commit/662d88d15a50a4a28cccd648f24c3bd52ba56882</GitHubUrl>
+				<Hash>781fde52797f736de9b0426bb4a5c6048a1ae075</Hash>
+				<GitHubUrl>https://github.com/cschneegans/unattend-generator/commit/781fde52797f736de9b0426bb4a5c6048a1ae075</GitHubUrl>
 			</Commit>
 		</Build>
 		<ExtractScript>
@@ -282,6 +282,7 @@ $selectors = @(
 	'Microsoft.Wallet';
 	'Microsoft.BingWeather';
 	'Microsoft.YourPhone';
+	'Microsoft.ZuneVideo';
 );
 $getCommand = {
   Get-AppxProvisionedPackage -Online;
@@ -330,6 +331,7 @@ $selectors = @(
 	'Browser.InternetExplorer';
 	'MathRecognizer';
 	'OneCoreUAP.OneSync';
+	'Microsoft.Windows.PowerShell.ISE';
 	'App.Support.QuickAssist';
 	'Microsoft.Windows.SnippingTool';
 	'Language.Speech';
@@ -633,7 +635,13 @@ $htmlAccentColor = '#8B00D6';
 };
 		</File>
 		<File path="C:\Windows\Setup\Scripts\unattend-01.cmd">
-powercfg /h off
+@echo off
+powercfg /h off &gt;NUL 2&gt;&amp;1
+powercfg /S 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c &gt;NUL 2&gt;&amp;1
+fsutil behavior set disable8dot3 1 &gt;NUL 2&gt;&amp;1
+fsutil behavior set disablecompression 1 &gt;NUL 2&gt;&amp;1
+fsutil behavior set disableEncryption 1 &gt;NUL 2&gt;&amp;1
+fsutil behavior set disableLastAccess 1 &gt;NUL 2&gt;&amp;1
 		</File>
 		<File path="C:\Windows\Setup\Scripts\unattend-02.ps1">
 Set-MpPreference -DisableRealtimeMonitoring $true;
@@ -675,87 +683,13 @@ Windows Registry Editor Version 5.00
 		</File>
 		<File path="C:\Windows\Setup\Scripts\unattend-04.cmd">
 @echo off
-winget install -h --accept-package-agreements --accept-source-agreements --disable-interactivity --nowarn --force Git.Git 7zip.7zip astral-sh.uv Python.Python.3.14 Microsoft.PowerShell Microsoft.WindowsTerminal jdx.mise GitHub.cli Oven-sh.Bun Microsoft.DirectX sinelaw.fresh-editor OpenJS.NodeJS TechPowerUp.NVCleanstall GlennDelahoy.SnappyDriverInstallerOrigin Rustlang.Rustup Mozilla.sccache topgrade-rs.topgrade Devolutions.UniGetUI Microsoft.VisualStudio.BuildTools VSCodium.VSCodium PrismLauncher.PrismLauncher ImputNet.Helium Gyan.FFmpeg.Essentials EpicGames.EpicGamesLauncher Valve.Steam SteelSeries.GG abbodi1406.vcredist aria2.aria2
-powercfg /h off &gt;NUL 2&gt;&amp;1
-fsutil behavior set disable8dot3 1 &gt;NUL 2&gt;&amp;1
-fsutil behavior set disablecompression 1 &gt;NUL 2&gt;&amp;1
-Dism /Online /Cleanup-Image /StartComponentCleanup
-powercfg /S 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c
+winget install -h --accept-package-agreements --accept-source-agreements --disable-interactivity --nowarn --force Git.Git abbodi1406.vcredist Microsoft.DotNet.DesktopRuntime.10 Chocolatey.Chocolatey activescott.lessmsi Gyan.FFmpeg aria2.aria2 jdx.mise 7zip.7zip astral-sh.uv Python.Python.3.14 Microsoft.PowerShell Microsoft.WindowsTerminal jdx.mise GitHub.cli Oven-sh.Bun Microsoft.DirectX sinelaw.fresh-editor OpenJS.NodeJS TechPowerUp.NVCleanstall GlennDelahoy.SnappyDriverInstallerOrigin topgrade-rs.topgrade Devolutions.UniGetUI ImputNet.Helium EpicGames.EpicGamesLauncher Valve.Steam SteelSeries.GG Bitwarden.Bitwarden AutoHotkey.AutoHotkey &gt;&gt; "%TEMP%\Apps.log" 2&gt;&amp;1
 		</File>
 		<File path="C:\Windows\Setup\Scripts\unattend-05.ps1">
 iex "&amp; {$(irm get.scoop.sh)} -RunAsAdmin"
 		</File>
 		<File path="C:\Windows\Setup\Scripts\unattend-06.reg">
 Windows Registry Editor Version 5.00
-
-; Restore the classic context menu
-[HKEY_CURRENT_USER\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32]
-@=""
-
-; Disable core isolation (VBS)
-[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity]
-"Enabled"=dword:00000000
-
-[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\DeviceGuard]
-"EnableVirtualizationBasedSecurity"=dword:00000000
-"RequirePlatformSecurityFeatures"=dword:00000000
-
-[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\KernelShadowStacks]
-"Enabled"=dword:00000000
-
-[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\CredentialGuard]
-"Enabled"=dword:00000000
-
-; Disable suggested actions
-[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\SmartActionPlatform\SmartClipboard]
-"Disabled"=dword:00000001
-
-; Disable search highlights
-[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\SearchSettings]
-"IsDynamicSearchBoxEnabled"=dword:00000000
-
-; Disable storage sense
-[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\StorageSense]
-"AllowStorageSenseGlobal"=dword:00000000
-
-; Explorer: leftmost taskbar, disable snap layout/bar, start menu tips, Copilot button
-[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced]
-"TaskbarAl"=dword:00000000
-"EnableSnapBar"=dword:00000000
-"EnableSnapAssistFlyout"=dword:00000000
-"Start_IrisRecommendations"=dword:00000000
-"Start_Layout"=dword:00000001
-"ShowCopilotButton"=dword:00000000
-
-; Disable OneDrive noti
-[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings\Microsoft.SkyDrive.Desktop]
-"Enabled"=dword:00000000
-
-; Content delivery: disable whats-new, suggested content, pre-installed apps
-[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager]
-"SubscribedContent-310093Enabled"=dword:00000000
-"SubscribedContent-338393Enabled"=dword:00000000
-"SubscribedContent-353694Enabled"=dword:00000000
-"SubscribedContent-353696Enabled"=dword:00000000
-"OemPreInstalledAppsEnabled"=dword:00000000
-"PreInstalledAppsEnabled"=dword:00000000
-"SilentInstalledAppsEnabled"=dword:00000000
-"SoftLandingEnabled"=dword:00000000
-"ContentDeliveryAllowed"=dword:00000000
-"PreInstalledAppsEverEnabled"=dword:00000000
-"SubscribedContentEnabled"=dword:00000000
-
-; Enable action center
-[HKEY_CURRENT_USER\SOFTWARE\Policies\Microsoft\Windows\Explorer]
-"DisableNotificationCenter"=-
-
-; Disable account noti
-[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\SystemSettings\AccountNotifications]
-"EnableAccountNotifications"=dword:00000000
-
-; Disable win 11 system requirements
-[HKEY_CURRENT_USER\Control Panel\UnsupportedHardwareNotificationCache]
-"SV2"=dword:00000000
 
 [HKEY_LOCAL_MACHINE\SYSTEM\Setup\LabConfig]
 "BypassCPUCheck"=dword:00000001
@@ -775,209 +709,8 @@ Windows Registry Editor Version 5.00
 "BypassSecureBootCheck"=dword:00000001
 "AllowUpgradesWithUnsupportedTPMOrCPU"=dword:00000001
 
-; Disable show recently added apps and recommendations
-[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Start]
-"ShowRecentList"=dword:00000000
-"RightCompanionToggledOpen"=dword:00000000
-
-; Disable ai insights
-[HKEY_CURRENT_USER\Software\Microsoft\input\Settings]
-"InsightsEnabled"=dword:00000000
-
-; Remove pinned items in network and sound flyout
-[HKEY_CURRENT_USER\Control Panel\Quick Actions\Control Center\Unpinned]
-"Microsoft.QuickAction.BlueLightReduction"=hex(0):
-"Microsoft.QuickAction.Accessibility"=hex(0):
-"Microsoft.QuickAction.NearShare"=hex(0):
-"Microsoft.QuickAction.Cast"=hex(0):
-"Microsoft.QuickAction.ProjectL2"=hex(0):
-
-; Disable Windows AI
-[HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\WindowsCopilot]
-"TurnOffWindowsCopilot"=dword:00000001
-
-[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WindowsAI]
-"DisableAIDataAnalysis"=dword:00000001
-"AllowRecallEnablement"=dword:00000000
-"DisableClickToDo"=dword:00000001
-
-[HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\Shell\Copilot\BingChat]
-"IsUserEligible"=dword:00000000
-
-[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Paint]
-"DisableGenerativeFill"=dword:00000001
-"DisableCocreator"=dword:00000001
-"DisableImageCreator"=dword:00000001
-
-[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\WindowsNotepad]
-"DisableAIFeatures"=dword:00000001
-
-; Disable Edge Copilot sidebar
-[HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Edge]
-"HubsSidebarEnabled"=dword:00000000
-
-; Disable AI in Notepad (per-user companion to the machine policy above)
-[HKEY_CURRENT_USER\Software\Microsoft\Notepad]
-"EnableCowriter"=dword:00000000
-
-; Disable AI in Photos
-[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Photos]
-"EnableAIFeatures"=dword:00000000
-
-; Disable background apps win 11
-[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\BackgroundAccessApplications]
-"GlobalUserDisabled"=dword:00000001
-
-; Enable end task in taskbar right click menu
-[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced\TaskbarDeveloperSettings]
-"TaskbarEndTask"=dword:00000001
-
-; Disable SnippingTool Noti
-[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings\Microsoft.ScreenSketch_8wekyb3d8bbwe!App]
-"Enabled"=dword:00000000
-
-; Disable Share App Experiences
-[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CDP]
-"RomeSdkChannelUserAuthzPolicy"=dword:00000000
-"NearShareChannelUserAuthzPolicy"=dword:00000000
-"CdpSessionUserAuthzPolicy"=dword:00000000
-
-; Set Wallpaper to Solid Color (11)
-[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Wallpapers]
-"BackgroundType"=dword:00000001
-
-; Disable Prompt For Location Privacy
-[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\location]
-"ShowGlobalPrompts"=dword:00000000
-
-; Disable User Choice Driver
-[HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Services\UCPD]
-"Start"=dword:00000004
-
-; Disable Phone Companion in Start Menu
-[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Start\Companions\Microsoft.YourPhone_8wekyb3d8bbwe]
-"IsEnabled"=dword:00000000
-"IsAvailable"=dword:00000000
-
-; Disable Cross Device Resume
-[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\CrossDeviceResume\Configuration]
-"IsResumeAllowed"=dword:00000000
-"IsOneDriveResumeAllowed"=dword:00000000
-
-; Disable Dynamic Lighting
-[HKEY_CURRENT_USER\Software\Microsoft\Lighting]
-"AmbientLightingEnabled"=dword:00000000
-"ControlledByForegroundApp"=dword:00000000
-
-; 100% DPI &amp; disable per-process DPI scaling for apps
-[HKEY_CURRENT_USER\Control Panel\Desktop]
-"LogPixels"="00000096"
-"Win8DpiScaling"="00000000"
-"EnablePerProcessSystemDPI"="00000000"
-"MenuShowDelay"="0"
-
-[HKEY_CURRENT_USER\Control Panel\Desktop\WindowMetrics]
-"AppliedDPI"="00000096"
-
-; Mouse: turn off enhance pointer precision
-[HKEY_CURRENT_USER\Control Panel\Mouse]
-"MouseSensitivity"="10"
-"SmoothMouseXCurve"=hex:\
-	00,00,00,00,00,00,00,00,\
-	C0,CC,0C,00,00,00,00,00,\
-	80,99,19,00,00,00,00,00,\
-	40,66,26,00,00,00,00,00,\
-	00,33,33,00,00,00,00,00
-"SmoothMouseYCurve"=hex:\
-	00,00,00,00,00,00,00,00,\
-	00,00,38,00,00,00,00,00,\
-	00,00,70,00,00,00,00,00,\
-	00,00,A8,00,00,00,00,00,\
-	00,00,E0,00,00,00,00,00
-
-[HKEY_USERS\.DEFAULT\Control Panel\Mouse]
-"MouseSpeed"="0"
-"MouseThreshold1"="0"
-"MouseThreshold2"="0"
-
-; Filterkeys setter
-[HKEY_CURRENT_USER\Control Panel\Accessibility\Keyboard Response]
-"DelayBeforeAcceptance"="0"
-"BounceTime"="0"
-
-; Disable nvidia tray icon
-[HKEY_CURRENT_USER\Software\NVIDIA Corporation\NvTray]
-"StartOnLogin"=dword:00000000
-
-; Nvidia enable old sharpening
-[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\nvlddmkm\FTS]
-"EnableGR535"=dword:00000000
-
-[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\VideoSettings]
-"VideoQualityOnBattery"=dword:00000001
-
-; Turn off notifications network usage
-[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\CurrentVersion\PushNotifications]
-"NoCloudApplicationNotification"=dword:00000001
-
-; Always unload dlls
-[HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Explorer]
-"AlwaysUnloadDLL"=dword:00000001
-
-; Disable "- shortcut" text for shortcuts
-[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer]
-"link"=hex:00,00,00,00
-
-; Use the latest .NET Framework version
-[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\.NETFramework]
-"OnlyUseLatestCLR"=dword:00000001
-
-[HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\.NETFramework]
-"OnlyUseLatestCLR"=dword:00000001
-
-; Resolves a memory leak in Windows 10 (Ndu service)
-[HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Services\Ndu]
-"Start"=dword:00000004
-
-; Disable mitigations
-[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management]
-"FeatureSettings"=dword:00000001
-"FeatureSettingsOverrideMask"=dword:00000003
-"FeatureSettingsOverride"=dword:00000003
-
-; Turn on Game Mode registry
-[HKEY_CURRENT_USER\Software\Microsoft\GameBar]
-"AllowAutoGameMode"=dword:00000001
-"AutoGameModeEnabled"=dword:00000001
-
-; HW scheduling on
-[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\GraphicsDrivers]
-"HwSchMode"=dword:00000002
-
-; Prefer IPv4 over IPv6
-[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters]
-"DisabledComponents"=dword:00000020
-
-; Enable network card onboard processor
-[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters]
-"DisableTaskOffload"=dword:00000000
-
-; SSD tweaks
-[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\NvCache]
-"OptimizeBootAndResume"=dword:00000001
-"EnablePowerModeState"=dword:00000000
-"EnableNvCache"=dword:00000001
-"EnableSolidStateMode"=dword:00000001
-
-[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Policies]
-"NtfsDisableCompression"=dword:00000001
-"NtfsDisableEncryption"=dword:00000001
-"NtfsEncryptPagingFile"=dword:00000000
-"NtfsDefaultTier"=dword:00000002
-"NtfsForceNonPagedPoolAllocation"=dword:00000001
-"NtfsParallelFlushWorkers"=dword:00000000
-"NtfsDisable8dot3NameCreation"=dword:00000001
-"NtfsEnableTxfDeprecatedFunctionality"=dword:00000000
+[HKEY_CURRENT_USER\Control Panel\UnsupportedHardwareNotificationCache]
+"SV2"=dword:00000000
 
 [HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Control\FileSystem]
 "NtfsDisable8dot3NameCreation"=dword:00000001
@@ -986,19 +719,8 @@ Windows Registry Editor Version 5.00
 "LongPathsEnabled"=dword:00000001
 "DisableDeleteNotification"=dword:00000001
 
-[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Psched]
-"NonBestEffortLimit"=dword:00000000
-"TimerResolution"=dword:00000001
-
-; Prefetch and logging
-[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management\PrefetchParameters]
-"EnablePrefetcher"=dword:00000000
-"EnableBoottrace"=dword:00000000
-"SfTracingState"=dword:00000000
-
-; Fix ctfmon
-[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Input]
-"InputServiceEnabledForCCI"=dword:00000000
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Power\PowerSettings]
+"ActivePowerScheme"="8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c"
 		</File>
 		<File path="C:\Windows\Setup\Scripts\Specialize.ps1">
 $scripts = @(
@@ -1140,18 +862,6 @@ $scripts = @(
 	};
 	{
 		reg.exe import "C:\Windows\Setup\Scripts\unattend-03.reg";
-	};
-	{
-		reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" /v EnableFirstLogonAnimation /t REG_DWORD /d 0 /f;
-	};
-	{
-		reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\UserProfileEngagement" /v ScoobeSystemSettingEnabled /t REG_DWORD /d 0 /f;
-	};
-	{
-		reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Device Installer" /v DisableCoInstallers /t REG_DWORD /d 1 /f;
-	};
-	{
-		reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\DriverSearching" /v SearchOrderConfig /t REG_DWORD /d 0 /f;
 	};
 );
 
@@ -1354,15 +1064,6 @@ $scripts = @(
 	};
 	{
 		reg.exe add "HKU\DefaultUser\Software\Microsoft\Windows\CurrentVersion\RunOnce" /v "UnattendedSetup" /t REG_SZ /d "powershell.exe -WindowStyle \""Normal\"" -ExecutionPolicy \""Unrestricted\"" -NoProfile -File \""C:\Windows\Setup\Scripts\UserOnce.ps1\""" /f;
-	};
-	{
-		reg.exe add "HKU\DefaultUser\System\GameConfigStore" /v GameDVR_Enabled /t REG_DWORD /d 0 /f;
-	};
-	{
-		reg.exe add "HKU\DefaultUser\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v LaunchTo /t REG_DWORD /d 1 /f;
-	};
-	{
-		reg.exe add "HKU\DefaultUser\Software\Microsoft\Windows\CurrentVersion\Search" /v BingSearchEnabled /t REG_DWORD /d 0 /f;
 	};
 );
 

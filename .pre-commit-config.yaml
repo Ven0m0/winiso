@@ -1,7 +1,7 @@
 repos:
   # Ruff - Python linting and formatting
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.16.6
+    rev: v0.16.8
     hooks:
       # Run linter and auto-fix issues
       - id: ruff
@@ -12,7 +12,7 @@ repos:
         types_or: [python, pyi]
         stages: [pre-commit]
   - repo: https://github.com/DetachHead/basedpyright-prek-mirror
-    rev: 1.39.10
+    rev: 1.40.1
     hooks:
       - id: basedpyright
         files: ^scripts/download_uup\.py$
@@ -53,12 +53,12 @@ repos:
         pass_filenames: true
 
   - repo: https://github.com/renovatebot/pre-commit-hooks
-    rev: 44.69.5
+    rev: 44.94.2
     hooks:
       - id: renovate-config-validator
 
   - repo: https://github.com/biomejs/pre-commit
-    rev: v2.5.12
+    rev: v2.5.13
     hooks:
       - id: biome-ci
         exclude: ^ventoy/

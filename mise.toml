@@ -23,7 +23,7 @@ uvx = true
 cli_telemetry_optout = true
 
 [tools]
-python = "3.14"
+python = "3.15.0"
 uv = "latest"
 ruff = "latest"
 ty = "latest"

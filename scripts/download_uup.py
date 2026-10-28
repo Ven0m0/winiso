@@ -4,20 +4,39 @@ Automates the download of UUP files from uupdump.net
 """
 
 import argparse
-import os
 import shutil
 import sys
 import time
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any, Literal, cast, overload
 from urllib.parse import urlencode
 
 import httpx
 import orjson
+import pyutils
+from keep_list import (
+    collect_component_patterns,  # noqa: F401  (re-exported for callers and tests)
+    get_component_group,  # noqa: F401
+    list_component_groups,  # noqa: F401
+    load_component_groups,
+    validate_component_groups,
+)
+from keep_list import write_group_selection as write_component_groups_for_build
+from pyutils import log_error, log_info, log_success, log_warn
+from uup_delta import (
+    DEFAULT_DELTA_STORE,
+    calculate_delta,
+    compute_changed_files,  # noqa: F401  (re-exported for callers and tests)
+    format_delta_summary,  # noqa: F401
+    get_build_files,
+    get_delta_store_path,  # noqa: F401
+    load_delta_manifest,
+    save_delta_manifest,
+)
 
 CACHE_DIR_NAME: str = ".uup_cache"
 DEFAULT_CACHE_TTL_SECONDS: int = 3600
-COMPONENT_GROUPS_FILE: str = "config/component_groups.json"
 ALL_COMPONENT_GROUPS: list[str] = [
     "gaming",
     "productivity",
@@ -74,12 +93,12 @@ PROFILES: dict[str, dict[str, Any]] = {
 
 
 class Colors:
-    CYAN = "\033[0;36m"
-    GREEN = "\033[0;32m"
-    YELLOW = "\033[1;33m"
-    RED = "\033[0;31m"
-    RESET = "\033[0m"
-    BOLD = "\033[1m"
+    CYAN = pyutils.CYAN
+    GREEN = pyutils.GREEN
+    YELLOW = pyutils.YELLOW
+    RED = pyutils.RED
+    RESET = pyutils.NC
+    BOLD = pyutils.BOLD
 
 
 _url_cache: dict[str, str | dict[str, Any]] = {}
@@ -92,27 +111,6 @@ def _get_client() -> httpx.Client:
     if _client is None:
         _client = httpx.Client(http2=True, timeout=30.0, follow_redirects=True)
     return _client
-
-
-def log_info(msg: str) -> None:
-    print(f"{Colors.CYAN}[INFO]{Colors.RESET} {msg}")
-
-
-def log_success(msg: str) -> None:
-    print(f"{Colors.GREEN}[OK]{Colors.RESET} {msg}")
-
-
-def log_warn(msg: str) -> None:
-    print(f"{Colors.YELLOW}[WARN]{Colors.RESET} {msg}")
-
-
-def log_error(msg: str) -> None:
-    print(f"{Colors.RED}[ERROR]{Colors.RESET} {msg}")
-
-
-def log_debug(msg: str) -> None:
-    if os.environ.get("LOG_LEVEL", "").lower() == "debug":
-        print(f"{Colors.CYAN}[DEBUG]{Colors.RESET} {msg}")
 
 
 def check_dependencies() -> bool:
@@ -556,7 +554,9 @@ def download_language_packs(
     return all_success
 
 
-def select_editions(build_info: dict[str, Any]) -> list[str] | None:
+def select_editions(
+    build_info: dict[str, Any], ask: Callable[[str], str] | None = None
+) -> list[str] | None:
     """Allow user to select which editions to download"""
     files = build_info.get("files", {})
 
@@ -587,7 +587,11 @@ def select_editions(build_info: dict[str, Any]) -> list[str] | None:
         print(f"{Colors.CYAN}[{i}]{Colors.RESET} {edition}")
     print(f"{Colors.CYAN}[A]{Colors.RESET} All editions (default)")
 
-    choice = input(f"\n{Colors.BOLD}Select edition [A]:{Colors.RESET} ").strip().upper()
+    choice = (
+        (ask or input)(f"\n{Colors.BOLD}Select edition [A]:{Colors.RESET} ")
+        .strip()
+        .upper()
+    )
 
     if choice == "" or choice == "A":
         return None  # Download all
@@ -655,14 +659,29 @@ def resolve_edition_filter(
     return None
 
 
-def _prepare_output_directory(output_path: Path) -> None:
+def _is_within(path: Path, root: Path) -> bool:
+    """True if ``path`` resolves to ``root`` or somewhere below it.
+
+    The one containment check behind both output-directory guards (cwd in
+    download_build, project root in _resolve_output_dir).
+    """
+    try:
+        _ = path.resolve().relative_to(root.resolve())
+    except ValueError, RuntimeError:
+        return False
+    return True
+
+
+def _prepare_output_directory(
+    output_path: Path, ask: Callable[[str], str] | None = None
+) -> None:
     output_path.mkdir(parents=True, exist_ok=True)
     existing_files = list(output_path.glob("*"))
     if existing_files:
         print(
             f"\n{Colors.YELLOW}Warning:{Colors.RESET} {len(existing_files)} files exist in {output_path}"
         )
-        response = input("Clear existing files? [y/N]: ").strip().lower()
+        response = (ask or input)("Clear existing files? [y/N]: ").strip().lower()
         if response == "y":
             log_info("Clearing existing files...")
             for f in existing_files:
@@ -727,213 +746,6 @@ def _prepare_download_list(
             {"url": file_url, "name": filename, "size": file_info.get("size", 0)}
         )
     return download_list
-
-
-# Default on-disk location for delta manifests (per-build file lists). Set
-# via --delta-store. Files are JSON objects keyed by filename.
-DEFAULT_DELTA_STORE: str = ".uup-delta"
-
-
-def get_build_files(build_info: dict[str, Any]) -> dict[str, dict[str, Any]]:
-    """Extract the per-file metadata from a build info dict.
-
-    Returns a mapping of ``filename -> {size, sha256, ...}`` for every entry in
-    ``build_info['files']``. Only entries that are mappings are preserved so a
-    malformed value does not crash downstream consumers.
-
-    The returned dict is suitable for passing to :func:`calculate_delta` or
-    :func:`save_delta_manifest`.
-    """
-    raw_files: Any = build_info.get("files", {})
-    if not isinstance(raw_files, dict):
-        return {}
-    result: dict[str, dict[str, Any]] = {}
-    for filename, info in raw_files.items():
-        if not isinstance(filename, str) or not isinstance(info, dict):
-            continue
-        result[filename] = dict(info)
-    return result
-
-
-def calculate_delta(
-    base_files: dict[str, dict[str, Any]],
-    target_files: dict[str, dict[str, Any]],
-) -> dict[str, list[str]]:
-    """Compare two file lists and classify each file by change type.
-
-    The returned dict has four keys:
-    - ``added``: filenames present in ``target_files`` but not in ``base_files``
-    - ``removed``: filenames present in ``base_files`` but not in ``target_files``
-    - ``modified``: filenames present in both, with a different ``size`` or
-      ``sha256`` (or any other top-level key) value
-    - ``unchanged``: filenames present in both with identical metadata
-
-    A file is treated as ``modified`` if any of its metadata keys differ; this
-    is conservative but correct in the absence of a guaranteed per-file
-    checksum.
-    """
-    base_keys = set(base_files.keys())
-    target_keys = set(target_files.keys())
-
-    added: list[str] = sorted(target_keys - base_keys)
-    removed: list[str] = sorted(base_keys - target_keys)
-
-    common = base_keys & target_keys
-    modified: list[str] = []
-    unchanged: list[str] = []
-    for name in sorted(common):
-        if base_files[name] != target_files[name]:
-            modified.append(name)
-        else:
-            unchanged.append(name)
-
-    return {
-        "added": added,
-        "removed": removed,
-        "modified": modified,
-        "unchanged": unchanged,
-    }
-
-
-def get_delta_store_path(store_dir: str | Path | None = None) -> Path:
-    """Return the path to the local delta-manifest store, creating it if needed.
-
-    The store is intentionally outside the project root in spirit (it is a
-    runtime cache of file lists), but the default keeps it alongside the
-    ``.uup_cache`` directory in the project root for simplicity.
-    """
-    if store_dir is None:
-        project_root = Path(__file__).resolve().parent.parent
-        path = project_root / DEFAULT_DELTA_STORE
-    else:
-        path = Path(store_dir)
-        if not path.is_absolute():
-            project_root = Path(__file__).resolve().parent.parent
-            path = project_root / path
-    try:
-        path = path.resolve()
-    except OSError, RuntimeError:
-        return path
-    try:
-        path.mkdir(parents=True, exist_ok=True)
-    except OSError as exc:
-        log_warn(f"Could not create delta store at {path}: {exc}")
-    return path
-
-
-def _safe_delta_filename(build_id: str) -> str:
-    """Return a filesystem-safe filename for a delta manifest.
-
-    Aggressively replaces any non-alphanumeric character (including ``.`` and
-    path separators) with ``_`` to prevent path-traversal issues when a
-    caller-supplied build ID contains ``..`` or ``/``.
-    """
-    safe = "".join(c if c.isalnum() or c in "-_" else "_" for c in build_id)
-    return f"{safe[:128]}.json"
-
-
-def save_delta_manifest(
-    build_id: str,
-    files: dict[str, dict[str, Any]],
-    store_dir: str | Path | None = None,
-) -> Path | None:
-    """Persist a build's file list to the local delta store.
-
-    Returns the manifest path on success, or ``None`` on failure. The manifest
-    is a JSON object with ``build_id``, ``saved_at`` (unix timestamp), and
-    ``files`` keys.
-    """
-    store_path = get_delta_store_path(store_dir)
-    manifest_path = store_path / _safe_delta_filename(build_id)
-    payload = {
-        "build_id": build_id,
-        "saved_at": time.time(),
-        "files": files,
-    }
-    try:
-        manifest_path.write_bytes(
-            orjson.dumps(payload, option=orjson.OPT_INDENT_2 | orjson.OPT_SORT_KEYS)
-        )
-        return manifest_path
-    except (OSError, TypeError) as exc:
-        log_error(f"Failed to save delta manifest for {build_id}: {exc}")
-        return None
-
-
-def load_delta_manifest(
-    build_id: str,
-    store_dir: str | Path | None = None,
-) -> dict[str, dict[str, Any]] | None:
-    """Load a previously saved delta manifest for ``build_id``.
-
-    Returns the ``files`` mapping, or ``None`` if the manifest is missing or
-    malformed. The resolved manifest path is verified to be inside the
-    resolved store directory to prevent path traversal via a malicious
-    ``build_id``.
-    """
-    store_path = get_delta_store_path(store_dir)
-    safe_name = _safe_delta_filename(build_id)
-    manifest_path = (store_path / safe_name).resolve()
-
-    try:
-        store_resolved = store_path.resolve()
-    except OSError, RuntimeError:
-        return None
-
-    try:
-        manifest_path.relative_to(store_resolved)
-    except ValueError, RuntimeError:
-        log_error("Delta manifest path is outside the delta store")
-        return None
-
-    if not manifest_path.exists():
-        return None
-    try:
-        data: Any = orjson.loads(manifest_path.read_bytes())
-    except (OSError, orjson.JSONDecodeError) as exc:
-        log_warn(f"Failed to read delta manifest for {build_id}: {exc}")
-        return None
-    if not isinstance(data, dict):
-        return None
-    files: Any = data.get("files", {})
-    if not isinstance(files, dict):
-        return None
-    result: dict[str, dict[str, Any]] = {}
-    for name, info in files.items():
-        if isinstance(name, str) and isinstance(info, dict):
-            result[name] = cast(dict[str, Any], info)
-    return result
-
-
-def compute_changed_files(
-    base_files: dict[str, dict[str, Any]],
-    target_files: dict[str, dict[str, Any]],
-) -> set[str]:
-    """Return the set of filenames that need to be re-downloaded.
-
-    Equivalent to ``added | modified`` from :func:`calculate_delta`. This is
-    the convenience helper used by the download pipeline when filtering a
-    download list for a delta build.
-    """
-    delta = calculate_delta(base_files, target_files)
-    return set(delta["added"]) | set(delta["modified"])
-
-
-def format_delta_summary(
-    base_id: str,
-    target_id: str,
-    delta: dict[str, list[str]],
-) -> str:
-    """Format a human-readable summary of a delta for CLI output."""
-    lines = [
-        f"Delta: {base_id} -> {target_id}",
-        f"  added:    {len(delta['added'])}",
-        f"  modified: {len(delta['modified'])}",
-        f"  removed:  {len(delta['removed'])}",
-        f"  unchanged:{len(delta['unchanged'])}",
-        f"  to download: {len(delta['added']) + len(delta['modified'])}",
-    ]
-    return "\n".join(lines)
 
 
 def _run_aria2_download(
@@ -1051,6 +863,7 @@ def download_build(
     language: str | None = "en-us",
     delta_from: str | None = None,
     delta_store: str | Path | None = None,
+    ask: Callable[[str], str] | None = None,
 ) -> bool:
     """Download UUP files for a specific build
 
@@ -1083,12 +896,11 @@ def download_build(
     else:
         output_path = Path.cwd().joinpath(output_path).resolve()
 
-    resolved_cwd = Path.cwd().resolve()
-    if os.path.commonpath([output_path, resolved_cwd]) != str(resolved_cwd):
+    if not _is_within(output_path, Path.cwd()):
         log_error("Output directory must be within the current directory")
         return False
 
-    _prepare_output_directory(output_path)
+    _prepare_output_directory(output_path, ask)
 
     target_files = get_build_files(build_info)
     delta_filter: set[str] | None = None
@@ -1143,6 +955,7 @@ def _process_selected_build(
     cache_ttl: int = DEFAULT_CACHE_TTL_SECONDS,
     edition: str | None = None,
     mirrors: list[str] | None = None,
+    ask: Callable[[str], str] | None = None,
 ) -> bool:
     """Process the selected build for download."""
     build_id = selected_build["id"]
@@ -1164,7 +977,7 @@ def _process_selected_build(
     if edition:
         edition_filter = resolve_edition_filter(build_info, edition)
     else:
-        edition_filter = select_editions(build_info)
+        edition_filter = select_editions(build_info, ask)
 
     if edition:
         # Non-interactive: skip the confirmation prompt
@@ -1178,10 +991,11 @@ def _process_selected_build(
             use_cache=use_cache,
             cache_ttl=cache_ttl,
             mirrors=mirrors,
+            ask=ask,
         )
 
     confirm = (
-        input(f"\n{Colors.BOLD}Proceed with download? [Y/n]:{Colors.RESET} ")
+        (ask or input)(f"\n{Colors.BOLD}Proceed with download? [Y/n]:{Colors.RESET} ")
         .strip()
         .lower()
     )
@@ -1196,6 +1010,7 @@ def _process_selected_build(
             use_cache=use_cache,
             cache_ttl=cache_ttl,
             mirrors=mirrors,
+            ask=ask,
         )
     else:
         log_info("Download cancelled")
@@ -1208,6 +1023,7 @@ def interactive_mode(
     use_cache: bool = True,
     cache_ttl: int = DEFAULT_CACHE_TTL_SECONDS,
     edition: str | None = None,
+    ask: Callable[[str], str] | None = None,
 ) -> bool:
     """Interactive mode for selecting and downloading builds"""
     print(f"\n{Colors.BOLD}UUP File Downloader for Windows 11{Colors.RESET}")
@@ -1224,7 +1040,7 @@ def interactive_mode(
 
     while True:
         try:
-            choice = input(
+            choice = (ask or input)(
                 f"{Colors.BOLD}Select build number [1-{len(builds)}] or 'q' to quit:{Colors.RESET} "
             ).strip()
 
@@ -1241,6 +1057,7 @@ def interactive_mode(
                     use_cache=use_cache,
                     cache_ttl=cache_ttl,
                     edition=edition,
+                    ask=ask,
                 ):
                     return True
             else:
@@ -1335,110 +1152,6 @@ def get_profile(name: str) -> dict[str, Any] | None:
     """Get a specific build profile by name."""
     profiles = get_profiles()
     return profiles.get(name)
-
-
-def load_component_groups(path: str | None = None) -> dict[str, Any]:
-    """Load component groups from config/component_groups.json.
-
-    Returns a dict mapping group name -> {"description": str, "patterns": List[str]}.
-    Returns an empty dict if the file is missing, malformed, or has unexpected shape.
-    """
-    if path is None:
-        path = COMPONENT_GROUPS_FILE
-    try:
-        data: Any = orjson.loads(Path(path).read_bytes())
-    except (OSError, orjson.JSONDecodeError, ValueError) as exc:
-        log_warn(f"Could not load component groups from {path}: {exc}")
-        return {}
-    if not isinstance(data, dict):
-        log_warn(f"Component groups file {path} is not a JSON object")
-        return {}
-    raw_groups: Any = data.get("groups", data)
-    if not isinstance(raw_groups, dict):
-        log_warn(f"Component groups in {path} are not a mapping")
-        return {}
-    result: dict[str, Any] = {}
-    for name, body in raw_groups.items():
-        if not isinstance(name, str) or not isinstance(body, dict):
-            continue
-        patterns: Any = body.get("patterns", [])
-        if not isinstance(patterns, list):
-            continue
-        cleaned: list[str] = [p for p in patterns if isinstance(p, str) and p]
-        if not cleaned:
-            continue
-        description: str = (
-            body.get("description", "")
-            if isinstance(body.get("description"), str)
-            else ""
-        )
-        result[name] = {"description": description, "patterns": cleaned}
-    return result
-
-
-def list_component_groups(path: str | None = None) -> list[str]:
-    """Return the names of all available component groups (sorted)."""
-    groups = load_component_groups(path)
-    return sorted(groups.keys())
-
-
-def get_component_group(name: str, path: str | None = None) -> dict[str, Any] | None:
-    """Get a single component group by name, or None if not found."""
-    groups = load_component_groups(path)
-    return groups.get(name)
-
-
-def validate_component_groups(names: list[str], path: str | None = None) -> list[str]:
-    """Return the subset of `names` that exist in the component groups file.
-
-    Logs a warning for any names that are unknown.
-    """
-    available = set(list_component_groups(path))
-    valid: list[str] = []
-    for name in names:
-        if name in available:
-            valid.append(name)
-        else:
-            log_warn(f"Unknown component group: {name}")
-    return valid
-
-
-def collect_component_patterns(
-    group_names: list[str], path: str | None = None
-) -> list[str]:
-    """Collect deduplicated glob patterns from the given component groups.
-
-    Order is preserved (group order, then pattern order within each group).
-    """
-    seen: set[str] = set()
-    combined: list[str] = []
-    for group_name in group_names:
-        group = get_component_group(group_name, path)
-        if not group:
-            continue
-        for pattern in group.get("patterns", []):
-            if pattern in seen:
-                continue
-            seen.add(pattern)
-            combined.append(pattern)
-    return combined
-
-
-def write_component_groups_for_build(
-    group_names: list[str], output_path: str = ".uup-groups"
-) -> bool:
-    """Write the selected component groups to a file consumable by the build pipeline.
-
-    The output file is a simple newline-separated list of group names.
-    Returns True on success, False on failure.
-    """
-    try:
-        with open(output_path, "w", encoding="utf-8") as f:
-            f.writelines(f"{name}\n" for name in group_names)
-        return True
-    except OSError as exc:
-        log_error(f"Could not write component groups file {output_path}: {exc}")
-        return False
 
 
 def display_component_groups(path: str | None = None) -> None:
@@ -1790,9 +1503,7 @@ def _resolve_output_dir(output_arg: str) -> Path | None:
     if not output_dir.is_absolute():
         output_dir = project_root.joinpath(output_dir)
 
-    try:
-        output_dir.resolve().relative_to(project_root.resolve())
-    except ValueError, RuntimeError:
+    if not _is_within(output_dir, project_root):
         log_error(f"Path traversal attempt detected for output: {output_arg}")
         return None
 

@@ -20,11 +20,13 @@ import subprocess
 import sys
 from pathlib import Path
 
+import keep_list
 import win_config
-from debloat_wim import is_protected_pattern, load_group_patterns, load_patterns
 from win_utils import (
+    dism_capture,
     find_oscdimg,
     invoke_dism,
+    parse_dism_installed,
     require_admin,
     safe_remove_directory,
     write_error_exit,
@@ -84,15 +86,10 @@ FEATURES_TO_ENABLE = ("DirectPlay",)
 
 
 def get_appx_patterns() -> tuple[str, ...]:
-    """Loads AppX removal globs from config/debloat_list.txt (+ any component-group
-    patterns), the same source scripts/debloat_wim.py uses for the Linux pipeline,
-    so the Windows servicing stage can't drift from it and stays off the AppX
-    keep-list (Store/WebView/VCLibs/UI.Xaml/Defender/DesktopAppInstaller)."""
-    patterns = load_patterns()
-    for pattern in load_group_patterns():
-        if pattern not in patterns:
-            patterns.append(pattern)
-    return tuple(p for p in patterns if not is_protected_pattern(p))
+    """AppX removal globs from keep_list (config/debloat_list.txt plus selected
+    component groups), the same source the Linux pipeline's debloat_wim.py uses, so
+    this stage can't drift from it and stays off the AppX keep-list."""
+    return tuple(keep_list.get_appx_patterns())
 
 
 CAPABILITIES_TO_REMOVE = (
@@ -111,28 +108,9 @@ CAPABILITIES_TO_REMOVE = (
 
 
 def dism_get_names(mount_dir: Path, args: list[str], identity_key: str) -> list[str]:
-    """Parses "<identity_key> : Name" / "State : Installed" blocks from dism.exe output."""
-    result = subprocess.run(
-        ["dism.exe", f"/Image:{mount_dir}", *args],
-        capture_output=True,
-        text=True,
-        check=False,
+    return parse_dism_installed(
+        dism_capture([f"/Image:{mount_dir}", *args]), identity_key
     )
-    names: list[str] = []
-    current: str | None = None
-    for line in result.stdout.splitlines():
-        identity_match = re.match(
-            rf"^{re.escape(identity_key)}\s*:\s*(.+)$", line.strip()
-        )
-        if identity_match:
-            current = identity_match.group(1).strip()
-            continue
-        state_match = re.match(r"^State\s*:\s*(.+)$", line.strip())
-        if state_match and current is not None:
-            if state_match.group(1).strip().lower() == "installed":
-                names.append(current)
-            current = None
-    return names
 
 
 def matches_any(name: str, patterns: tuple[str, ...]) -> str | None:
@@ -152,45 +130,36 @@ def remove_packages(mount_dir: Path) -> None:
     print("Removing Windows Packages...")
     for name in dism_get_names(mount_dir, ["/Get-Packages"], "Package Identity"):
         if matches_any(name, PACKAGES_TO_REMOVE):
-            _ = subprocess.run(
+            dism_capture(
                 [
-                    "dism.exe",
                     f"/Image:{mount_dir}",
                     "/Remove-Package",
                     f"/PackageName:{name}",
                     "/NoRestart",
-                ],
-                capture_output=True,
-                check=False,
+                ]
             )
 
 
 def set_features(mount_dir: Path) -> None:
     print("Configuring Optional Features...")
     for feature in FEATURES_TO_DISABLE:
-        _ = subprocess.run(
+        dism_capture(
             [
-                "dism.exe",
                 f"/Image:{mount_dir}",
                 "/Disable-Feature",
                 f"/FeatureName:{feature}",
                 "/NoRestart",
-            ],
-            capture_output=True,
-            check=False,
+            ]
         )
     for feature in FEATURES_TO_ENABLE:
-        _ = subprocess.run(
+        dism_capture(
             [
-                "dism.exe",
                 f"/Image:{mount_dir}",
                 "/Enable-Feature",
                 f"/FeatureName:{feature}",
                 "/All",
                 "/NoRestart",
-            ],
-            capture_output=True,
-            check=False,
+            ]
         )
 
 
@@ -201,15 +170,12 @@ def remove_appx_packages(mount_dir: Path) -> None:
         mount_dir, ["/Get-ProvisionedAppxPackages"], "DisplayName"
     ):
         if matches_any(name, appx_patterns):
-            _ = subprocess.run(
+            dism_capture(
                 [
-                    "dism.exe",
                     f"/Image:{mount_dir}",
                     "/Remove-ProvisionedAppxPackage",
                     f"/PackageName:{name}",
-                ],
-                capture_output=True,
-                check=False,
+                ]
             )
 
 
@@ -217,15 +183,12 @@ def remove_capabilities(mount_dir: Path) -> None:
     print("Removing Capabilities...")
     for name in dism_get_names(mount_dir, ["/Get-Capabilities"], "Capability Identity"):
         if matches_any(name, CAPABILITIES_TO_REMOVE):
-            _ = subprocess.run(
+            dism_capture(
                 [
-                    "dism.exe",
                     f"/Image:{mount_dir}",
                     "/Remove-Capability",
                     f"/CapabilityName:{name}",
-                ],
-                capture_output=True,
-                check=False,
+                ]
             )
 
 

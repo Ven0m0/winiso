@@ -16,7 +16,7 @@ No macOS support. No Windows required for the Linux build path.
 
 | Rule | Detail |
 |------|--------|
-| **AppX keep-list** | Never remove: `*Store*`, `*WebView*`, `*VCLibs*`, `*UI.Xaml*`, `*Defender*`, `*DesktopAppInstaller*`. Enforced via `debloat_wim.is_protected_pattern()` on both the Linux pipeline (`debloat_wim.py`) and the Windows servicing stage (`apply_image_settings.py`'s `get_appx_patterns()`), which both read `config/debloat_list.txt` as the single source of truth |
+| **AppX keep-list** | Never remove: `*Store*`, `*WebView*`, `*VCLibs*`, `*UI.Xaml*`, `*Defender*`, `*DesktopAppInstaller*`. Enforced via `keep_list.is_protected_pattern()` on both the Linux pipeline (`debloat_wim.py`) and the Windows servicing stage (`apply_image_settings.py`'s `get_appx_patterns()`), which both get their patterns from `keep_list.get_appx_patterns()` (`config/debloat_list.txt` plus selected component groups) as the single source of truth |
 | **Non-root** | `wimlib-imagex` runs as the current user via FUSE — never add `sudo` to the build pipeline |
 | **Flat UUP layout** | UUP files land in `uup_files/` as `*.cab` / `*.esd`, no subdirectories (`uup_files/` is a runtime directory, not committed) |
 | **Converter is upstream** | `scripts/custom_convert.sh` is patch-only; never rewrite its logic |
@@ -38,6 +38,8 @@ scripts/custom_convert.sh           # UUP→WIM converter (upstream-derived, pat
 scripts/convert_config.sh           # Compression/editions config, sourced by custom_convert.sh (stays bash)
 scripts/utils.sh                    # Bash logging/tool-check helpers — kept only as custom_convert.sh's dependency
 scripts/debloat_wim.py              # AppX removal + offline registry hardening
+scripts/keep_list.py                # Stdlib-only owner of debloat_list.txt, component_groups.json, .uup-groups and the AppX keep-list
+scripts/uup_delta.py                # UUP delta-manifest store and delta calculation (used by download_uup.py)
 scripts/download_uup.py             # UUP API client (Python 3, httpx + orjson)
 scripts/setup_env.py                # Installs system dependencies (Linux only)
 scripts/pyutils.py                  # Shared logging/tool-check helpers (import this, never copy)
@@ -76,6 +78,9 @@ config/components.psd1              # PowerShell data file: extra packages/capab
 ventoy/answer/                      # Canonical autounattend.xml source; config/autounattend.xml is a symlink to it
 
 tests/test_download_uup.py          # Unit tests (40+ cases, unittest + mock)
+tests/test_keep_list.py             # Keep-list, component-group round trip, stdlib-only import guard
+tests/test_download_seams.py        # Prompt seam, path containment, uup_delta
+tests/test_validators.py            # Validator checks, sign_iso checksum, single-home logging guard
 tests/test_security.py              # Path traversal validation tests
 docs/autounattend.md                # Autounattend customisation guide
 
@@ -139,7 +144,7 @@ Copy `install.wim` to a Windows machine, run `scripts/windows_service.cmd` again
 
 The Linux build pipeline (`build.py`, `setup_env.py`, `sign_iso.py`, `validate_prereqs.py`,
 `debloat_wim.py`) is Python 3, cross-platform where the underlying tools allow it.
-`download_uup.py`, `build.py`, and `debloat_wim.py` depend on `httpx` (HTTP/2 client,
+`download_uup.py` and `build.py` depend on `httpx` (HTTP/2 client,
 replacing `urllib`) and `orjson` (JSON, replacing stdlib `json`) — declared in
 `pyproject.toml`, installed via `uv sync`. Every `make`/`mise` target that runs one of
 these scripts goes through `uv run` (Makefile's `PY ?= uv run --`) so the deps are on

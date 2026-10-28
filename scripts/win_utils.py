@@ -2,6 +2,7 @@
 
 import ctypes
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -38,6 +39,37 @@ def invoke_dism(args: list[str]) -> None:
         write_error_exit(
             f"dism {' '.join(args)} failed with exit code {result.returncode}"
         )
+
+
+def dism_capture(args: list[str]) -> str:
+    """Run dism.exe quietly and return its stdout; the exit code is not checked.
+
+    The one adapter for offline-image queries and best-effort removals, so callers
+    (and tests) never build a dism.exe subprocess themselves.
+    """
+    result = subprocess.run(
+        ["dism.exe", *args], capture_output=True, text=True, check=False
+    )
+    return result.stdout
+
+
+def parse_dism_installed(output: str, identity_key: str) -> list[str]:
+    """Parse "<identity_key> : Name" / "State : Installed" blocks from dism.exe output."""
+    names: list[str] = []
+    current: str | None = None
+    for line in output.splitlines():
+        identity_match = re.match(
+            rf"^{re.escape(identity_key)}\s*:\s*(.+)$", line.strip()
+        )
+        if identity_match:
+            current = identity_match.group(1).strip()
+            continue
+        state_match = re.match(r"^State\s*:\s*(.+)$", line.strip())
+        if state_match and current is not None:
+            if state_match.group(1).strip().lower() == "installed":
+                names.append(current)
+            current = None
+    return names
 
 
 def find_oscdimg() -> str:

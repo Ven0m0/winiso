@@ -10,7 +10,7 @@ Usage: python scripts/validate_debloat.py
 
 import sys
 
-from debloat_wim import (
+from keep_list import (
     CONFIG_FILE,
     PATTERN_RE,
     is_protected_pattern,

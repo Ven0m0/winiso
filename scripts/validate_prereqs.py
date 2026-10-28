@@ -7,6 +7,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+from keep_list import load_patterns
 from pyutils import (
     REQUIRED_TOOLS,
     check_iso_tool,
@@ -82,11 +83,7 @@ def main() -> int:
     debloat_list = config_dir / "debloat_list.txt"
     if debloat_list.is_file():
         log_success("debloat_list.txt found")
-        lines = debloat_list.read_text(encoding="utf-8", errors="replace").splitlines()
-        pattern_count = sum(
-            1 for line in lines if line.strip() and not line.startswith("#")
-        )
-        log_info(f"  → {pattern_count} debloat patterns configured")
+        log_info(f"  → {len(load_patterns())} debloat patterns configured")
     else:
         log_warn("debloat_list.txt not found - no apps will be removed")
         warnings += 1

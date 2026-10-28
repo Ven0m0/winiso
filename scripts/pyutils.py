@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Shared logging and tool-check helpers for the build pipeline scripts."""
 
+import os
 import shutil
 import sys
 
@@ -12,6 +13,7 @@ GREEN = "\033[0;32m"
 YELLOW = "\033[1;33m"
 CYAN = "\033[0;36m"
 NC = "\033[0m"
+BOLD = "\033[1m"
 
 REQUIRED_TOOLS = ["aria2c", "cabextract", "wimlib-imagex", "chntpw", "xmllint"]
 
@@ -30,6 +32,11 @@ def log_warn(msg: str) -> None:
 
 def log_error(msg: str) -> None:
     print(f"{RED}[ERROR]{NC} {msg}")
+
+
+def log_debug(msg: str) -> None:
+    if os.environ.get("LOG_LEVEL", "").lower() == "debug":
+        print(f"{CYAN}[DEBUG]{NC} {msg}")
 
 
 def check_tool(tool: str) -> bool:

@@ -6,6 +6,8 @@ paths:
   - "scripts/sign_iso.py"
   - "scripts/validate_prereqs.py"
   - "scripts/debloat_wim.py"
+  - "scripts/keep_list.py"
+  - "scripts/uup_delta.py"
   - "scripts/pyutils.py"
   - "scripts/convert_ve_plugin"
   - "scripts/custom_convert.sh"
@@ -16,7 +18,7 @@ paths:
 # Linux build pipeline rules
 
 - Pipeline scripts (`build.py`, `setup_env.py`, `sign_iso.py`, `validate_prereqs.py`, `debloat_wim.py`) are Python 3; `import pyutils` for logging (`log_info`/`log_success`/`log_warn`/`log_error`) instead of adding new logging styles.
-- `download_uup.py`, `build.py`, and `debloat_wim.py` use `httpx` (HTTP client) and `orjson` (JSON) — both declared in `pyproject.toml`, not stdlib `urllib`/`json`. New JSON/HTTP code in these three files should use them too. Everything else in the pipeline stays stdlib-first.
+- `download_uup.py` and `build.py` use `httpx` (HTTP client) and `orjson` (JSON) — both declared in `pyproject.toml`, not stdlib `urllib`/`json`. New JSON/HTTP code in these files should use them too. `keep_list.py` stays stdlib-only (the Windows servicing scripts import it). Everything else in the pipeline stays stdlib-first.
 - Derive paths from `Path(__file__).resolve().parent` (`SCRIPT_DIR`) or its parent (`PROJECT_ROOT`); do not introduce machine-specific absolute paths inside scripts.
 - Do not add `sudo`/elevation to `build.py` or any script in the Linux build pipeline.
 - Treat `scripts/custom_convert.sh` and `scripts/convert_config.sh` (which it sources) as upstream-derived and patch-only unless the task explicitly requires a converter change — these are the only scripts that stay bash. The one repo-owned exception is the `# DEBLOAT HOOK` block, which reads `$PYTHON` (set by `build.py` to `sys.executable`, falling back to plain `python3`) so the debloater runs under the same venv that has httpx/orjson installed.

@@ -125,8 +125,8 @@ def main() -> int:
     env["PAUSE_FOR_WINDOWS_STAGE"] = os.environ.get("PAUSE_FOR_WINDOWS_STAGE", "0")
     env["NANO"] = os.environ.get("NANO", "0")
     env["WIMLIB_IMAGEX_IGNORE_CASE"] = "1"
-    # debloat_wim.py now imports orjson; the converter's DEBLOAT HOOK must run
-    # it with the same interpreter (venv) that build.py itself is running under.
+    # The converter's DEBLOAT HOOK runs debloat_wim.py with the same interpreter
+    # (venv) that build.py itself is running under.
     env["PYTHON"] = sys.executable
 
     # custom_convert.sh is upstream-derived bash and stays as-is; run via bash.

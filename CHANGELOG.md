@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+- New `scripts/keep_list.py` (stdlib-only) owns `config/debloat_list.txt`, `config/component_groups.json`,
+  the `.uup-groups` selection, and the AppX keep-list. `debloat_wim.py`, `apply_image_settings.py`,
+  `validate_debloat.py`, `validate_prereqs.py` and `download_uup.py` all use it, so the Windows servicing
+  script no longer reaches `orjson` through `debloat_wim` (stdlib-only invariant) and the group file
+  format has one parser. `debloat_wim.py` now also filters protected entries out of `debloat_list.txt`
+  itself. `download_uup.py` writes `.uup-groups` to the project root by default (it was cwd-relative).
+- `download_uup.py` uses `pyutils` for logging (the copied `log_*` helpers are gone) and imports the
+  delta store from the new `scripts/uup_delta.py`. Interactive prompts accept an `ask` callable
+  (default `input`), and both output-directory guards share one `_is_within()` check.
+- `win_utils.dism_capture()` and `win_utils.parse_dism_installed()` give `apply_image_settings.py` one
+  DISM adapter and a pure parser; `pyutils.py` gained `log_debug` and `BOLD`.
+- `validate_prereqs.py` counts debloat patterns through the same loader the debloater uses.
 - `scripts/download_uup.py`, `scripts/build.py`, and `scripts/debloat_wim.py` now use `httpx`
   (HTTP/2 client, replacing `urllib.request`) and `orjson` (replacing stdlib `json`) — both
   declared as runtime dependencies in `pyproject.toml`. `fetch_url()` keeps its exact signature,
@@ -26,6 +38,8 @@ All notable changes to this project will be documented in this file.
   `additional_dependencies: [httpx, orjson]` so it can resolve the new imports.
 
 ### Added
+- `tests/test_keep_list.py`, `tests/test_download_seams.py`, `tests/test_validators.py`, and DISM seam
+  tests in `tests/test_apply_image_settings.py`.
 - Hyper-V ISO boot validation and an opt-in WinPE deploy/capture loop, ported from
   [CleanWin11IsoMaker](https://github.com/pitomec/CleanWin11IsoMaker)'s `functions/hyperv.ps1`
   and `functions/winpe.ps1`: `scripts/HyperVUtils.ps1` (shared VM/VHD helpers, dot-sources

@@ -9,7 +9,7 @@ You review changes against this repo's Hard Invariants table (AGENTS.md), not ge
 
 Check every changed file against:
 
-1. **AppX keep-list** — `config/debloat_list.txt` and `scripts/debloat_wim.py` must never remove `*Store*`, `*WebView*`, `*VCLibs*`, `*UI.Xaml*`, `*Defender*`, `*DesktopAppInstaller*`.
+1. **AppX keep-list** — `config/debloat_list.txt`, `scripts/keep_list.py` and `scripts/debloat_wim.py` must never remove `*Store*`, `*WebView*`, `*VCLibs*`, `*UI.Xaml*`, `*Defender*`, `*DesktopAppInstaller*`.
 2. **Non-root** — no `sudo` anywhere in the Linux pipeline (`build.py`, `setup_env.py`, `debloat_wim.py`, `download_uup.py`, `validate_prereqs.py`, `sign_iso.py`).
 3. **Flat UUP layout** — nothing writes subdirectories under `uup_files/`.
 4. **Converter is upstream** — `scripts/custom_convert.sh` / `scripts/convert_config.sh` logic changes only if explicitly asked for a patch; flag any rewrite.

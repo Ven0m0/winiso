@@ -15,6 +15,7 @@ import httpx
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 
 import download_uup
+import uup_delta
 from download_uup import parse_args
 
 
@@ -2201,7 +2202,7 @@ class TestDeltaManifestIO(unittest.TestCase):
     def test_load_malformed_manifest_returns_none(self):
         with tempfile.TemporaryDirectory() as tmp:
             store = Path(tmp)
-            manifest = store / download_uup._safe_delta_filename("build-1")
+            manifest = store / uup_delta._safe_delta_filename("build-1")
             manifest.write_text("not json{", encoding="utf-8")
             self.assertIsNone(
                 download_uup.load_delta_manifest("build-1", store_dir=tmp)
@@ -2210,7 +2211,7 @@ class TestDeltaManifestIO(unittest.TestCase):
     def test_load_manifest_filters_non_dict_entries(self):
         with tempfile.TemporaryDirectory() as tmp:
             store = Path(tmp)
-            manifest = store / download_uup._safe_delta_filename("build-1")
+            manifest = store / uup_delta._safe_delta_filename("build-1")
             manifest.write_text(
                 json.dumps(
                     {"build_id": "build-1", "files": {"a": {"size": 1}, "bad": "x"}}
@@ -2223,7 +2224,7 @@ class TestDeltaManifestIO(unittest.TestCase):
     def test_load_manifest_top_level_not_dict(self):
         with tempfile.TemporaryDirectory() as tmp:
             store = Path(tmp)
-            manifest = store / download_uup._safe_delta_filename("build-1")
+            manifest = store / uup_delta._safe_delta_filename("build-1")
             manifest.write_text(json.dumps(["a", "b"]), encoding="utf-8")
             self.assertIsNone(
                 download_uup.load_delta_manifest("build-1", store_dir=tmp)
@@ -2232,7 +2233,7 @@ class TestDeltaManifestIO(unittest.TestCase):
     def test_load_manifest_files_not_dict(self):
         with tempfile.TemporaryDirectory() as tmp:
             store = Path(tmp)
-            manifest = store / download_uup._safe_delta_filename("build-1")
+            manifest = store / uup_delta._safe_delta_filename("build-1")
             manifest.write_text(json.dumps({"files": "nope"}), encoding="utf-8")
             self.assertIsNone(
                 download_uup.load_delta_manifest("build-1", store_dir=tmp)
@@ -2249,13 +2250,13 @@ class TestDeltaManifestIO(unittest.TestCase):
 
     def test_safe_delta_filename(self):
         """Unsafe characters in build_id must be replaced with underscores."""
-        name = download_uup._safe_delta_filename("../../etc/passwd")
+        name = uup_delta._safe_delta_filename("../../etc/passwd")
         self.assertNotIn("..", name)
         self.assertNotIn("/", name)
         self.assertTrue(name.endswith(".json"))
 
     def test_safe_delta_filename_preserves_alnum_dash(self):
-        name = download_uup._safe_delta_filename("abc-123_XYZ")
+        name = uup_delta._safe_delta_filename("abc-123_XYZ")
         self.assertEqual(name, "abc-123_XYZ.json")
 
     def test_load_manifest_path_traversal_rejected(self):

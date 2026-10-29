@@ -37,17 +37,6 @@ from uup_delta import (
 
 CACHE_DIR_NAME: str = ".uup_cache"
 DEFAULT_CACHE_TTL_SECONDS: int = 3600
-ALL_COMPONENT_GROUPS: list[str] = [
-    "gaming",
-    "productivity",
-    "social",
-    "telemetry",
-    "media",
-    "system",
-    "news",
-    "oem",
-]
-
 # Profile definitions for different use cases
 PROFILES: dict[str, dict[str, Any]] = {
     "minimal": {

@@ -9,8 +9,12 @@ import sys
 import time
 from pathlib import Path
 
-if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if (
+    sys.stdout.encoding
+    and sys.stdout.encoding.lower() != "utf-8"
+    and callable(reconfigure := getattr(sys.stdout, "reconfigure", None))
+):
+    reconfigure(encoding="utf-8", errors="replace")
 
 
 def write_step(message: str) -> None:

@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+- Python quality cleanup removes an unused component-group constant and dead test setup,
+  and makes optional-result assertions explicit for type checking across the test suite.
+- Logging helpers tolerate redirected output streams without `reconfigure()` while preserving
+  UTF-8 configuration for supported streams; regression tests cover both cases.
+- Removed executable shebangs from import-only Python modules and formatted `.kilo/kilo.json`
+  without changing its values so the full pre-commit gate passes on Windows.
 - New `scripts/keep_list.py` (stdlib-only) owns `config/debloat_list.txt`, `config/component_groups.json`,
   the `.uup-groups` selection, and the AppX keep-list. `debloat_wim.py`, `apply_image_settings.py`,
   `validate_debloat.py`, `validate_prereqs.py` and `download_uup.py` all use it, so the Windows servicing

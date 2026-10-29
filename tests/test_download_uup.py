@@ -6,8 +6,9 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import unittest.mock
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import httpx
 
@@ -209,7 +210,7 @@ class TestGetLatestBuilds(unittest.TestCase):
 
         result = download_uup.get_latest_builds(max_results=2)
 
-        self.assertIsNotNone(result)
+        assert result is not None
         self.assertEqual(len(result), 2)
         # Expected sort order: build-2 (1620000000), build-3 (1610000000)
         self.assertEqual(result[0]["id"], "build-2")
@@ -260,7 +261,7 @@ class TestFetchLatestFromWU(unittest.TestCase):
             }
         }
         result = download_uup.fetch_latest_from_wu(arch="amd64", ring="Retail")
-        self.assertIsNotNone(result)
+        assert result is not None
         self.assertEqual(result["updateId"], "12345")
         self.assertEqual(result["updateTitle"], "Windows 11 Build")
         self.assertEqual(result["foundBuild"], "22621.1")
@@ -280,7 +281,7 @@ class TestGetUpdateInfo(unittest.TestCase):
 
         result = download_uup.get_update_info("test-update-id")
 
-        self.assertIsNotNone(result)
+        assert result is not None
         self.assertEqual(result["updateId"], "test-update-id")
         self.assertEqual(result["title"], "Windows 11 Update")
         mock_fetch_url.assert_called_once_with(
@@ -525,7 +526,7 @@ class TestRunAria2Download(unittest.TestCase):
     @patch("download_uup.log_warn")
     @patch("download_uup.Path.unlink")
     def test_run_aria2_download_keyboard_interrupt(
-        self, mock_unlink, mock_log_warn, mock_run, mock_open
+        self, _mock_unlink, mock_log_warn, mock_run, mock_open
     ):
         mock_run.side_effect = KeyboardInterrupt()
         dl_list = [{"url": "http://test", "name": "test.esd"}]
@@ -573,7 +574,7 @@ class TestRunAria2Download(unittest.TestCase):
     @patch("builtins.open", new_callable=unittest.mock.mock_open)
     @patch("subprocess.run")
     @patch("download_uup.Path.unlink")
-    def test_run_aria2_download_success(self, mock_unlink, mock_run, mock_open):
+    def test_run_aria2_download_success(self, _mock_unlink, mock_run, mock_open):
         mock_result = unittest.mock.MagicMock()
         mock_result.stdout = "Download progress"
         mock_run.return_value = mock_result
@@ -686,7 +687,7 @@ class TestSelectEditions(unittest.TestCase):
         )
 
     @patch("builtins.input", return_value="")
-    def test_select_editions_empty_choice(self, mock_input):
+    def test_select_editions_empty_choice(self, _mock_input):
         build_info = {
             "files": {
                 "Windows_Professional.esd": {"size": 100},
@@ -697,13 +698,13 @@ class TestSelectEditions(unittest.TestCase):
         self.assertIsNone(result)
 
     @patch("builtins.input", return_value="A")
-    def test_select_editions_all_choice(self, mock_input):
+    def test_select_editions_all_choice(self, _mock_input):
         build_info = {"files": {"Windows_Professional.esd": {"size": 100}}}
         result = download_uup.select_editions(build_info)
         self.assertIsNone(result)
 
     @patch("builtins.input", return_value="1")
-    def test_select_editions_valid_choice(self, mock_input):
+    def test_select_editions_valid_choice(self, _mock_input):
         # We need to be careful with the order of editions because it uses list(edition_files.keys())
         # Python 3.7+ dicts are ordered, so "professional" then "home"
         build_info = {
@@ -720,7 +721,7 @@ class TestSelectEditions(unittest.TestCase):
 
     @patch("download_uup.log_warn")
     @patch("builtins.input", return_value="invalid")
-    def test_select_editions_non_numeric_choice(self, mock_input, mock_log_warn):
+    def test_select_editions_non_numeric_choice(self, _mock_input, mock_log_warn):
         build_info = {"files": {"Windows_Professional.esd": {"size": 100}}}
         result = download_uup.select_editions(build_info)
         self.assertIsNone(result)
@@ -728,7 +729,7 @@ class TestSelectEditions(unittest.TestCase):
 
     @patch("download_uup.log_warn")
     @patch("builtins.input", return_value="99")
-    def test_select_editions_out_of_range_choice(self, mock_input, mock_log_warn):
+    def test_select_editions_out_of_range_choice(self, _mock_input, mock_log_warn):
         build_info = {"files": {"Windows_Professional.esd": {"size": 100}}}
         result = download_uup.select_editions(build_info)
         self.assertIsNone(result)
@@ -750,8 +751,8 @@ class TestInteractiveMode(unittest.TestCase):
     def test_interactive_mode_quit(
         self,
         mock_get_builds_cached,
-        mock_display_builds,
-        mock_input,
+        _mock_display_builds,
+        _mock_input,
         mock_log_info,
     ):
         mock_get_builds_cached.return_value = [{"id": "1", "title": "Build 1"}]
@@ -766,8 +767,8 @@ class TestInteractiveMode(unittest.TestCase):
     def test_interactive_mode_value_error(
         self,
         mock_get_builds_cached,
-        mock_display_builds,
-        mock_input,
+        _mock_display_builds,
+        _mock_input,
         mock_log_warn,
     ):
         mock_get_builds_cached.return_value = [{"id": "1", "title": "Build 1"}]
@@ -782,8 +783,8 @@ class TestInteractiveMode(unittest.TestCase):
     def test_interactive_mode_keyboard_interrupt(
         self,
         mock_get_builds_cached,
-        mock_display_builds,
-        mock_input,
+        _mock_display_builds,
+        _mock_input,
         mock_log_info,
     ):
         mock_get_builds_cached.return_value = [{"id": "1", "title": "Build 1"}]
@@ -931,8 +932,8 @@ class TestProcessSelectedBuild(unittest.TestCase):
     def test_process_selected_build_success(
         self,
         mock_get_build_info_cached,
-        mock_select_editions,
-        mock_input,
+        _mock_select_editions,
+        _mock_input,
         mock_download_build,
     ):
         mock_get_build_info_cached.return_value = {"files": {}}
@@ -969,7 +970,7 @@ class TestProcessSelectedBuild(unittest.TestCase):
     @patch("download_uup.select_editions", return_value=None)
     @patch("download_uup.get_build_info_cached")
     def test_process_selected_build_cancelled(
-        self, mock_get_build_info_cached, mock_select_editions, mock_input
+        self, mock_get_build_info_cached, _mock_select_editions, _mock_input
     ):
         mock_get_build_info_cached.return_value = {"files": {"a.esd": {"size": 1}}}
         selected_build = {"id": "test-build-id", "title": "Test Build"}
@@ -981,7 +982,7 @@ class TestProcessSelectedBuild(unittest.TestCase):
 
 class TestPrepareOutputDirectory(unittest.TestCase):
     @patch("builtins.input", return_value="")
-    def test_prepare_output_directory_creates_dir(self, mock_input):
+    def test_prepare_output_directory_creates_dir(self, _mock_input):
         import tempfile
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -992,7 +993,7 @@ class TestPrepareOutputDirectory(unittest.TestCase):
             self.assertTrue(output_path.exists())
 
     @patch("builtins.input", return_value="y")
-    def test_prepare_output_directory_clears_files(self, mock_input):
+    def test_prepare_output_directory_clears_files(self, _mock_input):
         import tempfile
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -1026,7 +1027,7 @@ class TestProfiles(unittest.TestCase):
 
     def test_get_profile_existing(self):
         result = download_uup.get_profile("minimal")
-        self.assertIsNotNone(result)
+        assert result is not None
         self.assertEqual(result["edition"], "Core")
 
     def test_get_profile_nonexistent(self):
@@ -1053,28 +1054,7 @@ class TestParseArgsWithPreset(unittest.TestCase):
 
 
 class TestPinFunctions(unittest.TestCase):
-    """Tests for get_pinned_build/save_pinned_build using a temp project root."""
-
-    def setUp(self):
-        import tempfile
-
-        self._tmp = tempfile.TemporaryDirectory()
-        self.tmp_path = Path(self._tmp.name)
-        # Patch Path so the project root is the temp dir
-        self._orig_path = download_uup.Path
-
-        def _patched_path(*args, **kwargs):
-            # Replace the project_root path with our temp dir
-            if args and args[0] == __file__:
-                self._orig_path(*args, **kwargs)
-                return MagicMock()
-            return self._orig_path(*args, **kwargs)
-
-        # Simpler approach: monkey-patch the function's resolution
-        self._pin_path = self.tmp_path / ".uup-pin.json"
-
-    def tearDown(self):
-        self._tmp.cleanup()
+    """Tests for pin-related argument parsing and missing pin files."""
 
     def test_get_pinned_build_no_file(self):
         # When the pin file doesn't exist, returns None
@@ -1351,7 +1331,7 @@ class TestComponentGroups(unittest.TestCase):
 
     def test_get_component_group_existing(self):
         group = download_uup.get_component_group("gaming", self.groups_file)
-        self.assertIsNotNone(group)
+        assert group is not None
         self.assertIn("*Xbox*", group["patterns"])
 
     def test_get_component_group_missing(self):
@@ -1508,7 +1488,7 @@ class TestMainInfoModes(unittest.TestCase):
         mock_log_error.assert_called()
 
     @patch("download_uup.write_component_groups_for_build", return_value=False)
-    def test_main_write_groups_write_failure(self, mock_write):
+    def test_main_write_groups_write_failure(self, _mock_write):
         with patch.object(
             sys,
             "argv",
@@ -1572,7 +1552,7 @@ class TestMainInfoModes(unittest.TestCase):
 
     @patch("download_uup.get_build_info_cached", return_value=None)
     @patch("download_uup.check_dependencies", return_value=True)
-    def test_main_build_id_no_info(self, mock_check, mock_get_info):
+    def test_main_build_id_no_info(self, mock_check, _mock_get_info):
         with (
             patch.object(sys, "argv", ["download_uup.py", "--build-id", "abc"]),
             patch("download_uup.log_error") as mock_log_error,
@@ -1586,7 +1566,7 @@ class TestMainInfoModes(unittest.TestCase):
         return_value={"files": {"Microsoft.Windows.Professional.esd": {"size": 1}}},
     )
     @patch("download_uup.check_dependencies", return_value=True)
-    def test_main_build_id_with_edition(self, mock_check, mock_get_info):
+    def test_main_build_id_with_edition(self, mock_check, _mock_get_info):
         with (
             patch.object(
                 sys,
@@ -1849,16 +1829,16 @@ class TestFetchUrlBranches(unittest.TestCase):
 
 class TestGetApiVersion(unittest.TestCase):
     @patch("download_uup.fetch_url", return_value='{"response": {"apiVersion": "1.0"}}')
-    def test_success(self, mock_fetch):
+    def test_success(self, _mock_fetch):
         info = download_uup.get_api_version()
         self.assertEqual(info, {"apiVersion": "1.0"})
 
     @patch("download_uup.fetch_url", return_value=None)
-    def test_no_response(self, mock_fetch):
+    def test_no_response(self, _mock_fetch):
         self.assertIsNone(download_uup.get_api_version())
 
     @patch("download_uup.fetch_url", return_value="not json at all")
-    def test_json_decode_error(self, mock_fetch):
+    def test_json_decode_error(self, _mock_fetch):
         self.assertIsNone(download_uup.get_api_version())
 
 
@@ -1952,15 +1932,12 @@ class TestSavePinnedBuild(unittest.TestCase):
     def setUp(self):
         self._tmp = tempfile.TemporaryDirectory()
         self.tmp_path = Path(self._tmp.name)
-        # Patch script_dir / project_root for save_pinned_build
-        self._real_path = download_uup.Path
 
     def tearDown(self):
         self._tmp.cleanup()
 
     def test_save_pinned_build_minimal(self):
         # Use a build_id-only save by calling in a temp project root
-        self.tmp_path / ".uup-pin.json"
         with patch.object(download_uup, "Path") as MockPath:
             MockPath.return_value.parent.parent = self.tmp_path
             ok = download_uup.save_pinned_build("b1")
@@ -1971,7 +1948,7 @@ class TestSelectEditionsAllEditions(unittest.TestCase):
     """Cover enterprise/home/core/education branches in select_editions."""
 
     @patch("builtins.input", return_value="")
-    def test_all_edition_variants_present(self, mock_input):
+    def test_all_edition_variants_present(self, _mock_input):
         build_info = {
             "files": {
                 "Win_Professional.esd": {"size": 1},
@@ -1985,7 +1962,7 @@ class TestSelectEditionsAllEditions(unittest.TestCase):
         self.assertIsNone(result)
 
     @patch("builtins.input", return_value="3")
-    def test_select_home(self, mock_input):
+    def test_select_home(self, _mock_input):
         build_info = {
             "files": {
                 "Win_Professional.esd": {"size": 1},
@@ -1999,7 +1976,7 @@ class TestSelectEditionsAllEditions(unittest.TestCase):
 
 class TestGetLatestBuildsEmpty(unittest.TestCase):
     @patch("download_uup.fetch_url", return_value={"response": {"builds": []}})
-    def test_empty_builds_list(self, mock_fetch):
+    def test_empty_builds_list(self, _mock_fetch):
         self.assertEqual(download_uup.get_latest_builds(), [])
 
 
@@ -2187,8 +2164,8 @@ class TestDeltaManifestIO(unittest.TestCase):
                 "b.cab": {"size": 200},
             }
             path = download_uup.save_delta_manifest("build-1", files, store_dir=tmp)
-            self.assertIsNotNone(path)
-            self.assertTrue(Path(path).exists())
+            assert path is not None
+            self.assertTrue(path.exists())
 
             loaded = download_uup.load_delta_manifest("build-1", store_dir=tmp)
             self.assertIsNotNone(loaded)
@@ -2245,8 +2222,8 @@ class TestDeltaManifestIO(unittest.TestCase):
             path = download_uup.save_delta_manifest(
                 "build-1", {"a": {"size": 1}}, store_dir=nested
             )
-            self.assertIsNotNone(path)
-            self.assertTrue(Path(path).exists())
+            assert path is not None
+            self.assertTrue(path.exists())
 
     def test_safe_delta_filename(self):
         """Unsafe characters in build_id must be replaced with underscores."""

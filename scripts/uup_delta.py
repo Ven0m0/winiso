@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """uup_delta.py - Per-build file manifests and delta calculation for UUP downloads.
 
 Owns the on-disk delta store (a directory of JSON manifests, one per build) and the

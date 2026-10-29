@@ -1,5 +1,7 @@
 import hashlib
+import io
 import re
+import runpy
 import sys
 import tempfile
 import unittest
@@ -86,6 +88,28 @@ class TestCheckRawLines(unittest.TestCase):
 
 
 class TestLoggingHasOneHome(unittest.TestCase):
+    def test_logging_modules_support_redirected_stdout(self) -> None:
+        class RedirectedStream:
+            encoding = "cp1252"
+
+        for module in ("pyutils.py", "win_utils.py"):
+            with (
+                self.subTest(module=module),
+                mock.patch.object(sys, "stdout", RedirectedStream()),
+            ):
+                runpy.run_path(str(SCRIPTS / module))
+
+    def test_logging_modules_reconfigure_text_stdout(self) -> None:
+        for module in ("pyutils.py", "win_utils.py"):
+            with (
+                self.subTest(module=module),
+                io.TextIOWrapper(io.BytesIO(), encoding="cp1252") as stream,
+            ):
+                with mock.patch.object(sys, "stdout", stream):
+                    runpy.run_path(str(SCRIPTS / module))
+                self.assertEqual(stream.encoding, "utf-8")
+                self.assertEqual(stream.errors, "replace")
+
     def test_no_script_redefines_pyutils_log_helpers(self):
         for script in SCRIPTS.glob("*.py"):
             if script.name == "pyutils.py":

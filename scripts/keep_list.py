@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """keep_list.py - AppX removal patterns, the keep-list, and component groups.
 
 Single owner of config/debloat_list.txt, config/component_groups.json and the

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """uupdump.net API client: HTTP fetch, JSON endpoints and the on-disk metadata cache."""
 
 import time

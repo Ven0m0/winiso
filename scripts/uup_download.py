@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """UUP file download: edition filtering, output-dir guard, delta filter and aria2c."""
 
 import subprocess

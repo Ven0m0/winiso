@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Build selection config: named profiles (config/profiles.json) and the pinned build (.uup-pin.json)."""
 
 from pathlib import Path

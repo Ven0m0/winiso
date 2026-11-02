@@ -11,6 +11,8 @@ uup_files/*
 !uup_files/.gitkeep
 .uup_cache/
 **/.uup_cache/
+.uup-groups
+.uup-delta/
 uupdump/uup_download_macos.sh
 uupdump/files/convert_config_macos
 

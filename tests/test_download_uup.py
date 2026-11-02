@@ -20,6 +20,7 @@ import keep_list
 import uup_api
 import uup_delta
 import uup_download
+import uup_profiles
 from download_uup import parse_args
 
 
@@ -166,7 +167,7 @@ class TestGetLatestBuilds(unittest.TestCase):
         result = uup_api.get_latest_builds()
 
         self.assertIsNone(result)
-        mock_log_error.assert_called_with("API Error: Invalid request")
+        mock_log_error.assert_any_call("API Error: Invalid request")
 
     @patch("uup_api.fetch_url")
     @patch("uup_api.log_error")
@@ -231,27 +232,9 @@ class TestFetchLatestFromWU(unittest.TestCase):
         self.assertIsNone(result)
         mock_log_error.assert_called_with("API Error: Invalid ring")
 
-    @patch("uup_api.fetch_url")
-    @patch("uup_api.log_warn")
-    def test_fetch_latest_from_wu_no_response(self, mock_log_warn, mock_fetch_url):
-        mock_fetch_url.return_value = None
-        result = uup_api.fetch_latest_from_wu()
-        self.assertIsNone(result)
-        mock_log_warn.assert_called_with(
-            "Failed to fetch from Windows Update, falling back to cached builds"
-        )
-
-    @patch("uup_api.fetch_url")
-    @patch("uup_api.log_warn")
-    def test_fetch_latest_from_wu_json_decode_error(
-        self, mock_log_warn, mock_fetch_url
-    ):
-        mock_fetch_url.return_value = None
-        result = uup_api.fetch_latest_from_wu()
-        self.assertIsNone(result)
-        mock_log_warn.assert_called_with(
-            "Failed to fetch from Windows Update, falling back to cached builds"
-        )
+    @patch("uup_api.fetch_url", return_value=None)
+    def test_fetch_latest_from_wu_no_response(self, _mock_fetch_url):
+        self.assertIsNone(uup_api.fetch_latest_from_wu())
 
     @patch("uup_api.fetch_url")
     def test_fetch_latest_from_wu_success(self, mock_fetch_url):
@@ -848,31 +831,6 @@ class TestGetAvailableEditions(unittest.TestCase):
 
         self.assertIsNone(result)
 
-    @patch("uup_api.fetch_url")
-    def test_get_api_version_success(self, mock_fetch_url):
-        mock_fetch_url.return_value = '{"response": {"version": "1.0.0"}}'
-        result = uup_api.get_api_version()
-        self.assertEqual(result, {"version": "1.0.0"})
-        mock_fetch_url.assert_called_once_with("https://api.uupdump.net/")
-
-    @patch("uup_api.fetch_url")
-    def test_get_api_version_fetch_fails(self, mock_fetch_url):
-        mock_fetch_url.return_value = None
-        result = uup_api.get_api_version()
-        self.assertIsNone(result)
-
-    @patch("uup_api.fetch_url")
-    def test_get_api_version_invalid_json(self, mock_fetch_url):
-        mock_fetch_url.return_value = None
-        result = uup_api.get_api_version()
-        self.assertIsNone(result)
-
-    @patch("uup_api.fetch_url")
-    def test_get_api_version_no_response_key(self, mock_fetch_url):
-        mock_fetch_url.return_value = '{"other_key": "value"}'
-        result = uup_api.get_api_version()
-        self.assertEqual(result, {})
-
 
 class TestDisplayBuilds(unittest.TestCase):
     def _get_print_calls(self, mock_print):
@@ -1020,7 +978,7 @@ class TestPrepareOutputDirectory(unittest.TestCase):
 
 class TestProfiles(unittest.TestCase):
     def test_get_profiles_returns_dict(self):
-        result = download_uup.get_profiles()
+        result = uup_profiles.get_profiles()
         self.assertIsInstance(result, dict)
         self.assertIn("minimal", result)
         self.assertIn("standard", result)
@@ -1029,12 +987,12 @@ class TestProfiles(unittest.TestCase):
         self.assertIn("dev", result)
 
     def test_get_profile_existing(self):
-        result = download_uup.get_profile("minimal")
+        result = uup_profiles.get_profile("minimal")
         assert result is not None
         self.assertEqual(result["edition"], "Core")
 
     def test_get_profile_nonexistent(self):
-        result = download_uup.get_profile("nonexistent")
+        result = uup_profiles.get_profile("nonexistent")
         self.assertIsNone(result)
 
     @patch("builtins.print")
@@ -1060,8 +1018,8 @@ class TestPinFunctions(unittest.TestCase):
     """Tests for pin-related argument parsing and missing pin files."""
 
     def test_get_pinned_build_no_file(self):
-        with patch.object(download_uup, "PIN_FILE", Path("/nonexistent/.uup-pin.json")):
-            self.assertIsNone(download_uup.get_pinned_build())
+        with patch.object(uup_profiles, "PIN_FILE", Path("/nonexistent/.uup-pin.json")):
+            self.assertIsNone(uup_profiles.get_pinned_build())
 
     def test_parse_args_pin_build(self):
         args = parse_args(["--build-id", "abc-123", "--pin-build"])
@@ -1428,7 +1386,7 @@ class TestMainInfoModes(unittest.TestCase):
         self.assertEqual(rc, 0)
         mock_display.assert_called_once()
 
-    @patch("download_uup.get_pinned_build", return_value=None)
+    @patch("uup_profiles.get_pinned_build", return_value=None)
     @patch("download_uup.log_info")
     def test_main_show_pin_none(self, mock_log_info, mock_get_pin):
         with patch.object(sys, "argv", ["download_uup.py", "--show-pin"]):
@@ -1436,7 +1394,7 @@ class TestMainInfoModes(unittest.TestCase):
         self.assertEqual(rc, 1)
         mock_get_pin.assert_called_once()
 
-    @patch("download_uup.get_pinned_build", return_value={"build_id": "abc"})
+    @patch("uup_profiles.get_pinned_build", return_value={"build_id": "abc"})
     def test_main_show_pin_present(self, mock_get_pin):
         with (
             patch.object(sys, "argv", ["download_uup.py", "--show-pin"]),
@@ -1447,7 +1405,7 @@ class TestMainInfoModes(unittest.TestCase):
         self.assertTrue(mock_print.called)
 
     @patch(
-        "download_uup.get_pinned_build",
+        "uup_profiles.get_pinned_build",
         return_value={"build_id": "abc", "title": "Win11", "edition": "Pro"},
     )
     def test_main_show_pin_with_title_and_edition(self, mock_get_pin):
@@ -1490,7 +1448,7 @@ class TestMainInfoModes(unittest.TestCase):
     def test_main_use_pin_no_pin(self):
         with (
             patch.object(sys, "argv", ["download_uup.py", "--use-pin"]),
-            patch("download_uup.get_pinned_build", return_value=None),
+            patch("uup_profiles.get_pinned_build", return_value=None),
             patch("download_uup.log_error") as mock_log_error,
         ):
             rc = download_uup.main()
@@ -1506,7 +1464,7 @@ class TestMainInfoModes(unittest.TestCase):
         self.assertEqual(rc, 1)
         mock_log_error.assert_called()
 
-    @patch("download_uup.save_pinned_build", return_value=False)
+    @patch("uup_profiles.save_pinned_build", return_value=False)
     def test_main_pin_build_failure(self, mock_save):
         with patch.object(
             sys,
@@ -1821,21 +1779,6 @@ class TestFetchUrlBranches(unittest.TestCase):
         self.assertEqual(result, {"a": 1})
 
 
-class TestGetApiVersion(unittest.TestCase):
-    @patch("uup_api.fetch_url", return_value='{"response": {"apiVersion": "1.0"}}')
-    def test_success(self, _mock_fetch):
-        info = uup_api.get_api_version()
-        self.assertEqual(info, {"apiVersion": "1.0"})
-
-    @patch("uup_api.fetch_url", return_value=None)
-    def test_no_response(self, _mock_fetch):
-        self.assertIsNone(uup_api.get_api_version())
-
-    @patch("uup_api.fetch_url", return_value="not json at all")
-    def test_json_decode_error(self, _mock_fetch):
-        self.assertIsNone(uup_api.get_api_version())
-
-
 class TestDisplayComponentGroups(unittest.TestCase):
     def setUp(self):
         self.tmpdir = tempfile.mkdtemp()
@@ -1905,16 +1848,16 @@ class TestLoadComponentGroupsEdgeCases(unittest.TestCase):
 
 class TestGetProfiles(unittest.TestCase):
     def test_built_in_profiles(self):
-        profiles = download_uup.get_profiles()
+        profiles = uup_profiles.get_profiles()
         self.assertIsInstance(profiles, dict)
         self.assertGreater(len(profiles), 0)
         self.assertIn("minimal", profiles)
 
     def test_get_profile_existing(self):
-        self.assertIsNotNone(download_uup.get_profile("minimal"))
+        self.assertIsNotNone(uup_profiles.get_profile("minimal"))
 
     def test_get_profile_missing(self):
-        self.assertIsNone(download_uup.get_profile("not-a-profile"))
+        self.assertIsNone(uup_profiles.get_profile("not-a-profile"))
 
     def test_display_profiles(self):
         with patch("builtins.print") as mock_print:
@@ -1933,8 +1876,8 @@ class TestSavePinnedBuild(unittest.TestCase):
     def test_save_pinned_build_minimal(self):
         # Use a build_id-only save by calling in a temp project root
         pin = self.tmp_path / ".uup-pin.json"
-        with patch.object(download_uup, "PIN_FILE", pin):
-            ok = download_uup.save_pinned_build("b1")
+        with patch.object(uup_profiles, "PIN_FILE", pin):
+            ok = uup_profiles.save_pinned_build("b1")
         self.assertTrue(ok)
         self.assertEqual(json.loads(pin.read_text()), {"build_id": "b1"})
 

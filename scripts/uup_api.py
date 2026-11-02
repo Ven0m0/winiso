@@ -102,53 +102,46 @@ def fetch_url(
         return None
 
 
-@overload
-def _get_response_dict(data: dict[str, Any]) -> dict[str, Any] | None: ...
+API_BASE = "https://api.uupdump.net"
 
 
-@overload
-def _get_response_dict(
-    data: dict[str, Any], default: dict[str, Any]
-) -> dict[str, Any]: ...
-
-
-def _get_response_dict(
-    data: dict[str, Any], default: dict[str, Any] | None = None
+def _api_get(
+    endpoint: str, params: dict[str, str] | None = None
 ) -> dict[str, Any] | None:
-    """Extract the 'response' field from API data with proper typing."""
+    """GET an api.uupdump.net endpoint and return its 'response' object.
+
+    Returns None on network/JSON failure or when the API reports an error, and {}
+    when the payload has no 'response' object.
+    """
+    url = f"{API_BASE}/{endpoint}"
+    if params:
+        url = f"{url}?{urlencode(params)}"
+    data = fetch_url(url, return_json=True)
+    if not data:
+        return None
     response = data.get("response")
-    if isinstance(response, dict):
-        return cast(dict[str, Any], response)
-    return default
+    if not isinstance(response, dict):
+        return {}
+    if response.get("error"):
+        log_error(f"API Error: {response['error']}")
+        return None
+    return cast(dict[str, Any], response)
 
 
 def get_latest_builds(max_results: int = 10) -> list[dict[str, Any]] | None:
     """Fetch latest Windows 11 builds from uupdump.net API"""
     log_info("Fetching latest Windows 11 builds from uupdump.net...")
-
-    api_url = "https://api.uupdump.net/listid.php"
-    params = {"search": "windows 11", "sortByDate": "1"}
-    url = f"{api_url}?{urlencode(params)}"
-    data = fetch_url(url, return_json=True)
-
-    if not data:
+    response = _api_get("listid.php", {"search": "windows 11", "sortByDate": "1"})
+    if response is None:
         log_error("Failed to fetch builds from uupdump.net")
         return None
 
-    if data.get("response", {}).get("error"):
-        log_error(f"API Error: {data['response']['error']}")
-        return None
-
-    builds = data.get("response", {}).get("builds", {})
+    builds = response.get("builds", {})
     if not builds:
         log_warn("No builds found in API response")
         return []
 
-    build_list: list[dict[str, Any]] = []
-    for build_id, build_info in builds.items():
-        build_info["id"] = build_id
-        build_list.append(build_info)
-
+    build_list = [{**info, "id": build_id} for build_id, info in builds.items()]
     build_list.sort(key=lambda x: int(x.get("created") or 0), reverse=True)
     return build_list[:max_results]
 
@@ -156,64 +149,27 @@ def get_latest_builds(max_results: int = 10) -> list[dict[str, Any]] | None:
 def get_build_info(
     build_id: str, language: str | None = "en-us"
 ) -> dict[str, Any] | None:
-    """Get detailed information about a specific build, optionally for a specific language"""
+    """Get detailed information about a specific build, optionally for one language."""
     log_info(f"Fetching build information for ID: {build_id}")
-
-    params: dict[str, str] = {"id": build_id}
+    params = {"id": build_id}
     if language:
         params["lang"] = language
-    api_url = f"https://api.uupdump.net/get.php?{urlencode(params)}"
-    data = fetch_url(api_url, return_json=True)
-
-    if not data:
-        return None
-
-    if data.get("response", {}).get("error"):
-        log_error(f"API Error: {data['response']['error']}")
-        return None
-
-    return _get_response_dict(data)
+    return _api_get("get.php", params) or None
 
 
 def get_available_editions(build_id: str) -> dict[str, Any] | None:
     """Get available editions for a specific build from the API"""
     log_info(f"Fetching available editions for build: {build_id}")
-
-    params = {"id": build_id, "lang": "en-us"}
-    api_url = f"https://api.uupdump.net/listeditions.php?{urlencode(params)}"
-    data = fetch_url(api_url, return_json=True)
-
-    if not data:
-        return None
-
-    response_data = _get_response_dict(data, {})
-    if response_data.get("error"):
-        log_error(f"API Error: {response_data['error']}")
-        return None
-
-    return response_data
+    return _api_get("listeditions.php", {"id": build_id, "lang": "en-us"})
 
 
 def get_available_languages(build_id: str | None = None) -> dict[str, Any] | None:
-    """Get available languages for a specific build from the API"""
+    """Get available languages, for one build or for all builds."""
     if build_id:
         log_info(f"Fetching available languages for build: {build_id}")
-        params = {"id": build_id, "lang": "en-us"}
-        api_url = f"https://api.uupdump.net/listlangs.php?{urlencode(params)}"
-    else:
-        log_info("Fetching all available languages")
-        api_url = "https://api.uupdump.net/listlangs.php"
-
-    data = fetch_url(api_url, return_json=True)
-
-    if not data:
-        return None
-
-    if data.get("response", {}).get("error"):
-        log_error(f"API Error: {data['response']['error']}")
-        return None
-
-    return _get_response_dict(data, {})
+        return _api_get("listlangs.php", {"id": build_id, "lang": "en-us"})
+    log_info("Fetching all available languages")
+    return _api_get("listlangs.php")
 
 
 def fetch_latest_from_wu(
@@ -221,58 +177,13 @@ def fetch_latest_from_wu(
 ) -> dict[str, Any] | None:
     """Fetch the latest build from Windows Update servers"""
     log_info(f"Fetching latest {arch} build from Windows Update ({ring} ring)...")
-
-    params = {"arch": arch, "ring": ring}
-    api_url = f"https://api.uupdump.net/fetchupd.php?{urlencode(params)}"
-    data = fetch_url(api_url, return_json=True)
-
-    if not data:
-        log_warn("Failed to fetch from Windows Update, falling back to cached builds")
-        return None
-
-    if data.get("response", {}).get("error"):
-        log_error(f"API Error: {data['response']['error']}")
-        return None
-
-    return _get_response_dict(data, {})
-
-
-def get_api_version() -> dict[str, Any] | None:
-    """Get the current UUP dump API version"""
-    api_url = "https://api.uupdump.net/"
-    response = fetch_url(api_url)
-
-    if not response:
-        return None
-
-    try:
-        data = orjson.loads(response)
-    except orjson.JSONDecodeError as e:
-        log_error(f"Failed to parse JSON response: {e}")
-        return None
-
-    if not isinstance(data, dict):
-        return None
-
-    return _get_response_dict(data, {})
+    return _api_get("fetchupd.php", {"arch": arch, "ring": ring})
 
 
 def get_update_info(update_id: str) -> dict[str, Any] | None:
     """Get update information from updateinfo.php endpoint"""
     log_info(f"Fetching update info for ID: {update_id}")
-
-    api_url = f"https://api.uupdump.net/updateinfo.php?id={update_id}"
-    data = fetch_url(api_url, return_json=True)
-
-    if not data:
-        log_error(f"Failed to fetch update info for {update_id}")
-        return None
-
-    if data.get("response", {}).get("error"):
-        log_error(f"API Error: {data['response']['error']}")
-        return None
-
-    return _get_response_dict(data, {})
+    return _api_get("updateinfo.php", {"id": update_id})
 
 
 def get_cache_dir() -> Path:

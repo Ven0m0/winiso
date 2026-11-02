@@ -16,12 +16,11 @@ import orjson
 import uup_api
 import uup_delta
 import uup_download
+import uup_profiles
 from pyutils import BOLD, CYAN, NC, log_error, log_info, log_success, log_warn
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
-PROFILES_FILE = PROJECT_ROOT / "config" / "profiles.json"
-PIN_FILE = PROJECT_ROOT / ".uup-pin.json"
 
 
 def check_dependencies() -> bool:
@@ -82,45 +81,32 @@ def _process_selected_build(
         return False
 
     # Resolve edition: non-interactive if --edition was supplied, else prompt
+    # and skip the confirmation prompt too when non-interactive.
     if edition:
         edition_filter = uup_download.resolve_edition_filter(build_info, edition)
     else:
         edition_filter = uup_download.select_editions(build_info, ask)
-
-    if edition:
-        # Non-interactive: skip the confirmation prompt
-        return uup_download.download_build(
-            build_id,
-            output_dir,
-            edition_filter,
-            build_info=build_info,
-            verbose=verbose,
-            resume=True,
-            use_cache=use_cache,
-            cache_ttl=cache_ttl,
-            mirrors=mirrors,
-            ask=ask,
+        confirm = (
+            (ask or input)(f"\n{BOLD}Proceed with download? [Y/n]:{NC} ")
+            .strip()
+            .lower()
         )
+        if confirm not in ("", "y", "yes"):
+            log_info("Download cancelled")
+            return False
 
-    confirm = (
-        (ask or input)(f"\n{BOLD}Proceed with download? [Y/n]:{NC} ").strip().lower()
+    return uup_download.download_build(
+        build_id,
+        output_dir,
+        edition_filter,
+        build_info=build_info,
+        verbose=verbose,
+        resume=True,
+        use_cache=use_cache,
+        cache_ttl=cache_ttl,
+        mirrors=mirrors,
+        ask=ask,
     )
-    if confirm in ("", "y", "yes"):
-        return uup_download.download_build(
-            build_id,
-            output_dir,
-            edition_filter,
-            build_info=build_info,
-            verbose=verbose,
-            resume=True,
-            use_cache=use_cache,
-            cache_ttl=cache_ttl,
-            mirrors=mirrors,
-            ask=ask,
-        )
-    else:
-        log_info("Download cancelled")
-        return False
 
 
 def interactive_mode(
@@ -177,61 +163,9 @@ def interactive_mode(
             return False
 
 
-def get_profiles() -> dict[str, dict[str, Any]]:
-    """Load build profiles from config/profiles.json (the single source of truth)."""
-    try:
-        data = orjson.loads(PROFILES_FILE.read_bytes())
-    except (orjson.JSONDecodeError, OSError) as e:
-        log_warn(f"Failed to load {PROFILES_FILE}: {e}")
-        return {}
-    profiles = data.get("profiles") if isinstance(data, dict) else None
-    return profiles if isinstance(profiles, dict) else {}
-
-
-def get_pinned_build() -> dict[str, Any] | None:
-    """Load pinned build configuration from .uup-pin.json in the project root."""
-    pin_path = PIN_FILE
-
-    if not pin_path.exists():
-        return None
-
-    try:
-        data = orjson.loads(pin_path.read_bytes())
-        if isinstance(data, dict) and "build_id" in data:
-            return data
-        log_warn("Invalid pin file: missing 'build_id'")
-        return None
-    except (orjson.JSONDecodeError, OSError) as e:
-        log_warn(f"Failed to read pin file: {e}")
-        return None
-
-
-def save_pinned_build(
-    build_id: str,
-    title: str | None = None,
-    edition: str | None = None,
-) -> bool:
-    """Save a build as the pinned version for reproducibility."""
-    pin_path = PIN_FILE
-
-    data: dict[str, Any] = {"build_id": build_id}
-    if title:
-        data["title"] = title
-    if edition:
-        data["edition"] = edition
-
-    try:
-        pin_path.write_bytes(orjson.dumps(data, option=orjson.OPT_INDENT_2))
-        log_success(f"Pinned build {build_id} to {pin_path}")
-        return True
-    except OSError as e:
-        log_error(f"Failed to write pin file: {e}")
-        return False
-
-
 def display_profiles() -> None:
     """Display available build profiles in a user-friendly format."""
-    profiles = get_profiles()
+    profiles = uup_profiles.get_profiles()
 
     print(f"\n{BOLD}Available Build Profiles:{NC}\n")
 
@@ -241,12 +175,6 @@ def display_profiles() -> None:
         print(f"{CYAN}[{name}]{NC} {description}")
         print(f"    Edition: {edition}")
         print()
-
-
-def get_profile(name: str) -> dict[str, Any] | None:
-    """Get a specific build profile by name."""
-    profiles = get_profiles()
-    return profiles.get(name)
 
 
 def display_component_groups(path: str | None = None) -> None:
@@ -495,6 +423,16 @@ For more information, visit: https://uupdump.net
     return parser.parse_args(args)
 
 
+def _print_named_list(title: str, names: list[str], fancy: dict[str, str]) -> None:
+    print(f"\n{BOLD}{title}:{NC}\n")
+    for name in names:
+        print(f"  {CYAN}{name}{NC} - {fancy.get(name, name)}")
+
+
+def _split_csv(value: str | None) -> list[str]:
+    return [item.strip() for item in (value or "").split(",") if item.strip()]
+
+
 def _handle_info_mode(args: argparse.Namespace) -> int | None:
     """Handles info-only modes and returns the appropriate exit code. Returns None if not handled."""
     # List editions mode
@@ -623,7 +561,7 @@ def main() -> int:
 
     # Handle show-pin mode
     if args.show_pin:
-        pin = get_pinned_build()
+        pin = uup_profiles.get_pinned_build()
         if pin:
             print(f"Pinned build: {pin.get('build_id')}")
             if "title" in pin:
@@ -641,9 +579,7 @@ def main() -> int:
 
     # Handle write-groups mode
     if args.write_groups:
-        names: list[str] = []
-        if args.groups:
-            names = [n.strip() for n in args.groups.split(",") if n.strip()]
+        names = _split_csv(args.groups)
         if not names:
             log_error("--write-groups requires --groups to be specified")
             return 1
@@ -657,7 +593,7 @@ def main() -> int:
 
     # Handle --use-pin: replace build_id with pinned value
     if args.use_pin:
-        pin = get_pinned_build()
+        pin = uup_profiles.get_pinned_build()
         if not pin:
             log_error(
                 "No pinned build found. Use --pin-build with --build-id to create one."
@@ -671,7 +607,7 @@ def main() -> int:
         if not args.build_id:
             log_error("--pin-build requires --build-id to be specified")
             return 1
-        if not save_pinned_build(args.build_id):
+        if not uup_profiles.save_pinned_build(args.build_id):
             return 1
         # Fall through to download if --build-id is also set
 
@@ -679,10 +615,12 @@ def main() -> int:
     preset_mode = False
     if args.preset:
         preset_mode = True
-        profile = get_profile(args.preset)
+        profile = uup_profiles.get_profile(args.preset)
         if not profile:
             log_error(f"Unknown profile: {args.preset}")
-            log_info(f"Available profiles: {', '.join(get_profiles().keys())}")
+            log_info(
+                f"Available profiles: {', '.join(uup_profiles.get_profiles().keys())}"
+            )
             return 1
         log_info(f"Using profile: {args.preset}")
         print(f"  {profile.get('description', '')}")
@@ -699,7 +637,7 @@ def main() -> int:
 
     # Handle --groups override (always wins over profile defaults)
     if args.groups:
-        cli_groups = [n.strip() for n in args.groups.split(",") if n.strip()]
+        cli_groups = _split_csv(args.groups)
         valid_cli_groups = keep_list.validate_component_groups(cli_groups)
         if valid_cli_groups and keep_list.write_group_selection(valid_cli_groups):
             log_info(f"Component groups (from --groups): {', '.join(valid_cli_groups)}")
@@ -741,7 +679,7 @@ def main() -> int:
     # Mirrors mode: parse --mirrors option
     custom_mirrors: list[str] | None = None
     if args.mirrors:
-        custom_mirrors = [m.strip() for m in args.mirrors.split(",") if m.strip()]
+        custom_mirrors = _split_csv(args.mirrors)
         log_info(f"Using {len(custom_mirrors)} custom mirror(s)")
 
     # Direct build ID mode
@@ -763,11 +701,7 @@ def main() -> int:
 
         # Handle multi-language download
         if args.languages_download:
-            langs = [
-                lang.strip()
-                for lang in args.languages_download.split(",")
-                if lang.strip()
-            ]
+            langs = _split_csv(args.languages_download)
             if langs:
                 success = uup_download.download_language_packs(
                     args.build_id,

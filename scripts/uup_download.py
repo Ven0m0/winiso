@@ -59,25 +59,7 @@ def select_editions(
     build_info: dict[str, Any], ask: Callable[[str], str] | None = None
 ) -> list[str] | None:
     """Allow user to select which editions to download"""
-    files = build_info.get("files", {})
-
-    # Find edition-specific ESD files
-    edition_files: dict[str, str] = {}
-
-    for filename in files:
-        if filename.endswith(".esd"):
-            filename_lower = filename.lower()
-            if "professional" in filename_lower:
-                edition_files["professional"] = filename
-            elif "enterprise" in filename_lower:
-                edition_files["enterprise"] = filename
-            elif "home" in filename_lower:
-                edition_files["home"] = filename
-            elif "core" in filename_lower:
-                edition_files["core"] = filename
-            elif "education" in filename_lower:
-                edition_files["education"] = filename
-
+    edition_files = list_edition_files(build_info)
     if not edition_files:
         log_warn("No edition-specific files found, will download all files")
         return None
@@ -261,14 +243,9 @@ def _run_aria2_download(
             if ".." in raw_name or "/" in raw_name or "\\" in raw_name:
                 log_error(f"Invalid filename detected: {raw_name}")
                 return False
-            sanitized_name = str(Path(raw_name).name)
-            url = str(item["url"])
-            if "\n" in url or "\r" in url:
-                url = url.replace("\n", "").replace("\r", "")
-
-            name = sanitized_name
-            if "\n" in name or "\r" in name:
-                name = name.replace("\n", "").replace("\r", "")
+            # CR/LF would inject extra directives into the aria2c input file.
+            url = str(item["url"]).replace("\n", "").replace("\r", "")
+            name = Path(raw_name).name.replace("\n", "").replace("\r", "")
             lines.append(f"{url}\n  out={name}")
 
         with open(aria2_input, "w") as fh:
@@ -435,9 +412,7 @@ def download_build(
     ok = _run_aria2_download(
         output_path, aria2_input, download_list, verbose=verbose, resume=resume
     )
-    if ok and delta_filter is not None:
-        uup_delta.save_delta_manifest(build_id, target_files, store_dir=delta_store)
-    elif ok:
+    if ok:
         # Always update the manifest so future delta runs have a baseline
         uup_delta.save_delta_manifest(build_id, target_files, store_dir=delta_store)
     return ok

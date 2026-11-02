@@ -119,11 +119,6 @@ list-builds = [
   "uv run -- {{config_root}}/scripts/download_uup.py --list"
 ]
 
-# Show API version
-api-version = [
-  "uv run -- {{config_root}}/scripts/download_uup.py --version"
-]
-
 # Show available tasks
 help = [
   "mise tasks"
@@ -168,11 +163,11 @@ description = "Run tests with coverage report"
 run = "uv run --group dev pytest tests/ --cov --cov-report=term-missing"
 
 [tasks.lint]
-description = "Lint + format-check Python (ruff) and type-check download_uup.py (ty)"
+description = "Lint + format-check Python (ruff) and type-check the downloader modules (ty)"
 run = [
   "ruff check scripts tests",
   "ruff format --check scripts tests",
-  "ty check scripts/download_uup.py"
+  "ty check scripts/download_uup.py scripts/uup_api.py scripts/uup_download.py scripts/uup_profiles.py"
 ]
 
 # Not a CI gate - mypy is a second opinion alongside ty/basedpyright, reported not enforced

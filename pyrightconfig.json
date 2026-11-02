@@ -1,4 +1,4 @@
 {
 	"typeCheckingMode": "standard",
-	"include": ["scripts/download_uup.py"]
+	"include": ["scripts/download_uup.py", "scripts/uup_api.py", "scripts/uup_download.py", "scripts/uup_profiles.py"]
 }

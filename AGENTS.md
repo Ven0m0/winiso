@@ -20,7 +20,7 @@ No macOS support. No Windows required for the Linux build path.
 | **Non-root** | `wimlib-imagex` runs as the current user via FUSE — never add `sudo` to the build pipeline |
 | **Flat UUP layout** | UUP files land in `uup_files/` as `*.cab` / `*.esd`, no subdirectories (`uup_files/` is a runtime directory, not committed) |
 | **Converter is upstream** | `scripts/custom_convert.sh` is patch-only; never rewrite its logic |
-| **Download source** | `scripts/download_uup.py` fetches from `uupdump.net` only |
+| **Download source** | The downloader (`download_uup.py` + `uup_api.py`/`uup_download.py`) fetches from `uupdump.net` only |
 | **XML encoding** | `config/autounattend.xml` must be UTF-8 without BOM |
 | **SetupComplete.cmd** | `config/oem/SetupComplete.cmd` must use CRLF line endings |
 | **No hardcoded paths** | All scripts derive paths from `SCRIPT_DIR` / `PROJECT_ROOT` |
@@ -39,8 +39,11 @@ scripts/convert_config.sh           # Compression/editions config, sourced by cu
 scripts/utils.sh                    # Bash logging/tool-check helpers — kept only as custom_convert.sh's dependency
 scripts/debloat_wim.py              # AppX removal + offline registry hardening
 scripts/keep_list.py                # Stdlib-only owner of debloat_list.txt, component_groups.json, .uup-groups and the AppX keep-list
-scripts/uup_delta.py                # UUP delta-manifest store and delta calculation (used by download_uup.py)
-scripts/download_uup.py             # UUP API client (Python 3, httpx + orjson)
+scripts/download_uup.py             # Downloader CLI entry point: argparse, info modes, interactive selection
+scripts/uup_api.py                  # uupdump.net API client (httpx + orjson) and on-disk metadata cache
+scripts/uup_download.py             # Edition filter, output-dir guard, delta filter, aria2c download
+scripts/uup_profiles.py             # config/profiles.json presets and the .uup-pin.json pinned build
+scripts/uup_delta.py                # UUP delta-manifest store and delta calculation (used by uup_download.py)
 scripts/setup_env.py                # Installs system dependencies (Linux only)
 scripts/pyutils.py                  # Shared logging/tool-check helpers (import this, never copy)
 scripts/validate_prereqs.py         # Pre-build checks (tools, disk space, UUP files)
@@ -72,7 +75,7 @@ config/unattend-generator/apply.reg # Manual TPM/RAM/CPU/SecureBoot bypass + 8.3
 config/unattend-generator/after-logon.cmd # Reference copy of the generator's FirstLogonScript0 (winget installs + powercfg) — not called by any script
 config/unattend-generator/system.ps1 # Reference copy of the generator's SystemScript1 (disables Defender realtime/behavior monitoring) — not called by any script
 config/component_groups.json        # Named AppX package groups mined from NTLite presets, consumed by validate_debloat.py's `.uup-groups` selection
-config/profiles.json                # Named build profiles (minimal/standard/gaming/enterprise/dev), consumed by download_uup.py
+config/profiles.json                # Named build profiles (minimal/standard/gaming/enterprise/dev), consumed by uup_profiles.py (single source; each profile's `component_groups` is written to `.uup-groups` by `--preset`)
 config/components.psd1              # PowerShell data file: extra packages/capabilities/features/apps for the NTLite manual path — not consumed by scripts/debloat_wim.py
 
 ventoy/answer/                      # Canonical autounattend.xml source; config/autounattend.xml is a symlink to it
@@ -195,11 +198,11 @@ the Windows-servicing side) provides.
   or `pwsh -NoProfile -Command "[System.Management.Automation.Language.Parser]::ParseFile('scripts/<changed>.ps1', [ref]$null, [ref]$null)"` for PowerShell scripts
 - When editing `scripts/debloat_wim.py` or `config/debloat_list.txt`, verify the AppX keep-list is intact
 - CLI interface of `scripts/download_uup.py` is stable — do not rename flags or change positional arguments
-- Path traversal protection is mandatory in `download_uup.py`; all output paths must be validated against the intended output directory
+- Path traversal protection is mandatory in the downloader (`uup_download._is_within`, `download_uup._resolve_output_dir`); all output paths must be validated against the intended output directory
 - Tests in `tests/test_security.py` cover path traversal — do not weaken them
 - Type hints required on all new functions
 - Lint: `ruff check scripts/ tests/ && ruff format --check scripts/ tests/`
-- Type-check: `basedpyright scripts/download_uup.py` (or `ty check`) — other scripts are not yet gated on this
+- Type-check: `basedpyright` (scope in `pyrightconfig.json`) or `ty check` over the four downloader modules — other scripts are not yet gated on this
 
 ---
 
@@ -330,7 +333,7 @@ zero existing partitions, so the test VM's disk is always sized above that floor
 guard, which the harness clears by injecting `VK_RETURN` via `Msvm_Keyboard.TypeKey` rather than
 by removing the guard from the answer file itself.
 
-Current test coverage: ~90% of `scripts/download_uup.py` (up from 60% after adding coverage for
+Current test coverage: ~90% of the downloader modules (up from 60% after adding coverage for
 `_process_selected_build`, `_prepare_output_directory`, `_prepare_download_list`,
 `_run_aria2_download`, and 5 path-traversal tests against the real `_resolve_output_dir()` guard).
 
@@ -387,12 +390,12 @@ Tools managed by `mise.toml`: `python 3.14`, `uv`, `ruff`, `ty`, `shellcheck`, `
 `powershell` (needed only for `Mount-DiskImage`/`Dismount-DiskImage` inside
 `apply_image_settings.py`; DISM itself is invoked via `dism.exe`, not the PowerShell DISM
 module). `basedpyright` is pre-commit-managed only (pinned via `.pre-commit-config.yaml`,
-scoped to `scripts/download_uup.py`), not a mise tool. `PSScriptAnalyzer` is a PowerShell
+scoped to the downloader modules), not a mise tool. `PSScriptAnalyzer` is a PowerShell
 Gallery module, bootstrapped by `mise run pwsh-install` rather than mise itself; its ruleset
 lives in `PSScriptAnalyzerSettings.psd1` at the repo root.
 
 ```bash
-mise run lint         # ruff check + ruff format --check + ty check (scripts/download_uup.py)
+mise run lint         # ruff check + ruff format --check + ty check (downloader modules)
 mise run lint-shell    # shellcheck + shfmt -d over scripts/{custom_convert,convert_config,utils}.sh
 mise run lint-ps       # PSScriptAnalyzer over every *.ps1/*.psm1/*.psd1 (bootstraps the module first)
 mise run lint-xml      # scripts/validate_xml.py — well-formed, UTF-8 no-BOM, autounattend symlink sync

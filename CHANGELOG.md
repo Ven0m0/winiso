@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+- Split the 1715-line `scripts/download_uup.py` into `uup_api.py` (uupdump.net client + cache),
+  `uup_download.py` (edition filter, output guard, delta, aria2c), `uup_profiles.py` (profiles + pin)
+  and a slimmer `download_uup.py` CLI. CLI flags are unchanged. API getters share one `_api_get`
+  helper; tests now patch the module that owns each name.
+- Removed unused `uup_api.get_api_version` and the broken `mise run api-version` task (it passed a
+  nonexistent `--version` flag), plus unreferenced `config/list.txt`, `docs/python-quality-report.md`
+  and `docs/autounattend_guide.md` (copied from another project). `.uup-groups`/`.uup-delta/` are
+  now git-ignored.
+
 - Python quality cleanup removes an unused component-group constant and dead test setup,
   and makes optional-result assertions explicit for type checking across the test suite.
 - Logging helpers tolerate redirected output streams without `reconfigure()` while preserving
@@ -78,6 +87,10 @@ All notable changes to this project will be documented in this file.
   3rd-party installers, etc).
 
 ### Fixed
+- `--preset` never applied its component groups: `config/profiles.json` always overrode the
+  built-in profiles but had no `component_groups`. The JSON file is now the single source and
+  carries each profile's groups; the dead `keep_gaming_apps`/`include_wsl`/`notes` keys are gone.
+- Two tests wrote a real `.uup-pin.json`/`.uup-groups` into the repo root; they now use temp paths.
 - `scripts/apply_image_settings.py`'s Windows-servicing AppX removal list was hardcoded and had
   drifted from `config/debloat_list.txt` — it removed `Microsoft.WindowsStore*`,
   `Microsoft.StorePurchaseApp*`, and `Microsoft.SecHealthUI*`, all violating the AGENTS.md AppX

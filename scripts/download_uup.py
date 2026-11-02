@@ -439,12 +439,11 @@ def _handle_info_mode(args: argparse.Namespace) -> int | None:
     if args.editions:
         editions_info = uup_api.get_available_editions(args.editions)
         if editions_info:
-            print(f"\n{BOLD}Available Editions for Build:{NC}\n")
-            edition_list = editions_info.get("editionList", [])
-            fancy_names = editions_info.get("editionFancyNames", {})
-            for edition in edition_list:
-                fancy_name = fancy_names.get(edition, edition)
-                print(f"  {CYAN}{edition}{NC} - {fancy_name}")
+            _print_named_list(
+                "Available Editions for Build",
+                editions_info.get("editionList", []),
+                editions_info.get("editionFancyNames", {}),
+            )
             return 0
         return 1
 
@@ -452,12 +451,11 @@ def _handle_info_mode(args: argparse.Namespace) -> int | None:
     if args.languages is not None:
         langs_info = uup_api.get_available_languages(args.languages or None)
         if langs_info:
-            print(f"\n{BOLD}Available Languages:{NC}\n")
-            lang_list = langs_info.get("langList", [])
-            fancy_names = langs_info.get("langFancyNames", {})
-            for lang in lang_list:
-                fancy_name = fancy_names.get(lang, lang)
-                print(f"  {CYAN}{lang}{NC} - {fancy_name}")
+            _print_named_list(
+                "Available Languages",
+                langs_info.get("langList", []),
+                langs_info.get("langFancyNames", {}),
+            )
             return 0
         return 1
 

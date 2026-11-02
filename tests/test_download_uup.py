@@ -1145,9 +1145,7 @@ class TestCache(unittest.TestCase):
             uup_api, "get_latest_builds", return_value=sample
         ) as mock_api:
             first = uup_api.get_latest_builds_cached(max_results=5, ttl_seconds=60)
-            second = uup_api.get_latest_builds_cached(
-                max_results=5, ttl_seconds=60
-            )
+            second = uup_api.get_latest_builds_cached(max_results=5, ttl_seconds=60)
             self.assertEqual(first, sample)
             self.assertEqual(second, sample)
             self.assertEqual(mock_api.call_count, 1)
@@ -1171,18 +1169,14 @@ class TestCache(unittest.TestCase):
         from unittest.mock import patch
 
         with patch.object(uup_api, "get_latest_builds", return_value=None):
-            result = uup_api.get_latest_builds_cached(
-                max_results=5, ttl_seconds=60
-            )
+            result = uup_api.get_latest_builds_cached(max_results=5, ttl_seconds=60)
             self.assertIsNone(result)
 
     def test_build_info_cached_uses_cache(self):
         from unittest.mock import patch
 
         info = {"files": {"a.cab": {"size": 1}}}
-        with patch.object(
-            uup_api, "get_build_info", return_value=info
-        ) as mock_api:
+        with patch.object(uup_api, "get_build_info", return_value=info) as mock_api:
             r1 = uup_api.get_build_info_cached("xyz", ttl_seconds=60)
             r2 = uup_api.get_build_info_cached("xyz", ttl_seconds=60)
             self.assertEqual(r1, info)
@@ -1380,18 +1374,14 @@ class TestComponentGroups(unittest.TestCase):
 
     def test_write_component_groups_for_build_success(self):
         out_path = os.path.join(self.tmpdir, ".uup-groups")
-        ok = keep_list.write_group_selection(
-            ["gaming", "telemetry"], out_path
-        )
+        ok = keep_list.write_group_selection(["gaming", "telemetry"], out_path)
         self.assertTrue(ok)
         with open(out_path) as f:
             contents = f.read()
         self.assertEqual(contents, "gaming\ntelemetry\n")
 
     def test_write_component_groups_for_build_failure(self):
-        ok = keep_list.write_group_selection(
-            ["gaming"], "/no/such/dir/.uup-groups"
-        )
+        ok = keep_list.write_group_selection(["gaming"], "/no/such/dir/.uup-groups")
         self.assertFalse(ok)
 
     def test_parse_args_groups_flag(self):
@@ -2186,9 +2176,7 @@ class TestDeltaManifestIO(unittest.TestCase):
             store = Path(tmp)
             manifest = store / uup_delta._safe_delta_filename("build-1")
             manifest.write_text("not json{", encoding="utf-8")
-            self.assertIsNone(
-                uup_delta.load_delta_manifest("build-1", store_dir=tmp)
-            )
+            self.assertIsNone(uup_delta.load_delta_manifest("build-1", store_dir=tmp))
 
     def test_load_manifest_filters_non_dict_entries(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -2208,18 +2196,14 @@ class TestDeltaManifestIO(unittest.TestCase):
             store = Path(tmp)
             manifest = store / uup_delta._safe_delta_filename("build-1")
             manifest.write_text(json.dumps(["a", "b"]), encoding="utf-8")
-            self.assertIsNone(
-                uup_delta.load_delta_manifest("build-1", store_dir=tmp)
-            )
+            self.assertIsNone(uup_delta.load_delta_manifest("build-1", store_dir=tmp))
 
     def test_load_manifest_files_not_dict(self):
         with tempfile.TemporaryDirectory() as tmp:
             store = Path(tmp)
             manifest = store / uup_delta._safe_delta_filename("build-1")
             manifest.write_text(json.dumps({"files": "nope"}), encoding="utf-8")
-            self.assertIsNone(
-                uup_delta.load_delta_manifest("build-1", store_dir=tmp)
-            )
+            self.assertIsNone(uup_delta.load_delta_manifest("build-1", store_dir=tmp))
 
     def test_save_creates_store_dir(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -2250,9 +2234,7 @@ class TestDeltaManifestIO(unittest.TestCase):
         """
         with tempfile.TemporaryDirectory() as tmp:
             # Save a normal manifest, then attempt to load a traversal one
-            uup_delta.save_delta_manifest(
-                "build-1", {"a": {"size": 1}}, store_dir=tmp
-            )
+            uup_delta.save_delta_manifest("build-1", {"a": {"size": 1}}, store_dir=tmp)
             # "../../../etc/passwd" sanitizes to ".._.._.._etc_passwd" which
             # is still inside the store - the path is just a non-existent
             # file. The key safety property is that the resolved path is

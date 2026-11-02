@@ -1,36 +1,34 @@
 {
-	"profiles": {
-		"minimal": {
-			"description": "Stripped-down Windows 11 with maximum debloating",
-			"edition": "Core",
-			"language": "en-us",
-			"notes": "Smallest install size, removes all non-essential apps"
-		},
-		"standard": {
-			"description": "Default debloated Windows 11 (Professional)",
-			"edition": "Professional",
-			"language": "en-us",
-			"notes": "Recommended for most users"
-		},
-		"gaming": {
-			"description": "Gaming-optimized Windows 11 with Game Mode enabled",
-			"edition": "Professional",
-			"language": "en-us",
-			"keep_gaming_apps": true,
-			"notes": "Keeps Xbox/Game-related components, disables telemetry"
-		},
-		"enterprise": {
-			"description": "Enterprise-ready Windows 11 with domain features",
-			"edition": "Enterprise",
-			"language": "en-us",
-			"notes": "Includes BitLocker, Group Policy support"
-		},
-		"dev": {
-			"description": "Developer configuration with WSL and tools",
-			"edition": "Professional",
-			"language": "en-us",
-			"include_wsl": true,
-			"notes": "Pre-configures WSL, keeps developer tools"
-		}
-	}
+  "profiles": {
+    "minimal": {
+      "description": "Stripped-down Windows 11 with maximum debloating",
+      "edition": "Core",
+      "language": "en-us",
+      "component_groups": ["gaming", "productivity", "social", "telemetry", "media", "system", "news", "oem"]
+    },
+    "standard": {
+      "description": "Default debloated Windows 11 (Professional)",
+      "edition": "Professional",
+      "language": "en-us",
+      "component_groups": ["telemetry", "social", "oem", "news"]
+    },
+    "gaming": {
+      "description": "Gaming-optimized Windows 11 (keeps Xbox/gaming apps)",
+      "edition": "Professional",
+      "language": "en-us",
+      "component_groups": ["productivity", "telemetry", "system", "news", "oem"]
+    },
+    "enterprise": {
+      "description": "Enterprise-ready Windows 11 with domain features",
+      "edition": "Enterprise",
+      "language": "en-us",
+      "component_groups": ["gaming", "social", "media", "news", "oem"]
+    },
+    "dev": {
+      "description": "Developer configuration (keeps productivity/system apps)",
+      "edition": "Professional",
+      "language": "en-us",
+      "component_groups": ["social", "oem", "news", "media"]
+    }
+  }
 }

@@ -8,6 +8,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 
 import download_uup
 import uup_delta
+import uup_api
+import uup_download
 
 
 class TestPromptSeam(unittest.TestCase):
@@ -15,23 +17,23 @@ class TestPromptSeam(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             out = Path(tmp)
             (out / "a.cab").write_text("x")
-            download_uup._prepare_output_directory(out, ask=lambda _: "y")
+            uup_download._prepare_output_directory(out, ask=lambda _: "y")
             self.assertFalse((out / "a.cab").exists())
 
     def test_existing_files_kept_when_ask_says_no(self):
         with tempfile.TemporaryDirectory() as tmp:
             out = Path(tmp)
             (out / "a.cab").write_text("x")
-            download_uup._prepare_output_directory(out, ask=lambda _: "n")
+            uup_download._prepare_output_directory(out, ask=lambda _: "n")
             self.assertTrue((out / "a.cab").exists())
 
     def test_declined_confirmation_never_downloads(self):
         build_info = {"files": {"x.cab": {"size": 1}}}
         with (
             mock.patch.object(
-                download_uup, "get_build_info_cached", return_value=build_info
+                uup_api, "get_build_info_cached", return_value=build_info
             ),
-            mock.patch.object(download_uup, "download_build") as download,
+            mock.patch.object(uup_download, "download_build") as download,
         ):
             ok = download_uup._process_selected_build(
                 {"id": "b1", "title": "t"}, "out", ask=lambda _: "n"
@@ -44,10 +46,10 @@ class TestPromptSeam(unittest.TestCase):
         ask = lambda _: "y"
         with (
             mock.patch.object(
-                download_uup, "get_build_info_cached", return_value=build_info
+                uup_api, "get_build_info_cached", return_value=build_info
             ),
             mock.patch.object(
-                download_uup, "download_build", return_value=True
+                uup_download, "download_build", return_value=True
             ) as download,
         ):
             ok = download_uup._process_selected_build(
@@ -60,12 +62,12 @@ class TestPromptSeam(unittest.TestCase):
 class TestIsWithin(unittest.TestCase):
     def test_inside_and_equal(self):
         root = Path.cwd()
-        self.assertTrue(download_uup._is_within(root / "a" / "b", root))
-        self.assertTrue(download_uup._is_within(root, root))
+        self.assertTrue(uup_download._is_within(root / "a" / "b", root))
+        self.assertTrue(uup_download._is_within(root, root))
 
     def test_dotdot_escape_is_rejected(self):
         root = Path.cwd()
-        self.assertFalse(download_uup._is_within(root / ".." / "elsewhere", root))
+        self.assertFalse(uup_download._is_within(root / ".." / "elsewhere", root))
 
 
 class TestUupDelta(unittest.TestCase):

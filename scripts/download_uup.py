@@ -1,105 +1,27 @@
 #!/usr/bin/env python3
-"""UUP File Downloader for Windows 11 ISO Builder
-Automates the download of UUP files from uupdump.net
+"""UUP File Downloader for Windows 11 ISO Builder - command-line entry point.
+
+Talks to uupdump.net through uup_api and downloads through uup_download.
 """
 
 import argparse
 import shutil
 import sys
-import time
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Literal, cast, overload
-from urllib.parse import urlencode
+from typing import Any
 
-import httpx
+import keep_list
 import orjson
-import pyutils
-from keep_list import (
-    collect_component_patterns,  # noqa: F401  (re-exported for callers and tests)
-    get_component_group,  # noqa: F401
-    list_component_groups,  # noqa: F401
-    load_component_groups,
-    validate_component_groups,
-)
-from keep_list import write_group_selection as write_component_groups_for_build
-from pyutils import log_error, log_info, log_success, log_warn
-from uup_delta import (
-    DEFAULT_DELTA_STORE,
-    calculate_delta,
-    compute_changed_files,  # noqa: F401  (re-exported for callers and tests)
-    format_delta_summary,  # noqa: F401
-    get_build_files,
-    get_delta_store_path,  # noqa: F401
-    load_delta_manifest,
-    save_delta_manifest,
-)
+import uup_api
+import uup_delta
+import uup_download
+from pyutils import BOLD, CYAN, NC, log_error, log_info, log_success, log_warn
 
-CACHE_DIR_NAME: str = ".uup_cache"
-DEFAULT_CACHE_TTL_SECONDS: int = 3600
-# Profile definitions for different use cases
-PROFILES: dict[str, dict[str, Any]] = {
-    "minimal": {
-        "description": "Stripped-down Windows 11 with maximum debloating",
-        "edition": "Core",
-        "language": "en-us",
-        "component_groups": [
-            "gaming",
-            "productivity",
-            "social",
-            "telemetry",
-            "media",
-            "system",
-            "news",
-            "oem",
-        ],
-    },
-    "standard": {
-        "description": "Default debloated Windows 11 (Professional)",
-        "edition": "Professional",
-        "language": "en-us",
-        "component_groups": ["telemetry", "social", "oem", "news"],
-    },
-    "gaming": {
-        "description": "Gaming-optimized Windows 11 with Game Mode enabled",
-        "edition": "Professional",
-        "language": "en-us",
-        "component_groups": ["productivity", "telemetry", "system", "news", "oem"],
-    },
-    "enterprise": {
-        "description": "Enterprise-ready Windows 11 with domain features",
-        "edition": "Enterprise",
-        "language": "en-us",
-        "component_groups": ["gaming", "social", "media", "news", "oem"],
-    },
-    "dev": {
-        "description": "Developer configuration with WSL and tools",
-        "edition": "Professional",
-        "language": "en-us",
-        "component_groups": ["social", "oem", "news", "media"],
-    },
-}
-
-
-class Colors:
-    CYAN = pyutils.CYAN
-    GREEN = pyutils.GREEN
-    YELLOW = pyutils.YELLOW
-    RED = pyutils.RED
-    RESET = pyutils.NC
-    BOLD = pyutils.BOLD
-
-
-_url_cache: dict[str, str | dict[str, Any]] = {}
-_client: httpx.Client | None = None
-
-
-def _get_client() -> httpx.Client:
-    """Return the shared httpx client, creating it on first use."""
-    global _client
-    if _client is None:
-        _client = httpx.Client(http2=True, timeout=30.0, follow_redirects=True)
-    return _client
+SCRIPT_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = SCRIPT_DIR.parent
+PROFILES_FILE = PROJECT_ROOT / "config" / "profiles.json"
+PIN_FILE = PROJECT_ROOT / ".uup-pin.json"
 
 
 def check_dependencies() -> bool:
@@ -116,137 +38,13 @@ def check_dependencies() -> bool:
     return True
 
 
-@overload
-def fetch_url(
-    url: str,
-    headers: dict[str, str] | None = None,
-    data: dict[str, Any] | None = None,
-    return_json: Literal[False] = False,
-) -> str | None: ...
-
-
-@overload
-def fetch_url(
-    url: str,
-    headers: dict[str, str] | None = None,
-    data: dict[str, Any] | None = None,
-    *,
-    return_json: Literal[True],
-) -> dict[str, Any] | None: ...
-
-
-def fetch_url(
-    url: str,
-    headers: dict[str, str] | None = None,
-    data: dict[str, Any] | None = None,
-    return_json: bool = False,
-) -> str | dict[str, Any] | None:
-    """Fetch URL with error handling and optional caching"""
-    if headers is None:
-        headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"}
-
-    cache_key = f"{url}:{return_json}" if not data else None
-    if cache_key and cache_key in _url_cache:
-        return _url_cache[cache_key]
-
-    try:
-        client = _get_client()
-        if data:
-            payload = urlencode(data).encode("utf-8")
-            response = client.post(url, headers=headers, content=payload)
-        else:
-            response = client.get(url, headers=headers)
-        response.raise_for_status()
-        text = response.text
-        result: str | dict[str, Any] | None = text
-
-        if return_json:
-            try:
-                parsed = orjson.loads(text)
-            except orjson.JSONDecodeError as e:
-                log_error(f"Failed to parse JSON response: {e}")
-                return None
-            if not isinstance(parsed, dict):
-                log_error("JSON response is not an object")
-                return None
-            result = parsed
-
-        if cache_key and result is not None:
-            _url_cache[cache_key] = result
-
-        return result
-    except httpx.HTTPStatusError as e:
-        log_error(f"HTTP Error {e.response.status_code}: {e.response.reason_phrase}")
-        return None
-    except httpx.RequestError as e:
-        log_error(f"URL Error: {e}")
-        return None
-    except OSError as e:
-        log_error(f"Network error fetching URL: {e}")
-        return None
-    except Exception as e:  # noqa: BLE001 - last-resort guard so an unexpected error surfaces as a log line, not a crash
-        log_error(f"Unexpected error fetching URL: {e}")
-        return None
-
-
-@overload
-def _get_response_dict(data: dict[str, Any]) -> dict[str, Any] | None: ...
-
-
-@overload
-def _get_response_dict(
-    data: dict[str, Any], default: dict[str, Any]
-) -> dict[str, Any]: ...
-
-
-def _get_response_dict(
-    data: dict[str, Any], default: dict[str, Any] | None = None
-) -> dict[str, Any] | None:
-    """Extract the 'response' field from API data with proper typing."""
-    response = data.get("response")
-    if isinstance(response, dict):
-        return cast(dict[str, Any], response)
-    return default
-
-
-def get_latest_builds(max_results: int = 10) -> list[dict[str, Any]] | None:
-    """Fetch latest Windows 11 builds from uupdump.net API"""
-    log_info("Fetching latest Windows 11 builds from uupdump.net...")
-
-    api_url = "https://api.uupdump.net/listid.php"
-    params = {"search": "windows 11", "sortByDate": "1"}
-    url = f"{api_url}?{urlencode(params)}"
-    data = fetch_url(url, return_json=True)
-
-    if not data:
-        log_error("Failed to fetch builds from uupdump.net")
-        return None
-
-    if data.get("response", {}).get("error"):
-        log_error(f"API Error: {data['response']['error']}")
-        return None
-
-    builds = data.get("response", {}).get("builds", {})
-    if not builds:
-        log_warn("No builds found in API response")
-        return []
-
-    build_list: list[dict[str, Any]] = []
-    for build_id, build_info in builds.items():
-        build_info["id"] = build_id
-        build_list.append(build_info)
-
-    build_list.sort(key=lambda x: int(x.get("created") or 0), reverse=True)
-    return build_list[:max_results]
-
-
 def display_builds(builds: list[dict[str, Any]] | None) -> None:
     """Display builds in a user-friendly format"""
     if not builds:
         log_warn("No builds available.")
         return
 
-    print(f"\n{Colors.BOLD}Available Windows 11 Builds:{Colors.RESET}\n")
+    print(f"\n{BOLD}Available Windows 11 Builds:{NC}\n")
 
     for i, build in enumerate(builds, 1):
         title = build.get("title", "Unknown")
@@ -254,686 +52,9 @@ def display_builds(builds: list[dict[str, Any]] | None) -> None:
         arch = build.get("arch", "N/A")
         created = build.get("created", "N/A")
 
-        print(f"{Colors.CYAN}[{i}]{Colors.RESET} {title}")
+        print(f"{CYAN}[{i}]{NC} {title}")
         print(f"    Build: {build_num} | Arch: {arch} | Created: {created}")
         print()
-
-
-def get_build_info(
-    build_id: str, language: str | None = "en-us"
-) -> dict[str, Any] | None:
-    """Get detailed information about a specific build, optionally for a specific language"""
-    log_info(f"Fetching build information for ID: {build_id}")
-
-    params: dict[str, str] = {"id": build_id}
-    if language:
-        params["lang"] = language
-    api_url = f"https://api.uupdump.net/get.php?{urlencode(params)}"
-    data = fetch_url(api_url, return_json=True)
-
-    if not data:
-        return None
-
-    if data.get("response", {}).get("error"):
-        log_error(f"API Error: {data['response']['error']}")
-        return None
-
-    return _get_response_dict(data)
-
-
-def get_available_editions(build_id: str) -> dict[str, Any] | None:
-    """Get available editions for a specific build from the API"""
-    log_info(f"Fetching available editions for build: {build_id}")
-
-    params = {"id": build_id, "lang": "en-us"}
-    api_url = f"https://api.uupdump.net/listeditions.php?{urlencode(params)}"
-    data = fetch_url(api_url, return_json=True)
-
-    if not data:
-        return None
-
-    response_data = _get_response_dict(data, {})
-    if response_data.get("error"):
-        log_error(f"API Error: {response_data['error']}")
-        return None
-
-    return response_data
-
-
-def get_available_languages(build_id: str | None = None) -> dict[str, Any] | None:
-    """Get available languages for a specific build from the API"""
-    if build_id:
-        log_info(f"Fetching available languages for build: {build_id}")
-        params = {"id": build_id, "lang": "en-us"}
-        api_url = f"https://api.uupdump.net/listlangs.php?{urlencode(params)}"
-    else:
-        log_info("Fetching all available languages")
-        api_url = "https://api.uupdump.net/listlangs.php"
-
-    data = fetch_url(api_url, return_json=True)
-
-    if not data:
-        return None
-
-    if data.get("response", {}).get("error"):
-        log_error(f"API Error: {data['response']['error']}")
-        return None
-
-    return _get_response_dict(data, {})
-
-
-def fetch_latest_from_wu(
-    arch: str = "amd64", ring: str = "Retail"
-) -> dict[str, Any] | None:
-    """Fetch the latest build from Windows Update servers"""
-    log_info(f"Fetching latest {arch} build from Windows Update ({ring} ring)...")
-
-    params = {"arch": arch, "ring": ring}
-    api_url = f"https://api.uupdump.net/fetchupd.php?{urlencode(params)}"
-    data = fetch_url(api_url, return_json=True)
-
-    if not data:
-        log_warn("Failed to fetch from Windows Update, falling back to cached builds")
-        return None
-
-    if data.get("response", {}).get("error"):
-        log_error(f"API Error: {data['response']['error']}")
-        return None
-
-    return _get_response_dict(data, {})
-
-
-def get_api_version() -> dict[str, Any] | None:
-    """Get the current UUP dump API version"""
-    api_url = "https://api.uupdump.net/"
-    response = fetch_url(api_url)
-
-    if not response:
-        return None
-
-    try:
-        data = orjson.loads(response)
-    except orjson.JSONDecodeError as e:
-        log_error(f"Failed to parse JSON response: {e}")
-        return None
-
-    if not isinstance(data, dict):
-        return None
-
-    return _get_response_dict(data, {})
-
-
-def get_update_info(update_id: str) -> dict[str, Any] | None:
-    """Get update information from updateinfo.php endpoint"""
-    log_info(f"Fetching update info for ID: {update_id}")
-
-    api_url = f"https://api.uupdump.net/updateinfo.php?id={update_id}"
-    data = fetch_url(api_url, return_json=True)
-
-    if not data:
-        log_error(f"Failed to fetch update info for {update_id}")
-        return None
-
-    if data.get("response", {}).get("error"):
-        log_error(f"API Error: {data['response']['error']}")
-        return None
-
-    return _get_response_dict(data, {})
-
-
-def get_cache_dir() -> Path:
-    """Return the cache directory, creating it if necessary."""
-    script_dir = Path(__file__).parent
-    project_root = script_dir.parent
-    cache_dir = project_root / CACHE_DIR_NAME
-    cache_dir.mkdir(parents=True, exist_ok=True)
-    return cache_dir
-
-
-def _safe_cache_name(key: str) -> str:
-    """Convert a cache key into a filesystem-safe filename."""
-    safe = "".join(c if c.isalnum() or c in "-_." else "_" for c in key)
-    return safe[:128] + ".json"
-
-
-def cache_get(key: str, ttl_seconds: int = DEFAULT_CACHE_TTL_SECONDS) -> Any | None:
-    """Read a cached value if present and not expired."""
-    cache_file = get_cache_dir() / _safe_cache_name(key)
-    if not cache_file.exists():
-        return None
-
-    try:
-        entry = orjson.loads(cache_file.read_bytes())
-    except (orjson.JSONDecodeError, OSError) as e:
-        log_warn(f"Cache read failed for {key}: {e}")
-        try:
-            cache_file.unlink(missing_ok=True)
-        except OSError:
-            pass
-        return None
-
-    if not isinstance(entry, dict) or "timestamp" not in entry or "data" not in entry:
-        try:
-            cache_file.unlink(missing_ok=True)
-        except OSError:
-            pass
-        return None
-    age = time.time() - float(entry["timestamp"])
-    if age > ttl_seconds:
-        return None
-
-    return entry["data"]
-
-
-def cache_set(key: str, data: Any) -> bool:
-    """Store a value in the local cache with the current timestamp."""
-    cache_file = get_cache_dir() / _safe_cache_name(key)
-    entry = {"timestamp": time.time(), "data": data}
-    try:
-        cache_file.write_bytes(orjson.dumps(entry))
-        return True
-    except (OSError, TypeError) as e:
-        log_warn(f"Cache write failed for {key}: {e}")
-        return False
-
-
-def cache_clear(key: str | None = None) -> int:
-    """Remove a single cache entry (if key given) or all entries. Returns the number removed."""
-    cache_dir = get_cache_dir()
-    if key:
-        target = cache_dir / _safe_cache_name(key)
-        if target.exists():
-            try:
-                target.unlink()
-                return 1
-            except OSError as e:
-                log_warn(f"Cache clear failed for {key}: {e}")
-                return 0
-        return 0
-
-    count = 0
-    for f in cache_dir.glob("*.json"):
-        try:
-            f.unlink()
-            count += 1
-        except OSError:
-            pass
-    return count
-
-
-def get_latest_builds_cached(
-    max_results: int = 10,
-    ttl_seconds: int = DEFAULT_CACHE_TTL_SECONDS,
-    force_refresh: bool = False,
-) -> list[dict[str, Any]] | None:
-    """Fetch latest builds, returning a cached result when fresh enough."""
-    cache_key = f"latest_builds_{max_results}"
-
-    if not force_refresh:
-        cached = cache_get(cache_key, ttl_seconds=ttl_seconds)
-        if cached is not None:
-            return cast(list[dict[str, Any]], cached)
-
-    builds = get_latest_builds(max_results)
-    if builds is not None:
-        cache_set(cache_key, builds)
-    return builds
-
-
-def get_build_info_cached(
-    build_id: str,
-    ttl_seconds: int = DEFAULT_CACHE_TTL_SECONDS,
-    force_refresh: bool = False,
-    language: str | None = "en-us",
-) -> dict[str, Any] | None:
-    """Fetch build info, returning a cached result when fresh enough."""
-    cache_key = f"build_info_{build_id}"
-    if language:
-        cache_key = f"build_info_{build_id}_{language}"
-
-    if not force_refresh:
-        cached = cache_get(cache_key, ttl_seconds=ttl_seconds)
-        if cached is not None:
-            return cast(dict[str, Any], cached)
-
-    info = get_build_info(build_id, language=language)
-    if info is not None:
-        cache_set(cache_key, info)
-    return info
-
-
-def download_language_packs(
-    build_id: str,
-    languages: list[str],
-    output_dir: str | Path,
-    edition_filter: list[str] | None = None,
-    verbose: bool = False,
-    use_cache: bool = True,
-    cache_ttl: int = DEFAULT_CACHE_TTL_SECONDS,
-) -> bool:
-    """Download language packs for a build."""
-    log_info(f"Downloading language packs: {', '.join(languages)}")
-
-    all_success = True
-    for lang in languages:
-        lang_output = Path(output_dir) / f"lang_{lang}"
-        log_info(f"Fetching language pack: {lang}")
-
-        lang_build_info = get_build_info_cached(
-            build_id, ttl_seconds=cache_ttl, force_refresh=not use_cache, language=lang
-        )
-
-        if not lang_build_info:
-            log_warn(f"No files found for language {lang}")
-            all_success = False
-            continue
-
-        if not download_build(
-            build_id,
-            lang_output,
-            edition_filter,
-            build_info=lang_build_info,
-            verbose=verbose,
-            resume=True,
-            use_cache=use_cache,
-            cache_ttl=cache_ttl,
-        ):
-            all_success = False
-
-    return all_success
-
-
-def select_editions(
-    build_info: dict[str, Any], ask: Callable[[str], str] | None = None
-) -> list[str] | None:
-    """Allow user to select which editions to download"""
-    files = build_info.get("files", {})
-
-    # Find edition-specific ESD files
-    edition_files: dict[str, str] = {}
-
-    for filename in files:
-        if filename.endswith(".esd"):
-            filename_lower = filename.lower()
-            if "professional" in filename_lower:
-                edition_files["professional"] = filename
-            elif "enterprise" in filename_lower:
-                edition_files["enterprise"] = filename
-            elif "home" in filename_lower:
-                edition_files["home"] = filename
-            elif "core" in filename_lower:
-                edition_files["core"] = filename
-            elif "education" in filename_lower:
-                edition_files["education"] = filename
-
-    if not edition_files:
-        log_warn("No edition-specific files found, will download all files")
-        return None
-
-    print(f"\n{Colors.BOLD}Available Editions:{Colors.RESET}\n")
-    editions = list(edition_files.keys())
-    for i, edition in enumerate(editions, 1):
-        print(f"{Colors.CYAN}[{i}]{Colors.RESET} {edition}")
-    print(f"{Colors.CYAN}[A]{Colors.RESET} All editions (default)")
-
-    choice = (
-        (ask or input)(f"\n{Colors.BOLD}Select edition [A]:{Colors.RESET} ")
-        .strip()
-        .upper()
-    )
-
-    if choice == "" or choice == "A":
-        return None  # Download all
-
-    try:
-        idx = int(choice) - 1
-        if 0 <= idx < len(editions):
-            return [edition_files[editions[idx]]]
-    except ValueError:
-        # Non-numeric or invalid input; fall through to generic warning and default behavior.
-        pass
-
-    log_warn("Invalid selection, downloading all editions")
-    return None
-
-
-def list_edition_files(build_info: dict[str, Any]) -> dict[str, str]:
-    """Return the mapping of known edition name -> ESD filename from build info."""
-    edition_files: dict[str, str] = {}
-    files = build_info.get("files", {})
-    for filename in files:
-        if not filename.endswith(".esd"):
-            continue
-        lower = filename.lower()
-        for key in ("professional", "enterprise", "home", "core", "education"):
-            if key in lower:
-                edition_files[key] = filename
-                break
-    return edition_files
-
-
-def resolve_edition_filter(
-    build_info: dict[str, Any],
-    edition: str | None = None,
-) -> list[str] | None:
-    """Resolve the edition name to its ESD filename, or return None for all.
-
-    Used by the --edition CLI flag to bypass the interactive prompt. The edition
-    name is matched case-insensitively against known keys (professional, enterprise,
-    home, core, education). If the edition cannot be resolved, an error is logged
-    and None is returned (which means: download all files).
-    """
-    if not edition:
-        return None
-
-    edition_files = list_edition_files(build_info)
-    if not edition_files:
-        log_warn("No edition-specific files in build metadata; downloading all files")
-        return None
-
-    key = edition.lower()
-    if key in edition_files:
-        log_info(f"Filtering to edition: {key} -> {edition_files[key]}")
-        return [edition_files[key]]
-
-    # Allow matching against the full filename too
-    for k, filename in edition_files.items():
-        if filename.lower() == key or k.startswith(key):
-            log_info(f"Filtering to edition: {k} -> {filename}")
-            return [filename]
-
-    log_error(
-        f"Unknown edition '{edition}'. Available: {', '.join(edition_files.keys())}"
-    )
-    return None
-
-
-def _is_within(path: Path, root: Path) -> bool:
-    """True if ``path`` resolves to ``root`` or somewhere below it.
-
-    The one containment check behind both output-directory guards (cwd in
-    download_build, project root in _resolve_output_dir).
-    """
-    try:
-        _ = path.resolve().relative_to(root.resolve())
-    except ValueError, RuntimeError:
-        return False
-    return True
-
-
-def _prepare_output_directory(
-    output_path: Path, ask: Callable[[str], str] | None = None
-) -> None:
-    output_path.mkdir(parents=True, exist_ok=True)
-    existing_files = list(output_path.glob("*"))
-    if existing_files:
-        print(
-            f"\n{Colors.YELLOW}Warning:{Colors.RESET} {len(existing_files)} files exist in {output_path}"
-        )
-        response = (ask or input)("Clear existing files? [y/N]: ").strip().lower()
-        if response == "y":
-            log_info("Clearing existing files...")
-            for f in existing_files:
-                if f.is_file() and f.name != ".gitkeep":
-                    f.unlink()
-
-
-# Mirror sources for redundant downloads
-# These are alternative CDN endpoints (UUP dump has no official mirrors, but
-# users can configure custom mirrors for redundancy in restricted networks)
-DEFAULT_MIRRORS: list[str] = [
-    "https://uupdump.net/get.php",
-]
-
-# User-configurable mirror file
-MIRROR_CONFIG_FILE: str = ".uup-mirrors"
-
-
-def load_mirrors() -> list[str]:
-    """Load custom mirrors from .uup-mirrors file or return defaults."""
-    script_dir = Path(__file__).parent
-    project_root = script_dir.parent
-    mirror_path = project_root / MIRROR_CONFIG_FILE
-
-    if mirror_path.exists():
-        try:
-            with open(mirror_path, encoding="utf-8") as f:
-                mirrors = [
-                    line.strip()
-                    for line in f
-                    if line.strip() and not line.startswith("#")
-                ]
-            if mirrors:
-                return mirrors
-        except OSError:
-            pass
-    return DEFAULT_MIRRORS
-
-
-def _prepare_download_list(
-    build_id: str,
-    files: dict[str, Any],
-    edition_filter: list[str] | None = None,
-    mirrors: list[str] | None = None,
-    delta_filter: set[str] | None = None,
-) -> list[dict[str, Any]]:
-    download_list: list[dict[str, Any]] = []
-    base_urls = mirrors if mirrors else load_mirrors()
-    primary_url = base_urls[0] if base_urls else "https://uupdump.net/get.php"
-
-    for filename, file_info in files.items():
-        if (
-            edition_filter
-            and filename.endswith(".esd")
-            and filename not in edition_filter
-        ):
-            continue
-        if delta_filter is not None and filename not in delta_filter:
-            continue
-        file_url = f"{primary_url}?id={build_id}&pack={filename}&aria2=2"
-        download_list.append(
-            {"url": file_url, "name": filename, "size": file_info.get("size", 0)}
-        )
-    return download_list
-
-
-def _run_aria2_download(
-    output_path: Path,
-    aria2_input: Path,
-    download_list: list[dict[str, Any]],
-    verbose: bool = False,
-    resume: bool = True,
-) -> bool:
-    import subprocess
-
-    session_file = output_path / ".aria2_session"
-    aria2_log = output_path / ".aria2.log"
-
-    try:
-        lines = []
-        for item in download_list:
-            raw_name = str(item["name"])
-            if ".." in raw_name or "/" in raw_name or "\\" in raw_name:
-                log_error(f"Invalid filename detected: {raw_name}")
-                return False
-            sanitized_name = str(Path(raw_name).name)
-            url = str(item["url"])
-            if "\n" in url or "\r" in url:
-                url = url.replace("\n", "").replace("\r", "")
-
-            name = sanitized_name
-            if "\n" in name or "\r" in name:
-                name = name.replace("\n", "").replace("\r", "")
-            lines.append(f"{url}\n  out={name}")
-
-        with open(aria2_input, "w") as fh:
-            fh.write("\n".join(lines))
-
-        cmd = [
-            "aria2c",
-            "-i",
-            str(aria2_input),
-            "-d",
-            str(output_path),
-            "-j",
-            "16",
-            "-x",
-            "16",
-            "-s",
-            "16",
-            "--file-allocation=none",
-            "--continue=true",
-        ]
-        if resume:
-            cmd.extend(
-                [
-                    "--save-session",
-                    str(session_file),
-                    "--save-session-interval",
-                    "60",
-                ]
-            )
-        if verbose:
-            cmd.append("--log")
-            cmd.append(str(aria2_log))
-        log_info("Starting download...")
-        result = subprocess.run(
-            cmd,
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-        if verbose and result.stdout:
-            print(result.stdout)
-        log_success("Download completed successfully")
-        # Clean up session file on success
-        try:
-            session_file.unlink(missing_ok=True)
-        except OSError:
-            pass
-        return True
-    except subprocess.CalledProcessError as e:
-        log_error(f"Download failed with exit code {e.returncode}")
-        if verbose and e.stdout:
-            print(f"stdout: {e.stdout}")
-        if e.stderr:
-            stderr_lines = e.stderr.splitlines()
-            tail = stderr_lines if verbose else stderr_lines[-20:]
-            for line in tail:
-                print(f"stderr: {line}")
-        return False
-    except KeyboardInterrupt:
-        log_warn("\nDownload cancelled by user - session saved for resume")
-        return False
-    except OSError as e:
-        log_error(f"System error during download: {e}")
-        return False
-    except Exception as e:  # noqa: BLE001 - last-resort guard so an unexpected error surfaces as a log line, not a crash
-        log_error(f"An unexpected error occurred during download: {e}")
-        return False
-    finally:
-        for f in output_path.glob("aria2_input*"):
-            try:
-                f.unlink()
-            except OSError:
-                pass
-
-
-def download_build(
-    build_id: str,
-    output_dir: str | Path,
-    edition_filter: list[str] | None = None,
-    build_info: dict[str, Any] | None = None,
-    verbose: bool = False,
-    resume: bool = True,
-    use_cache: bool = True,
-    cache_ttl: int = DEFAULT_CACHE_TTL_SECONDS,
-    mirrors: list[str] | None = None,
-    language: str | None = "en-us",
-    delta_from: str | None = None,
-    delta_store: str | Path | None = None,
-    ask: Callable[[str], str] | None = None,
-) -> bool:
-    """Download UUP files for a specific build
-
-    If ``delta_from`` is provided and a previously saved manifest exists in the
-    delta store for that build, only the files that have been added or modified
-    (compared to the saved manifest) are downloaded. A fresh manifest for
-    ``build_id`` is written to the delta store after a successful download so
-    subsequent delta runs have a baseline.
-    """
-    if build_info is None:
-        build_info = get_build_info_cached(
-            build_id,
-            ttl_seconds=cache_ttl,
-            force_refresh=not use_cache,
-            language=language,
-        )
-
-    if not build_info:
-        log_error("Failed to get build information")
-        return False
-
-    files = build_info.get("files", {})
-    if not files:
-        log_error("No files found for this build")
-        return False
-
-    output_path = Path(output_dir)
-    if output_path.is_absolute():
-        output_path = output_path.resolve()
-    else:
-        output_path = Path.cwd().joinpath(output_path).resolve()
-
-    if not _is_within(output_path, Path.cwd()):
-        log_error("Output directory must be within the current directory")
-        return False
-
-    _prepare_output_directory(output_path, ask)
-
-    target_files = get_build_files(build_info)
-    delta_filter: set[str] | None = None
-    if delta_from:
-        base_files = load_delta_manifest(delta_from, store_dir=delta_store)
-        if base_files is None:
-            log_warn(
-                f"No saved delta manifest for build {delta_from}; "
-                "downloading all files (full set)"
-            )
-        else:
-            delta = calculate_delta(base_files, target_files)
-            log_info(
-                f"Delta vs {delta_from}: +{len(delta['added'])} added, "
-                f"~{len(delta['modified'])} modified, "
-                f"-{len(delta['removed'])} removed"
-            )
-            delta_filter = set(delta["added"]) | set(delta["modified"])
-            if not delta_filter:
-                log_success(f"No changes detected vs {delta_from}; nothing to download")
-                save_delta_manifest(build_id, target_files, store_dir=delta_store)
-                return True
-
-    log_info(f"Preparing to download {len(files)} files...")
-    download_list = _prepare_download_list(
-        build_id, files, edition_filter, mirrors=mirrors, delta_filter=delta_filter
-    )
-
-    if not download_list:
-        log_error("No files to download after filtering")
-        return False
-
-    log_success(f"Will download {len(download_list)} files")
-
-    aria2_input = output_path / "aria2_input.txt"
-    ok = _run_aria2_download(
-        output_path, aria2_input, download_list, verbose=verbose, resume=resume
-    )
-    if ok and delta_filter is not None:
-        save_delta_manifest(build_id, target_files, store_dir=delta_store)
-    elif ok:
-        # Always update the manifest so future delta runs have a baseline
-        save_delta_manifest(build_id, target_files, store_dir=delta_store)
-    return ok
 
 
 def _process_selected_build(
@@ -941,7 +62,7 @@ def _process_selected_build(
     output_dir: str | Path,
     verbose: bool = False,
     use_cache: bool = True,
-    cache_ttl: int = DEFAULT_CACHE_TTL_SECONDS,
+    cache_ttl: int = uup_api.DEFAULT_CACHE_TTL_SECONDS,
     edition: str | None = None,
     mirrors: list[str] | None = None,
     ask: Callable[[str], str] | None = None,
@@ -949,13 +70,11 @@ def _process_selected_build(
     """Process the selected build for download."""
     build_id = selected_build["id"]
 
-    print(
-        f"\n{Colors.BOLD}Selected:{Colors.RESET} {selected_build.get('title', 'Unknown')}"
-    )
-    print(f"{Colors.BOLD}Build ID:{Colors.RESET} {build_id}")
+    print(f"\n{BOLD}Selected:{NC} {selected_build.get('title', 'Unknown')}")
+    print(f"{BOLD}Build ID:{NC} {build_id}")
 
     # Fetch build info once
-    build_info = get_build_info_cached(
+    build_info = uup_api.get_build_info_cached(
         build_id, ttl_seconds=cache_ttl, force_refresh=not use_cache
     )
     if not build_info:
@@ -964,13 +83,13 @@ def _process_selected_build(
 
     # Resolve edition: non-interactive if --edition was supplied, else prompt
     if edition:
-        edition_filter = resolve_edition_filter(build_info, edition)
+        edition_filter = uup_download.resolve_edition_filter(build_info, edition)
     else:
-        edition_filter = select_editions(build_info, ask)
+        edition_filter = uup_download.select_editions(build_info, ask)
 
     if edition:
         # Non-interactive: skip the confirmation prompt
-        return download_build(
+        return uup_download.download_build(
             build_id,
             output_dir,
             edition_filter,
@@ -984,12 +103,10 @@ def _process_selected_build(
         )
 
     confirm = (
-        (ask or input)(f"\n{Colors.BOLD}Proceed with download? [Y/n]:{Colors.RESET} ")
-        .strip()
-        .lower()
+        (ask or input)(f"\n{BOLD}Proceed with download? [Y/n]:{NC} ").strip().lower()
     )
     if confirm in ("", "y", "yes"):
-        return download_build(
+        return uup_download.download_build(
             build_id,
             output_dir,
             edition_filter,
@@ -1010,15 +127,15 @@ def interactive_mode(
     output_dir: str | Path,
     verbose: bool = False,
     use_cache: bool = True,
-    cache_ttl: int = DEFAULT_CACHE_TTL_SECONDS,
+    cache_ttl: int = uup_api.DEFAULT_CACHE_TTL_SECONDS,
     edition: str | None = None,
     ask: Callable[[str], str] | None = None,
 ) -> bool:
     """Interactive mode for selecting and downloading builds"""
-    print(f"\n{Colors.BOLD}UUP File Downloader for Windows 11{Colors.RESET}")
+    print(f"\n{BOLD}UUP File Downloader for Windows 11{NC}")
     print("=" * 50)
 
-    builds = get_latest_builds_cached(
+    builds = uup_api.get_latest_builds_cached(
         ttl_seconds=cache_ttl, force_refresh=not use_cache
     )
     if not builds:
@@ -1030,7 +147,7 @@ def interactive_mode(
     while True:
         try:
             choice = (ask or input)(
-                f"{Colors.BOLD}Select build number [1-{len(builds)}] or 'q' to quit:{Colors.RESET} "
+                f"{BOLD}Select build number [1-{len(builds)}] or 'q' to quit:{NC} "
             ).strip()
 
             if choice.lower() == "q":
@@ -1061,28 +178,19 @@ def interactive_mode(
 
 
 def get_profiles() -> dict[str, dict[str, Any]]:
-    """Load build profiles from config file or return built-in defaults."""
-    script_dir = Path(__file__).parent
-    profiles_path = script_dir.parent / "config" / "profiles.json"
-
-    if profiles_path.exists():
-        try:
-            data = orjson.loads(profiles_path.read_bytes())
-            if isinstance(data, dict):
-                profiles = data.get("profiles", PROFILES)
-                if isinstance(profiles, dict):
-                    return profiles
-        except orjson.JSONDecodeError, OSError:
-            log_warn("Failed to load profiles.json, using built-in profiles")
-
-    return PROFILES
+    """Load build profiles from config/profiles.json (the single source of truth)."""
+    try:
+        data = orjson.loads(PROFILES_FILE.read_bytes())
+    except (orjson.JSONDecodeError, OSError) as e:
+        log_warn(f"Failed to load {PROFILES_FILE}: {e}")
+        return {}
+    profiles = data.get("profiles") if isinstance(data, dict) else None
+    return profiles if isinstance(profiles, dict) else {}
 
 
 def get_pinned_build() -> dict[str, Any] | None:
     """Load pinned build configuration from .uup-pin.json in the project root."""
-    script_dir = Path(__file__).parent
-    project_root = script_dir.parent
-    pin_path = project_root / ".uup-pin.json"
+    pin_path = PIN_FILE
 
     if not pin_path.exists():
         return None
@@ -1104,9 +212,7 @@ def save_pinned_build(
     edition: str | None = None,
 ) -> bool:
     """Save a build as the pinned version for reproducibility."""
-    script_dir = Path(__file__).parent
-    project_root = script_dir.parent
-    pin_path = project_root / ".uup-pin.json"
+    pin_path = PIN_FILE
 
     data: dict[str, Any] = {"build_id": build_id}
     if title:
@@ -1127,12 +233,12 @@ def display_profiles() -> None:
     """Display available build profiles in a user-friendly format."""
     profiles = get_profiles()
 
-    print(f"\n{Colors.BOLD}Available Build Profiles:{Colors.RESET}\n")
+    print(f"\n{BOLD}Available Build Profiles:{NC}\n")
 
     for name, profile in profiles.items():
         description = profile.get("description", "No description")
         edition = profile.get("edition", "N/A")
-        print(f"{Colors.CYAN}[{name}]{Colors.RESET} {description}")
+        print(f"{CYAN}[{name}]{NC} {description}")
         print(f"    Edition: {edition}")
         print()
 
@@ -1145,15 +251,15 @@ def get_profile(name: str) -> dict[str, Any] | None:
 
 def display_component_groups(path: str | None = None) -> None:
     """Print all available component groups with descriptions to stdout."""
-    groups = load_component_groups(path)
+    groups = keep_list.load_component_groups(path)
     if not groups:
         print("No component groups available.")
         return
-    print(f"\n{Colors.BOLD}Available Component Groups:{Colors.RESET}\n")
+    print(f"\n{BOLD}Available Component Groups:{NC}\n")
     for name in sorted(groups.keys()):
         description = groups[name].get("description", "")
         pattern_count = len(groups[name].get("patterns", []))
-        print(f"  {Colors.CYAN}{name}{Colors.RESET} ({pattern_count} patterns)")
+        print(f"  {CYAN}{name}{NC} ({pattern_count} patterns)")
         if description:
             print(f"    {description}")
     print()
@@ -1291,8 +397,8 @@ For more information, visit: https://uupdump.net
     parser.add_argument(
         "--cache-ttl",
         type=int,
-        default=DEFAULT_CACHE_TTL_SECONDS,
-        help=f"Cache TTL in seconds (default: {DEFAULT_CACHE_TTL_SECONDS})",
+        default=uup_api.DEFAULT_CACHE_TTL_SECONDS,
+        help=f"Cache TTL in seconds (default: {uup_api.DEFAULT_CACHE_TTL_SECONDS})",
     )
 
     parser.add_argument(
@@ -1365,7 +471,7 @@ For more information, visit: https://uupdump.net
         dest="delta_store",
         help=(
             f"Directory used to store per-build file manifests for delta downloads "
-            f"(default: {DEFAULT_DELTA_STORE})"
+            f"(default: {uup_delta.DEFAULT_DELTA_STORE})"
         ),
     )
 
@@ -1393,35 +499,35 @@ def _handle_info_mode(args: argparse.Namespace) -> int | None:
     """Handles info-only modes and returns the appropriate exit code. Returns None if not handled."""
     # List editions mode
     if args.editions:
-        editions_info = get_available_editions(args.editions)
+        editions_info = uup_api.get_available_editions(args.editions)
         if editions_info:
-            print(f"\n{Colors.BOLD}Available Editions for Build:{Colors.RESET}\n")
+            print(f"\n{BOLD}Available Editions for Build:{NC}\n")
             edition_list = editions_info.get("editionList", [])
             fancy_names = editions_info.get("editionFancyNames", {})
             for edition in edition_list:
                 fancy_name = fancy_names.get(edition, edition)
-                print(f"  {Colors.CYAN}{edition}{Colors.RESET} - {fancy_name}")
+                print(f"  {CYAN}{edition}{NC} - {fancy_name}")
             return 0
         return 1
 
     # List languages mode
     if args.languages is not None:
-        langs_info = get_available_languages(args.languages or None)
+        langs_info = uup_api.get_available_languages(args.languages or None)
         if langs_info:
-            print(f"\n{Colors.BOLD}Available Languages:{Colors.RESET}\n")
+            print(f"\n{BOLD}Available Languages:{NC}\n")
             lang_list = langs_info.get("langList", [])
             fancy_names = langs_info.get("langFancyNames", {})
             for lang in lang_list:
                 fancy_name = fancy_names.get(lang, lang)
-                print(f"  {Colors.CYAN}{lang}{Colors.RESET} - {fancy_name}")
+                print(f"  {CYAN}{lang}{NC} - {fancy_name}")
             return 0
         return 1
 
     # Fetch latest from Windows Update
     if args.latest:
-        latest_info = fetch_latest_from_wu(args.arch, args.ring)
+        latest_info = uup_api.fetch_latest_from_wu(args.arch, args.ring)
         if latest_info:
-            print(f"\n{Colors.BOLD}Latest Build from Windows Update:{Colors.RESET}\n")
+            print(f"\n{BOLD}Latest Build from Windows Update:{NC}\n")
             print(f"  Update ID: {latest_info.get('updateId', 'N/A')}")
             print(f"  Title: {latest_info.get('updateTitle', 'N/A')}")
             print(f"  Build: {latest_info.get('foundBuild', 'N/A')}")
@@ -1431,9 +537,9 @@ def _handle_info_mode(args: argparse.Namespace) -> int | None:
 
     # Update info mode
     if args.update_info:
-        info = get_update_info(args.update_info)
+        info = uup_api.get_update_info(args.update_info)
         if info:
-            print(f"\n{Colors.BOLD}Update Information:{Colors.RESET}\n")
+            print(f"\n{BOLD}Update Information:{NC}\n")
             print(f"  {orjson.dumps(info, option=orjson.OPT_INDENT_2).decode()}")
             return 0
         return 1
@@ -1441,17 +547,19 @@ def _handle_info_mode(args: argparse.Namespace) -> int | None:
     # Save delta manifest mode
     if args.save_delta_manifest:
         build_id = args.save_delta_manifest
-        build_info = get_build_info_cached(
+        build_info = uup_api.get_build_info_cached(
             build_id, ttl_seconds=args.cache_ttl, force_refresh=args.no_cache
         )
         if not build_info:
             log_error(f"Failed to get build information for {build_id}")
             return 1
-        files = get_build_files(build_info)
+        files = uup_delta.get_build_files(build_info)
         if not files:
             log_error(f"No files found for build {build_id}")
             return 1
-        manifest_path = save_delta_manifest(build_id, files, store_dir=args.delta_store)
+        manifest_path = uup_delta.save_delta_manifest(
+            build_id, files, store_dir=args.delta_store
+        )
         if manifest_path:
             log_success(
                 f"Saved delta manifest for {build_id} ({len(files)} files) "
@@ -1462,14 +570,16 @@ def _handle_info_mode(args: argparse.Namespace) -> int | None:
 
     # Delta info mode
     if args.delta_info:
-        files = load_delta_manifest(args.delta_info, store_dir=args.delta_store)
+        files = uup_delta.load_delta_manifest(
+            args.delta_info, store_dir=args.delta_store
+        )
         if files is None:
             log_warn(
                 f"No saved delta manifest for build {args.delta_info} "
-                f"in store {args.delta_store or DEFAULT_DELTA_STORE}"
+                f"in store {args.delta_store or uup_delta.DEFAULT_DELTA_STORE}"
             )
             return 1
-        print(f"\n{Colors.BOLD}Delta Manifest:{Colors.RESET} {args.delta_info}\n")
+        print(f"\n{BOLD}Delta Manifest:{NC} {args.delta_info}\n")
         print(f"  Files: {len(files)}")
         total_size = sum(
             int(info.get("size", 0))
@@ -1484,15 +594,13 @@ def _handle_info_mode(args: argparse.Namespace) -> int | None:
 
 def _resolve_output_dir(output_arg: str) -> Path | None:
     """Resolves and validates the output directory to prevent traversal."""
-    script_dir = Path(__file__).parent
-    project_root = script_dir.parent
 
     # Security: Resolve and validate output path to prevent traversal
     output_dir = Path(output_arg)
     if not output_dir.is_absolute():
-        output_dir = project_root.joinpath(output_dir)
+        output_dir = PROJECT_ROOT.joinpath(output_dir)
 
-    if not _is_within(output_dir, project_root):
+    if not uup_download._is_within(output_dir, PROJECT_ROOT):
         log_error(f"Path traversal attempt detected for output: {output_arg}")
         return None
 
@@ -1504,7 +612,7 @@ def main() -> int:
 
     # Handle --clear-cache mode
     if args.clear_cache:
-        count = cache_clear()
+        count = uup_api.cache_clear()
         log_success(f"Cleared {count} cache entries")
         return 0
 
@@ -1539,10 +647,10 @@ def main() -> int:
         if not names:
             log_error("--write-groups requires --groups to be specified")
             return 1
-        valid = validate_component_groups(names)
+        valid = keep_list.validate_component_groups(names)
         if not valid:
             return 1
-        if write_component_groups_for_build(valid, args.write_groups):
+        if keep_list.write_group_selection(valid, args.write_groups):
             log_success(f"Wrote {len(valid)} component groups to {args.write_groups}")
             return 0
         return 1
@@ -1581,8 +689,8 @@ def main() -> int:
         # Persist the profile's component groups to .uup-groups for the build pipeline.
         profile_groups: Any = profile.get("component_groups", [])
         if isinstance(profile_groups, list) and profile_groups:
-            valid_profile_groups = validate_component_groups(profile_groups)
-            if valid_profile_groups and write_component_groups_for_build(
+            valid_profile_groups = keep_list.validate_component_groups(profile_groups)
+            if valid_profile_groups and keep_list.write_group_selection(
                 valid_profile_groups
             ):
                 log_info(
@@ -1592,8 +700,8 @@ def main() -> int:
     # Handle --groups override (always wins over profile defaults)
     if args.groups:
         cli_groups = [n.strip() for n in args.groups.split(",") if n.strip()]
-        valid_cli_groups = validate_component_groups(cli_groups)
-        if valid_cli_groups and write_component_groups_for_build(valid_cli_groups):
+        valid_cli_groups = keep_list.validate_component_groups(cli_groups)
+        if valid_cli_groups and keep_list.write_group_selection(valid_cli_groups):
             log_info(f"Component groups (from --groups): {', '.join(valid_cli_groups)}")
 
     # Note: verbose is not info_only - it affects download behavior
@@ -1622,7 +730,7 @@ def main() -> int:
 
     # List mode
     if args.list:
-        builds = get_latest_builds_cached(
+        builds = uup_api.get_latest_builds_cached(
             args.max_results, ttl_seconds=args.cache_ttl, force_refresh=args.no_cache
         )
         if builds:
@@ -1641,7 +749,7 @@ def main() -> int:
         log_info(f"Downloading build ID: {args.build_id}")
         edition_filter: list[str] | None = None
         if args.edition:
-            build_info = get_build_info_cached(
+            build_info = uup_api.get_build_info_cached(
                 args.build_id,
                 ttl_seconds=args.cache_ttl,
                 force_refresh=args.no_cache,
@@ -1649,7 +757,9 @@ def main() -> int:
             if not build_info:
                 log_error("Failed to get build information")
                 return 1
-            edition_filter = resolve_edition_filter(build_info, args.edition)
+            edition_filter = uup_download.resolve_edition_filter(
+                build_info, args.edition
+            )
 
         # Handle multi-language download
         if args.languages_download:
@@ -1659,7 +769,7 @@ def main() -> int:
                 if lang.strip()
             ]
             if langs:
-                success = download_language_packs(
+                success = uup_download.download_language_packs(
                     args.build_id,
                     langs,
                     output_dir,
@@ -1672,7 +782,7 @@ def main() -> int:
             log_error("No valid languages specified for download")
             return 1
 
-        success = download_build(
+        success = uup_download.download_build(
             args.build_id,
             output_dir,
             edition_filter,
@@ -1689,7 +799,7 @@ def main() -> int:
     # Preset mode: fetch latest builds and auto-select
     if preset_mode:
         log_info(f"Fetching latest builds for profile '{args.preset}'...")
-        builds = get_latest_builds_cached(
+        builds = uup_api.get_latest_builds_cached(
             args.max_results,
             ttl_seconds=args.cache_ttl,
             force_refresh=args.no_cache,

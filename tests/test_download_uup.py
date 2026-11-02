@@ -16,30 +16,33 @@ import httpx
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 
 import download_uup
+import keep_list
+import uup_api
 import uup_delta
+import uup_download
 from download_uup import parse_args
 
 
 class TestDownloadBuildBuildInfoFastPath(unittest.TestCase):
     """Tests that download_build reuses a supplied build_info and skips the API call."""
 
-    @patch("download_uup.get_build_info_cached")
+    @patch("uup_api.get_build_info_cached")
     def test_build_info_provided_skips_api_call(self, mock_get_build_info_cached):
         """When build_info is passed in, get_build_info_cached must not be called."""
         # Passing an empty files dict causes an early return ("No files found"),
         # so no filesystem or network activity is needed.
         build_info = {"files": {}}
-        result = download_uup.download_build(
+        result = uup_download.download_build(
             "fake-id", "/tmp/out", build_info=build_info
         )
 
         mock_get_build_info_cached.assert_not_called()
         self.assertFalse(result)
 
-    @patch("download_uup.get_build_info_cached", return_value=None)
+    @patch("uup_api.get_build_info_cached", return_value=None)
     def test_no_build_info_calls_api(self, mock_get_build_info_cached):
         """When build_info is not passed, get_build_info_cached is called."""
-        result = download_uup.download_build("fake-id", "/tmp/out")
+        result = uup_download.download_build("fake-id", "/tmp/out")
         mock_get_build_info_cached.assert_called_once()
         self.assertFalse(result)
 
@@ -111,28 +114,28 @@ class TestDownloadUUP(unittest.TestCase):
 
 
 class TestDownloadBuild(unittest.TestCase):
-    @patch("download_uup.get_build_info_cached")
-    @patch("download_uup.log_error")
+    @patch("uup_api.get_build_info_cached")
+    @patch("uup_download.log_error")
     def test_download_build_no_build_info(
         self, mock_log_error, mock_get_build_info_cached
     ):
         mock_get_build_info_cached.return_value = None
-        result = download_uup.download_build("build123", Path("out"))
+        result = uup_download.download_build("build123", Path("out"))
         self.assertFalse(result)
         mock_log_error.assert_called_once_with("Failed to get build information")
 
-    @patch("download_uup.get_build_info_cached")
-    @patch("download_uup.log_error")
+    @patch("uup_api.get_build_info_cached")
+    @patch("uup_download.log_error")
     def test_download_build_no_files(self, mock_log_error, mock_get_build_info_cached):
         mock_get_build_info_cached.return_value = {"files": {}}
-        result = download_uup.download_build("build123", Path("out"))
+        result = uup_download.download_build("build123", Path("out"))
         self.assertFalse(result)
         mock_log_error.assert_called_once_with("No files found for this build")
 
-    @patch("download_uup.log_error")
+    @patch("uup_download.log_error")
     def test_download_build_invalid_output_path(self, mock_log_error):
         build_info = {"files": {"a.esd": {"size": 1}}}
-        result = download_uup.download_build(
+        result = uup_download.download_build(
             "build123", "/tmp/outside", build_info=build_info
         )
         self.assertFalse(result)
@@ -140,10 +143,10 @@ class TestDownloadBuild(unittest.TestCase):
             "Output directory must be within the current directory"
         )
 
-    @patch("download_uup.log_error")
+    @patch("uup_download.log_error")
     def test_download_build_no_files_after_filter(self, mock_log_error):
         build_info = {"files": {"a.esd": {"size": 1}}}
-        result = download_uup.download_build(
+        result = uup_download.download_build(
             "build123",
             "uup_files",
             edition_filter=["b.esd"],
@@ -154,40 +157,40 @@ class TestDownloadBuild(unittest.TestCase):
 
 
 class TestGetLatestBuilds(unittest.TestCase):
-    @patch("download_uup.fetch_url")
-    @patch("download_uup.log_error")
+    @patch("uup_api.fetch_url")
+    @patch("uup_api.log_error")
     def test_get_latest_builds_api_error(self, mock_log_error, mock_fetch_url):
         # Simulate API returning a dict with an error field
         mock_fetch_url.return_value = {"response": {"error": "Invalid request"}}
 
-        result = download_uup.get_latest_builds()
+        result = uup_api.get_latest_builds()
 
         self.assertIsNone(result)
         mock_log_error.assert_called_with("API Error: Invalid request")
 
-    @patch("download_uup.fetch_url")
-    @patch("download_uup.log_error")
+    @patch("uup_api.fetch_url")
+    @patch("uup_api.log_error")
     def test_get_latest_builds_no_response(self, mock_log_error, mock_fetch_url):
         # Simulate no response from the URL fetch
         mock_fetch_url.return_value = None
 
-        result = download_uup.get_latest_builds()
+        result = uup_api.get_latest_builds()
 
         self.assertIsNone(result)
         mock_log_error.assert_called_with("Failed to fetch builds from uupdump.net")
 
-    @patch("download_uup.fetch_url")
-    @patch("download_uup.log_error")
+    @patch("uup_api.fetch_url")
+    @patch("uup_api.log_error")
     def test_get_latest_builds_json_decode_error(self, mock_log_error, mock_fetch_url):
         # fetch_url returns None when JSON parsing fails
         mock_fetch_url.return_value = None
 
-        result = download_uup.get_latest_builds()
+        result = uup_api.get_latest_builds()
 
         self.assertIsNone(result)
         mock_log_error.assert_called_with("Failed to fetch builds from uupdump.net")
 
-    @patch("download_uup.fetch_url")
+    @patch("uup_api.fetch_url")
     def test_get_latest_builds_success(self, mock_fetch_url):
         mock_fetch_url.return_value = {
             "response": {
@@ -208,7 +211,7 @@ class TestGetLatestBuilds(unittest.TestCase):
             }
         }
 
-        result = download_uup.get_latest_builds(max_results=2)
+        result = uup_api.get_latest_builds(max_results=2)
 
         assert result is not None
         self.assertEqual(len(result), 2)
@@ -220,37 +223,37 @@ class TestGetLatestBuilds(unittest.TestCase):
 
 
 class TestFetchLatestFromWU(unittest.TestCase):
-    @patch("download_uup.fetch_url")
-    @patch("download_uup.log_error")
+    @patch("uup_api.fetch_url")
+    @patch("uup_api.log_error")
     def test_fetch_latest_from_wu_api_error(self, mock_log_error, mock_fetch_url):
         mock_fetch_url.return_value = {"response": {"error": "Invalid ring"}}
-        result = download_uup.fetch_latest_from_wu()
+        result = uup_api.fetch_latest_from_wu()
         self.assertIsNone(result)
         mock_log_error.assert_called_with("API Error: Invalid ring")
 
-    @patch("download_uup.fetch_url")
-    @patch("download_uup.log_warn")
+    @patch("uup_api.fetch_url")
+    @patch("uup_api.log_warn")
     def test_fetch_latest_from_wu_no_response(self, mock_log_warn, mock_fetch_url):
         mock_fetch_url.return_value = None
-        result = download_uup.fetch_latest_from_wu()
+        result = uup_api.fetch_latest_from_wu()
         self.assertIsNone(result)
         mock_log_warn.assert_called_with(
             "Failed to fetch from Windows Update, falling back to cached builds"
         )
 
-    @patch("download_uup.fetch_url")
-    @patch("download_uup.log_warn")
+    @patch("uup_api.fetch_url")
+    @patch("uup_api.log_warn")
     def test_fetch_latest_from_wu_json_decode_error(
         self, mock_log_warn, mock_fetch_url
     ):
         mock_fetch_url.return_value = None
-        result = download_uup.fetch_latest_from_wu()
+        result = uup_api.fetch_latest_from_wu()
         self.assertIsNone(result)
         mock_log_warn.assert_called_with(
             "Failed to fetch from Windows Update, falling back to cached builds"
         )
 
-    @patch("download_uup.fetch_url")
+    @patch("uup_api.fetch_url")
     def test_fetch_latest_from_wu_success(self, mock_fetch_url):
         mock_fetch_url.return_value = {
             "response": {
@@ -260,7 +263,7 @@ class TestFetchLatestFromWU(unittest.TestCase):
                 "arch": "amd64",
             }
         }
-        result = download_uup.fetch_latest_from_wu(arch="amd64", ring="Retail")
+        result = uup_api.fetch_latest_from_wu(arch="amd64", ring="Retail")
         assert result is not None
         self.assertEqual(result["updateId"], "12345")
         self.assertEqual(result["updateTitle"], "Windows 11 Build")
@@ -269,7 +272,7 @@ class TestFetchLatestFromWU(unittest.TestCase):
 
 
 class TestGetUpdateInfo(unittest.TestCase):
-    @patch("download_uup.fetch_url")
+    @patch("uup_api.fetch_url")
     def test_get_update_info_success(self, mock_fetch_url):
         mock_fetch_url.return_value = {
             "response": {
@@ -279,7 +282,7 @@ class TestGetUpdateInfo(unittest.TestCase):
             }
         }
 
-        result = download_uup.get_update_info("test-update-id")
+        result = uup_api.get_update_info("test-update-id")
 
         assert result is not None
         self.assertEqual(result["updateId"], "test-update-id")
@@ -288,58 +291,58 @@ class TestGetUpdateInfo(unittest.TestCase):
             "https://api.uupdump.net/updateinfo.php?id=test-update-id", return_json=True
         )
 
-    @patch("download_uup.fetch_url")
+    @patch("uup_api.fetch_url")
     def test_get_update_info_fetch_fails(self, mock_fetch_url):
         mock_fetch_url.return_value = None
-        result = download_uup.get_update_info("test-update-id")
+        result = uup_api.get_update_info("test-update-id")
         self.assertIsNone(result)
 
-    @patch("download_uup.fetch_url")
-    @patch("download_uup.log_error")
+    @patch("uup_api.fetch_url")
+    @patch("uup_api.log_error")
     def test_get_update_info_api_error(self, mock_log_error, mock_fetch_url):
         mock_fetch_url.return_value = {"response": {"error": "Update not found"}}
-        result = download_uup.get_update_info("invalid-id")
+        result = uup_api.get_update_info("invalid-id")
         self.assertIsNone(result)
         mock_log_error.assert_called_once_with("API Error: Update not found")
 
 
 class TestGetBuildInfo(unittest.TestCase):
-    @patch("download_uup.fetch_url")
+    @patch("uup_api.fetch_url")
     def test_get_build_info_success(self, mock_fetch_url):
         mock_fetch_url.return_value = {"response": {"build": "info", "files": {}}}
 
-        result = download_uup.get_build_info("fake-id")
+        result = uup_api.get_build_info("fake-id")
 
         self.assertEqual(result, {"build": "info", "files": {}})
         mock_fetch_url.assert_called_once_with(
             "https://api.uupdump.net/get.php?id=fake-id&lang=en-us", return_json=True
         )
 
-    @patch("download_uup.fetch_url")
+    @patch("uup_api.fetch_url")
     def test_get_build_info_with_language(self, mock_fetch_url):
         mock_fetch_url.return_value = {"response": {"build": "info", "files": {}}}
 
-        result = download_uup.get_build_info("fake-id", language="fr-fr")
+        result = uup_api.get_build_info("fake-id", language="fr-fr")
 
         self.assertEqual(result, {"build": "info", "files": {}})
         mock_fetch_url.assert_called_once_with(
             "https://api.uupdump.net/get.php?id=fake-id&lang=fr-fr", return_json=True
         )
 
-    @patch("download_uup.fetch_url")
+    @patch("uup_api.fetch_url")
     def test_get_build_info_fetch_fails(self, mock_fetch_url):
         mock_fetch_url.return_value = None
-        result = download_uup.get_build_info("fake-id")
+        result = uup_api.get_build_info("fake-id")
         self.assertIsNone(result)
         mock_fetch_url.assert_called_once_with(
             "https://api.uupdump.net/get.php?id=fake-id&lang=en-us", return_json=True
         )
 
-    @patch("download_uup.fetch_url")
-    @patch("download_uup.log_error")
+    @patch("uup_api.fetch_url")
+    @patch("uup_api.log_error")
     def test_get_build_info_api_error(self, mock_log_error, mock_fetch_url):
         mock_fetch_url.return_value = {"response": {"error": "Invalid build ID"}}
-        result = download_uup.get_build_info("fake-id")
+        result = uup_api.get_build_info("fake-id")
         self.assertIsNone(result)
         mock_log_error.assert_called_once_with("API Error: Invalid build ID")
         mock_fetch_url.assert_called_once_with(
@@ -348,11 +351,11 @@ class TestGetBuildInfo(unittest.TestCase):
 
 
 class TestGetAvailableLanguages(unittest.TestCase):
-    @patch("download_uup.fetch_url")
+    @patch("uup_api.fetch_url")
     def test_get_available_languages_with_build_id_success(self, mock_fetch_url):
         mock_fetch_url.return_value = {"response": {"lang": "en-us", "langList": []}}
 
-        result = download_uup.get_available_languages("fake-id")
+        result = uup_api.get_available_languages("fake-id")
 
         self.assertEqual(result, {"lang": "en-us", "langList": []})
         mock_fetch_url.assert_called_once_with(
@@ -360,49 +363,49 @@ class TestGetAvailableLanguages(unittest.TestCase):
             return_json=True,
         )
 
-    @patch("download_uup.fetch_url")
+    @patch("uup_api.fetch_url")
     def test_get_available_languages_no_build_id_success(self, mock_fetch_url):
         mock_fetch_url.return_value = {"response": {"lang": "en-us", "langList": []}}
 
-        result = download_uup.get_available_languages()
+        result = uup_api.get_available_languages()
 
         self.assertEqual(result, {"lang": "en-us", "langList": []})
         mock_fetch_url.assert_called_once_with(
             "https://api.uupdump.net/listlangs.php", return_json=True
         )
 
-    @patch("download_uup.fetch_url")
+    @patch("uup_api.fetch_url")
     def test_get_available_languages_fetch_fails(self, mock_fetch_url):
         mock_fetch_url.return_value = None
-        result = download_uup.get_available_languages("fake-id")
+        result = uup_api.get_available_languages("fake-id")
         self.assertIsNone(result)
 
-    @patch("download_uup.fetch_url")
+    @patch("uup_api.fetch_url")
     def test_get_available_languages_api_error(self, mock_fetch_url):
         mock_fetch_url.return_value = {"response": {"error": "Invalid build id"}}
-        result = download_uup.get_available_languages("fake-id")
+        result = uup_api.get_available_languages("fake-id")
         self.assertIsNone(result)
 
-    @patch("download_uup.fetch_url")
+    @patch("uup_api.fetch_url")
     def test_get_available_languages_json_error(self, mock_fetch_url):
         mock_fetch_url.return_value = None
-        result = download_uup.get_available_languages("fake-id")
+        result = uup_api.get_available_languages("fake-id")
         self.assertIsNone(result)
 
 
 class TestFetchUrl(unittest.TestCase):
     def setUp(self):
-        download_uup._url_cache.clear()
+        uup_api._url_cache.clear()
         self.addCleanup(setattr, download_uup, "_client", None)
 
     def _use_handler(self, handler):
         """Install an httpx client backed by the given MockTransport handler."""
-        download_uup._client = httpx.Client(transport=httpx.MockTransport(handler))
+        uup_api._client = httpx.Client(transport=httpx.MockTransport(handler))
 
     def test_fetch_url_success_get(self):
         self._use_handler(lambda request: httpx.Response(200, text="success content"))
 
-        result = download_uup.fetch_url("http://example.com")
+        result = uup_api.fetch_url("http://example.com")
 
         self.assertEqual(result, "success content")
 
@@ -417,49 +420,49 @@ class TestFetchUrl(unittest.TestCase):
         self._use_handler(handler)
 
         data = {"key": "value"}
-        result = download_uup.fetch_url("http://example.com", data=data)
+        result = uup_api.fetch_url("http://example.com", data=data)
 
         self.assertEqual(result, "post success")
         self.assertEqual(captured["method"], "POST")
         self.assertEqual(captured["content"], b"key=value")
 
-    @patch("download_uup.log_error")
+    @patch("uup_api.log_error")
     def test_fetch_url_http_error(self, mock_log_error):
         self._use_handler(lambda request: httpx.Response(404, text="Not Found"))
 
-        result = download_uup.fetch_url("http://example.com")
+        result = uup_api.fetch_url("http://example.com")
 
         self.assertIsNone(result)
         mock_log_error.assert_called_once()
         self.assertIn("HTTP Error 404", mock_log_error.call_args[0][0])
 
-    @patch("download_uup.log_error")
+    @patch("uup_api.log_error")
     def test_fetch_url_url_error(self, mock_log_error):
         def handler(request):
             raise httpx.ConnectError("reason")
 
         self._use_handler(handler)
 
-        result = download_uup.fetch_url("http://example.com")
+        result = uup_api.fetch_url("http://example.com")
 
         self.assertIsNone(result)
         mock_log_error.assert_called_once()
         self.assertIn("URL Error", mock_log_error.call_args[0][0])
 
-    @patch("download_uup.log_error")
+    @patch("uup_api.log_error")
     def test_fetch_url_generic_exception(self, mock_log_error):
         def handler(request):
             raise ValueError("generic error")
 
         self._use_handler(handler)
 
-        result = download_uup.fetch_url("http://example.com")
+        result = uup_api.fetch_url("http://example.com")
 
         self.assertIsNone(result)
         mock_log_error.assert_called_once()
         self.assertIn("Unexpected error fetching URL", mock_log_error.call_args[0][0])
 
-    @patch("download_uup.log_error")
+    @patch("uup_api.log_error")
     def test_fetch_url_timeout_error(self, mock_log_error):
         # httpx maps socket-level timeouts to httpx.TimeoutException, a
         # RequestError subclass - not the builtin TimeoutError/OSError urllib
@@ -469,26 +472,26 @@ class TestFetchUrl(unittest.TestCase):
 
         self._use_handler(handler)
 
-        result = download_uup.fetch_url("http://example.com")
+        result = uup_api.fetch_url("http://example.com")
 
         self.assertIsNone(result)
         mock_log_error.assert_called_once()
         self.assertIn("URL Error", mock_log_error.call_args[0][0])
 
-    @patch("download_uup.log_error")
+    @patch("uup_api.log_error")
     def test_fetch_url_timeout_error_timeout(self, mock_log_error):
         def handler(request):
             raise httpx.TimeoutException("timed out")
 
         self._use_handler(handler)
 
-        result = download_uup.fetch_url("http://example.com")
+        result = uup_api.fetch_url("http://example.com")
 
         self.assertIsNone(result)
         mock_log_error.assert_called_once()
         self.assertIn("URL Error", mock_log_error.call_args[0][0])
 
-    @patch("download_uup.log_error")
+    @patch("uup_api.log_error")
     def test_fetch_url_connection_reset_error(self, mock_log_error):
         # httpx wraps a reset connection as httpx.RemoteProtocolError, also a
         # RequestError subclass.
@@ -497,7 +500,7 @@ class TestFetchUrl(unittest.TestCase):
 
         self._use_handler(handler)
 
-        result = download_uup.fetch_url("http://example.com")
+        result = uup_api.fetch_url("http://example.com")
 
         self.assertIsNone(result)
         mock_log_error.assert_called_once()
@@ -507,14 +510,14 @@ class TestFetchUrl(unittest.TestCase):
 class TestRunAria2Download(unittest.TestCase):
     @patch("builtins.open", new_callable=unittest.mock.mock_open)
     @patch("subprocess.run")
-    @patch("download_uup.log_error")
+    @patch("uup_download.log_error")
     def test_run_aria2_download_called_process_error(
         self, mock_log_error, mock_run, mock_open
     ):
         mock_run.side_effect = subprocess.CalledProcessError(1, "aria2c")
         dl_list = [{"url": "http://test", "name": "test.esd"}]
 
-        result = download_uup._run_aria2_download(
+        result = uup_download._run_aria2_download(
             Path("out"), Path("in.txt"), dl_list, verbose=False
         )
 
@@ -523,15 +526,15 @@ class TestRunAria2Download(unittest.TestCase):
 
     @patch("builtins.open", new_callable=unittest.mock.mock_open)
     @patch("subprocess.run")
-    @patch("download_uup.log_warn")
-    @patch("download_uup.Path.unlink")
+    @patch("uup_download.log_warn")
+    @patch("pathlib.Path.unlink")
     def test_run_aria2_download_keyboard_interrupt(
         self, _mock_unlink, mock_log_warn, mock_run, mock_open
     ):
         mock_run.side_effect = KeyboardInterrupt()
         dl_list = [{"url": "http://test", "name": "test.esd"}]
 
-        result = download_uup._run_aria2_download(
+        result = uup_download._run_aria2_download(
             Path("out"), Path("in.txt"), dl_list, verbose=False
         )
 
@@ -542,14 +545,14 @@ class TestRunAria2Download(unittest.TestCase):
 
     @patch("builtins.open", new_callable=unittest.mock.mock_open)
     @patch("subprocess.run")
-    @patch("download_uup.log_error")
+    @patch("uup_download.log_error")
     def test_run_aria2_download_generic_exception(
         self, mock_log_error, mock_run, mock_open
     ):
         mock_run.side_effect = Exception("Unexpected error")
         dl_list = [{"url": "http://test", "name": "test.esd"}]
 
-        download_uup._run_aria2_download(
+        uup_download._run_aria2_download(
             Path("out"), Path("in.txt"), dl_list, verbose=False
         )
 
@@ -559,12 +562,12 @@ class TestRunAria2Download(unittest.TestCase):
 
     @patch("builtins.open", new_callable=unittest.mock.mock_open)
     @patch("subprocess.run")
-    @patch("download_uup.log_error")
+    @patch("uup_download.log_error")
     def test_run_aria2_download_os_error(self, mock_log_error, mock_run, mock_open):
         mock_run.side_effect = FileNotFoundError("No such file")
         dl_list = [{"url": "http://test", "name": "test.esd"}]
 
-        result = download_uup._run_aria2_download(
+        result = uup_download._run_aria2_download(
             Path("out"), Path("in.txt"), dl_list, verbose=False
         )
 
@@ -573,14 +576,14 @@ class TestRunAria2Download(unittest.TestCase):
 
     @patch("builtins.open", new_callable=unittest.mock.mock_open)
     @patch("subprocess.run")
-    @patch("download_uup.Path.unlink")
+    @patch("pathlib.Path.unlink")
     def test_run_aria2_download_success(self, _mock_unlink, mock_run, mock_open):
         mock_result = unittest.mock.MagicMock()
         mock_result.stdout = "Download progress"
         mock_run.return_value = mock_result
         dl_list = [{"url": "http://test", "name": "test.esd"}]
 
-        result = download_uup._run_aria2_download(
+        result = uup_download._run_aria2_download(
             Path("out"), Path("in.txt"), dl_list, verbose=True
         )
 
@@ -589,7 +592,7 @@ class TestRunAria2Download(unittest.TestCase):
 
     @patch("builtins.open", new_callable=unittest.mock.mock_open)
     @patch("subprocess.run")
-    @patch("download_uup.log_error")
+    @patch("uup_download.log_error")
     def test_run_aria2_download_error_verbose(
         self, mock_log_error, mock_run, mock_open
     ):
@@ -598,7 +601,7 @@ class TestRunAria2Download(unittest.TestCase):
         )
         dl_list = [{"url": "http://test", "name": "test.esd"}]
 
-        result = download_uup._run_aria2_download(
+        result = uup_download._run_aria2_download(
             Path("out"), Path("in.txt"), dl_list, verbose=True
         )
 
@@ -607,13 +610,13 @@ class TestRunAria2Download(unittest.TestCase):
 
     @patch("builtins.open", new_callable=unittest.mock.mock_open)
     @patch("subprocess.run")
-    @patch("download_uup.log_error")
+    @patch("uup_download.log_error")
     def test_run_aria2_download_invalid_filename(
         self, mock_log_error, mock_run, mock_open
     ):
         dl_list = [{"url": "http://test", "name": "../escape.esd"}]
 
-        result = download_uup._run_aria2_download(Path("out"), Path("in.txt"), dl_list)
+        result = uup_download._run_aria2_download(Path("out"), Path("in.txt"), dl_list)
 
         self.assertFalse(result)
         mock_log_error.assert_called_with("Invalid filename detected: ../escape.esd")
@@ -626,7 +629,7 @@ class TestPrepareDownloadList(unittest.TestCase):
             "file1.esd": {"size": 100},
             "file2.cab": {"size": 200},
         }
-        result = download_uup._prepare_download_list(build_id, files)
+        result = uup_download._prepare_download_list(build_id, files)
 
         self.assertEqual(len(result), 2)
         self.assertEqual(
@@ -642,7 +645,7 @@ class TestPrepareDownloadList(unittest.TestCase):
             "file2.cab": {"size": 200},
         }
         edition_filter = ["file1.esd"]
-        result = download_uup._prepare_download_list(build_id, files, edition_filter)
+        result = uup_download._prepare_download_list(build_id, files, edition_filter)
 
         # .cab files are always included, .esd files are filtered
         self.assertEqual(len(result), 2)
@@ -657,30 +660,30 @@ class TestPrepareDownloadList(unittest.TestCase):
             "file2.esd": {"size": 200},
         }
         edition_filter = ["file1.esd"]
-        result = download_uup._prepare_download_list(build_id, files, edition_filter)
+        result = uup_download._prepare_download_list(build_id, files, edition_filter)
 
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0]["name"], "file1.esd")
 
     def test_prepare_download_list_empty_files(self):
-        result = download_uup._prepare_download_list("test-id", {})
+        result = uup_download._prepare_download_list("test-id", {})
         self.assertEqual(result, [])
 
 
 class TestSelectEditions(unittest.TestCase):
-    @patch("download_uup.log_warn")
+    @patch("uup_download.log_warn")
     def test_select_editions_no_esd_files(self, mock_log_warn):
         build_info = {"files": {"test.txt": {"size": 100}}}
-        result = download_uup.select_editions(build_info)
+        result = uup_download.select_editions(build_info)
         self.assertIsNone(result)
         mock_log_warn.assert_called_with(
             "No edition-specific files found, will download all files"
         )
 
-    @patch("download_uup.log_warn")
+    @patch("uup_download.log_warn")
     def test_select_editions_no_matching_esd_files(self, mock_log_warn):
         build_info = {"files": {"unknown.esd": {"size": 100}}}
-        result = download_uup.select_editions(build_info)
+        result = uup_download.select_editions(build_info)
         self.assertIsNone(result)
         mock_log_warn.assert_called_with(
             "No edition-specific files found, will download all files"
@@ -694,13 +697,13 @@ class TestSelectEditions(unittest.TestCase):
                 "Windows_Home.esd": {"size": 100},
             }
         }
-        result = download_uup.select_editions(build_info)
+        result = uup_download.select_editions(build_info)
         self.assertIsNone(result)
 
     @patch("builtins.input", return_value="A")
     def test_select_editions_all_choice(self, _mock_input):
         build_info = {"files": {"Windows_Professional.esd": {"size": 100}}}
-        result = download_uup.select_editions(build_info)
+        result = uup_download.select_editions(build_info)
         self.assertIsNone(result)
 
     @patch("builtins.input", return_value="1")
@@ -713,31 +716,31 @@ class TestSelectEditions(unittest.TestCase):
                 "Windows_Home.esd": {"size": 100},
             }
         }
-        result = download_uup.select_editions(build_info)
+        result = uup_download.select_editions(build_info)
         # It should return a list with the filename
         # editions = ["professional", "home"]
         # choice "1" -> idx 0 -> edition_files["professional"] -> "Windows_Professional.esd"
         self.assertEqual(result, ["Windows_Professional.esd"])
 
-    @patch("download_uup.log_warn")
+    @patch("uup_download.log_warn")
     @patch("builtins.input", return_value="invalid")
     def test_select_editions_non_numeric_choice(self, _mock_input, mock_log_warn):
         build_info = {"files": {"Windows_Professional.esd": {"size": 100}}}
-        result = download_uup.select_editions(build_info)
+        result = uup_download.select_editions(build_info)
         self.assertIsNone(result)
         mock_log_warn.assert_called_with("Invalid selection, downloading all editions")
 
-    @patch("download_uup.log_warn")
+    @patch("uup_download.log_warn")
     @patch("builtins.input", return_value="99")
     def test_select_editions_out_of_range_choice(self, _mock_input, mock_log_warn):
         build_info = {"files": {"Windows_Professional.esd": {"size": 100}}}
-        result = download_uup.select_editions(build_info)
+        result = uup_download.select_editions(build_info)
         self.assertIsNone(result)
         mock_log_warn.assert_called_with("Invalid selection, downloading all editions")
 
 
 class TestInteractiveMode(unittest.TestCase):
-    @patch("download_uup.get_latest_builds_cached", return_value=None)
+    @patch("uup_api.get_latest_builds_cached", return_value=None)
     @patch("download_uup.log_error")
     def test_interactive_mode_no_builds(self, mock_log_error, mock_get_builds_cached):
         result = download_uup.interactive_mode(Path("/tmp"))
@@ -747,7 +750,7 @@ class TestInteractiveMode(unittest.TestCase):
     @patch("download_uup.log_info")
     @patch("builtins.input", return_value="q")
     @patch("download_uup.display_builds")
-    @patch("download_uup.get_latest_builds_cached")
+    @patch("uup_api.get_latest_builds_cached")
     def test_interactive_mode_quit(
         self,
         mock_get_builds_cached,
@@ -763,7 +766,7 @@ class TestInteractiveMode(unittest.TestCase):
     @patch("download_uup.log_warn")
     @patch("builtins.input", side_effect=["invalid", "q"])
     @patch("download_uup.display_builds")
-    @patch("download_uup.get_latest_builds_cached")
+    @patch("uup_api.get_latest_builds_cached")
     def test_interactive_mode_value_error(
         self,
         mock_get_builds_cached,
@@ -779,7 +782,7 @@ class TestInteractiveMode(unittest.TestCase):
     @patch("download_uup.log_info")
     @patch("builtins.input", side_effect=KeyboardInterrupt)
     @patch("download_uup.display_builds")
-    @patch("download_uup.get_latest_builds_cached")
+    @patch("uup_api.get_latest_builds_cached")
     def test_interactive_mode_keyboard_interrupt(
         self,
         mock_get_builds_cached,
@@ -794,14 +797,14 @@ class TestInteractiveMode(unittest.TestCase):
 
 
 class TestGetAvailableEditions(unittest.TestCase):
-    @patch("download_uup.fetch_url")
-    @patch("download_uup.log_info")
+    @patch("uup_api.fetch_url")
+    @patch("uup_api.log_info")
     def test_get_available_editions_success(self, mock_log_info, mock_fetch_url):
         mock_fetch_url.return_value = {
             "response": {"editionList": ["Core", "Professional"]}
         }
 
-        result = download_uup.get_available_editions("fake-build-id")
+        result = uup_api.get_available_editions("fake-build-id")
 
         self.assertEqual(result, {"editionList": ["Core", "Professional"]})
         mock_fetch_url.assert_called_once_with(
@@ -812,62 +815,62 @@ class TestGetAvailableEditions(unittest.TestCase):
             "Fetching available editions for build: fake-build-id"
         )
 
-    @patch("download_uup.fetch_url")
-    @patch("download_uup.log_info")
+    @patch("uup_api.fetch_url")
+    @patch("uup_api.log_info")
     def test_get_available_editions_no_response(self, mock_log_info, mock_fetch_url):
         mock_fetch_url.return_value = None
 
-        result = download_uup.get_available_editions("fake-build-id")
+        result = uup_api.get_available_editions("fake-build-id")
 
         self.assertIsNone(result)
 
-    @patch("download_uup.fetch_url")
-    @patch("download_uup.log_error")
-    @patch("download_uup.log_info")
+    @patch("uup_api.fetch_url")
+    @patch("uup_api.log_error")
+    @patch("uup_api.log_info")
     def test_get_available_editions_api_error(
         self, mock_log_info, mock_log_error, mock_fetch_url
     ):
         mock_fetch_url.return_value = {"response": {"error": "Invalid build ID"}}
 
-        result = download_uup.get_available_editions("fake-build-id")
+        result = uup_api.get_available_editions("fake-build-id")
 
         self.assertIsNone(result)
         mock_log_error.assert_called_once_with("API Error: Invalid build ID")
 
-    @patch("download_uup.fetch_url")
-    @patch("download_uup.log_info")
+    @patch("uup_api.fetch_url")
+    @patch("uup_api.log_info")
     def test_get_available_editions_json_decode_error(
         self, mock_log_info, mock_fetch_url
     ):
         mock_fetch_url.return_value = None
 
-        result = download_uup.get_available_editions("fake-build-id")
+        result = uup_api.get_available_editions("fake-build-id")
 
         self.assertIsNone(result)
 
-    @patch("download_uup.fetch_url")
+    @patch("uup_api.fetch_url")
     def test_get_api_version_success(self, mock_fetch_url):
         mock_fetch_url.return_value = '{"response": {"version": "1.0.0"}}'
-        result = download_uup.get_api_version()
+        result = uup_api.get_api_version()
         self.assertEqual(result, {"version": "1.0.0"})
         mock_fetch_url.assert_called_once_with("https://api.uupdump.net/")
 
-    @patch("download_uup.fetch_url")
+    @patch("uup_api.fetch_url")
     def test_get_api_version_fetch_fails(self, mock_fetch_url):
         mock_fetch_url.return_value = None
-        result = download_uup.get_api_version()
+        result = uup_api.get_api_version()
         self.assertIsNone(result)
 
-    @patch("download_uup.fetch_url")
+    @patch("uup_api.fetch_url")
     def test_get_api_version_invalid_json(self, mock_fetch_url):
         mock_fetch_url.return_value = None
-        result = download_uup.get_api_version()
+        result = uup_api.get_api_version()
         self.assertIsNone(result)
 
-    @patch("download_uup.fetch_url")
+    @patch("uup_api.fetch_url")
     def test_get_api_version_no_response_key(self, mock_fetch_url):
         mock_fetch_url.return_value = '{"other_key": "value"}'
-        result = download_uup.get_api_version()
+        result = uup_api.get_api_version()
         self.assertEqual(result, {})
 
 
@@ -925,10 +928,10 @@ class TestDisplayBuilds(unittest.TestCase):
 
 
 class TestProcessSelectedBuild(unittest.TestCase):
-    @patch("download_uup.download_build", return_value=True)
+    @patch("uup_download.download_build", return_value=True)
     @patch("builtins.input", return_value="y")
-    @patch("download_uup.select_editions", return_value=None)
-    @patch("download_uup.get_build_info_cached")
+    @patch("uup_download.select_editions", return_value=None)
+    @patch("uup_api.get_build_info_cached")
     def test_process_selected_build_success(
         self,
         mock_get_build_info_cached,
@@ -946,9 +949,9 @@ class TestProcessSelectedBuild(unittest.TestCase):
         self.assertTrue(result)
         mock_download_build.assert_called_once()
 
-    @patch("download_uup.download_build", return_value=True)
-    @patch("download_uup.resolve_edition_filter", return_value=["filter"])
-    @patch("download_uup.get_build_info_cached")
+    @patch("uup_download.download_build", return_value=True)
+    @patch("uup_download.resolve_edition_filter", return_value=["filter"])
+    @patch("uup_api.get_build_info_cached")
     def test_process_selected_build_with_edition(
         self,
         mock_get_build_info_cached,
@@ -967,8 +970,8 @@ class TestProcessSelectedBuild(unittest.TestCase):
         mock_resolve_edition_filter.assert_called_once()
 
     @patch("builtins.input", return_value="n")
-    @patch("download_uup.select_editions", return_value=None)
-    @patch("download_uup.get_build_info_cached")
+    @patch("uup_download.select_editions", return_value=None)
+    @patch("uup_api.get_build_info_cached")
     def test_process_selected_build_cancelled(
         self, mock_get_build_info_cached, _mock_select_editions, _mock_input
     ):
@@ -988,7 +991,7 @@ class TestPrepareOutputDirectory(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             output_path = Path(tmpdir) / "output" / "uup_files"
             # The directory doesn't exist yet
-            download_uup._prepare_output_directory(output_path)
+            uup_download._prepare_output_directory(output_path)
             # Directory should be created
             self.assertTrue(output_path.exists())
 
@@ -1002,7 +1005,7 @@ class TestPrepareOutputDirectory(unittest.TestCase):
             # Create a test file
             (output_path / "test.txt").write_text("test content")
 
-            download_uup._prepare_output_directory(output_path)
+            uup_download._prepare_output_directory(output_path)
             # Test file should be deleted
             self.assertFalse((output_path / "test.txt").exists())
 
@@ -1011,7 +1014,7 @@ class TestPrepareOutputDirectory(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as tmpdir:
             output_path = Path(tmpdir) / "output" / "uup_files"
-            download_uup._prepare_output_directory(output_path)
+            uup_download._prepare_output_directory(output_path)
             self.assertTrue(output_path.exists())
 
 
@@ -1057,11 +1060,8 @@ class TestPinFunctions(unittest.TestCase):
     """Tests for pin-related argument parsing and missing pin files."""
 
     def test_get_pinned_build_no_file(self):
-        # When the pin file doesn't exist, returns None
-        # Use a path that definitely doesn't exist
-        result = download_uup.get_pinned_build()
-        # If repo has no pin file, returns None
-        self.assertIsNone(result)
+        with patch.object(download_uup, "PIN_FILE", Path("/nonexistent/.uup-pin.json")):
+            self.assertIsNone(download_uup.get_pinned_build())
 
     def test_parse_args_pin_build(self):
         args = parse_args(["--build-id", "abc-123", "--pin-build"])
@@ -1082,56 +1082,56 @@ class TestCache(unittest.TestCase):
         self.tmp = tempfile.mkdtemp()
         self._cwd = os.getcwd()
         os.chdir(self.tmp)
-        download_uup.cache_clear()
+        uup_api.cache_clear()
 
     def tearDown(self):
         os.chdir(self._cwd)
         shutil.rmtree(self.tmp, ignore_errors=True)
 
     def test_cache_set_and_get(self):
-        ok = download_uup.cache_set("mykey", {"a": 1, "b": [1, 2]})
+        ok = uup_api.cache_set("mykey", {"a": 1, "b": [1, 2]})
         self.assertTrue(ok)
-        result = download_uup.cache_get("mykey", ttl_seconds=60)
+        result = uup_api.cache_get("mykey", ttl_seconds=60)
         self.assertEqual(result, {"a": 1, "b": [1, 2]})
 
     def test_cache_get_missing(self):
-        self.assertIsNone(download_uup.cache_get("nope", ttl_seconds=60))
+        self.assertIsNone(uup_api.cache_get("nope", ttl_seconds=60))
 
     def test_cache_get_expired(self):
-        download_uup.cache_set("k", "v")
+        uup_api.cache_set("k", "v")
         # ttl=0 should treat it as expired
-        self.assertIsNone(download_uup.cache_get("k", ttl_seconds=0))
+        self.assertIsNone(uup_api.cache_get("k", ttl_seconds=0))
 
     def test_cache_clear_single(self):
-        download_uup.cache_set("a", 1)
-        download_uup.cache_set("b", 2)
-        removed = download_uup.cache_clear("a")
+        uup_api.cache_set("a", 1)
+        uup_api.cache_set("b", 2)
+        removed = uup_api.cache_clear("a")
         self.assertEqual(removed, 1)
-        self.assertIsNone(download_uup.cache_get("a", ttl_seconds=60))
-        self.assertEqual(download_uup.cache_get("b", ttl_seconds=60), 2)
+        self.assertIsNone(uup_api.cache_get("a", ttl_seconds=60))
+        self.assertEqual(uup_api.cache_get("b", ttl_seconds=60), 2)
 
     def test_cache_clear_all(self):
-        download_uup.cache_set("a", 1)
-        download_uup.cache_set("b", 2)
-        removed = download_uup.cache_clear()
+        uup_api.cache_set("a", 1)
+        uup_api.cache_set("b", 2)
+        removed = uup_api.cache_clear()
         self.assertGreaterEqual(removed, 2)
-        self.assertIsNone(download_uup.cache_get("a", ttl_seconds=60))
-        self.assertIsNone(download_uup.cache_get("b", ttl_seconds=60))
+        self.assertIsNone(uup_api.cache_get("a", ttl_seconds=60))
+        self.assertIsNone(uup_api.cache_get("b", ttl_seconds=60))
 
     def test_cache_get_corrupt_json(self):
-        cache_dir = download_uup.get_cache_dir()
-        cache_file = cache_dir / download_uup._safe_cache_name("corrupt")
+        cache_dir = uup_api.get_cache_dir()
+        cache_file = cache_dir / uup_api._safe_cache_name("corrupt")
         cache_file.write_text("{ not json")
-        self.assertIsNone(download_uup.cache_get("corrupt", ttl_seconds=60))
+        self.assertIsNone(uup_api.cache_get("corrupt", ttl_seconds=60))
 
     def test_cache_get_malformed_entry(self):
-        cache_dir = download_uup.get_cache_dir()
-        cache_file = cache_dir / download_uup._safe_cache_name("malformed")
+        cache_dir = uup_api.get_cache_dir()
+        cache_file = cache_dir / uup_api._safe_cache_name("malformed")
         cache_file.write_text(json.dumps(["just", "a", "list"]))
-        self.assertIsNone(download_uup.cache_get("malformed", ttl_seconds=60))
+        self.assertIsNone(uup_api.cache_get("malformed", ttl_seconds=60))
 
     def test_safe_cache_name_sanitizes(self):
-        name = download_uup._safe_cache_name("foo/bar baz?")
+        name = uup_api._safe_cache_name("foo/bar baz?")
         self.assertNotIn("/", name)
         self.assertTrue(name.endswith(".json"))
 
@@ -1142,10 +1142,10 @@ class TestCache(unittest.TestCase):
             {"id": "b1", "title": "Test", "created": 1, "build": "1", "arch": "x64"}
         ]
         with patch.object(
-            download_uup, "get_latest_builds", return_value=sample
+            uup_api, "get_latest_builds", return_value=sample
         ) as mock_api:
-            first = download_uup.get_latest_builds_cached(max_results=5, ttl_seconds=60)
-            second = download_uup.get_latest_builds_cached(
+            first = uup_api.get_latest_builds_cached(max_results=5, ttl_seconds=60)
+            second = uup_api.get_latest_builds_cached(
                 max_results=5, ttl_seconds=60
             )
             self.assertEqual(first, sample)
@@ -1157,12 +1157,12 @@ class TestCache(unittest.TestCase):
 
         sample = [{"id": "b1", "title": "Test"}]
         with patch.object(
-            download_uup, "get_latest_builds", return_value=sample
+            uup_api, "get_latest_builds", return_value=sample
         ) as mock_api:
-            download_uup.get_latest_builds_cached(
+            uup_api.get_latest_builds_cached(
                 max_results=5, ttl_seconds=60, force_refresh=True
             )
-            download_uup.get_latest_builds_cached(
+            uup_api.get_latest_builds_cached(
                 max_results=5, ttl_seconds=60, force_refresh=True
             )
             self.assertEqual(mock_api.call_count, 2)
@@ -1170,8 +1170,8 @@ class TestCache(unittest.TestCase):
     def test_latest_builds_cached_api_failure_no_cache(self):
         from unittest.mock import patch
 
-        with patch.object(download_uup, "get_latest_builds", return_value=None):
-            result = download_uup.get_latest_builds_cached(
+        with patch.object(uup_api, "get_latest_builds", return_value=None):
+            result = uup_api.get_latest_builds_cached(
                 max_results=5, ttl_seconds=60
             )
             self.assertIsNone(result)
@@ -1181,10 +1181,10 @@ class TestCache(unittest.TestCase):
 
         info = {"files": {"a.cab": {"size": 1}}}
         with patch.object(
-            download_uup, "get_build_info", return_value=info
+            uup_api, "get_build_info", return_value=info
         ) as mock_api:
-            r1 = download_uup.get_build_info_cached("xyz", ttl_seconds=60)
-            r2 = download_uup.get_build_info_cached("xyz", ttl_seconds=60)
+            r1 = uup_api.get_build_info_cached("xyz", ttl_seconds=60)
+            r2 = uup_api.get_build_info_cached("xyz", ttl_seconds=60)
             self.assertEqual(r1, info)
             self.assertEqual(r2, info)
             self.assertEqual(mock_api.call_count, 1)
@@ -1213,7 +1213,7 @@ class TestEditionSelection(unittest.TestCase):
         }
 
     def test_list_edition_files_extracts_known(self):
-        result = download_uup.list_edition_files(self._build_info())
+        result = uup_download.list_edition_files(self._build_info())
         self.assertIn("professional", result)
         self.assertIn("enterprise", result)
         self.assertIn("home", result)
@@ -1222,31 +1222,31 @@ class TestEditionSelection(unittest.TestCase):
         self.assertNotIn("Microsoft.Windows.SomeUpdate.cab", str(result))
 
     def test_list_edition_files_empty(self):
-        self.assertEqual(download_uup.list_edition_files({"files": {}}), {})
+        self.assertEqual(uup_download.list_edition_files({"files": {}}), {})
 
     def test_resolve_edition_filter_none(self):
-        result = download_uup.resolve_edition_filter(self._build_info(), None)
+        result = uup_download.resolve_edition_filter(self._build_info(), None)
         self.assertIsNone(result)
 
     def test_resolve_edition_filter_known(self):
-        result = download_uup.resolve_edition_filter(self._build_info(), "professional")
+        result = uup_download.resolve_edition_filter(self._build_info(), "professional")
         self.assertEqual(result, ["Microsoft.Windows.Professional.esd"])
 
     def test_resolve_edition_filter_case_insensitive(self):
-        result = download_uup.resolve_edition_filter(self._build_info(), "ENTERPRISE")
+        result = uup_download.resolve_edition_filter(self._build_info(), "ENTERPRISE")
         self.assertEqual(result, ["Microsoft.Windows.Enterprise.esd"])
 
     def test_resolve_edition_filter_prefix(self):
-        result = download_uup.resolve_edition_filter(self._build_info(), "home")
+        result = uup_download.resolve_edition_filter(self._build_info(), "home")
         self.assertEqual(result, ["Microsoft.Windows.Home.esd"])
 
     def test_resolve_edition_filter_unknown(self):
-        result = download_uup.resolve_edition_filter(self._build_info(), "datacenter")
+        result = uup_download.resolve_edition_filter(self._build_info(), "datacenter")
         self.assertIsNone(result)
 
     def test_resolve_edition_filter_no_edition_files(self):
         info = {"files": {"Microsoft.Windows.Updates.cab": {"size": 1}}}
-        result = download_uup.resolve_edition_filter(info, "professional")
+        result = uup_download.resolve_edition_filter(info, "professional")
         self.assertIsNone(result)
 
     def test_parse_args_edition_flag(self):
@@ -1281,21 +1281,21 @@ class TestComponentGroups(unittest.TestCase):
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
     def test_load_component_groups_returns_groups(self):
-        groups = download_uup.load_component_groups(self.groups_file)
+        groups = keep_list.load_component_groups(self.groups_file)
         self.assertIn("gaming", groups)
         self.assertIn("telemetry", groups)
         self.assertEqual(groups["gaming"]["patterns"], ["*Xbox*", "*Solitaire*"])
         self.assertEqual(groups["gaming"]["description"], "Game launchers")
 
     def test_load_component_groups_missing_file(self):
-        result = download_uup.load_component_groups("/nonexistent/path.json")
+        result = keep_list.load_component_groups("/nonexistent/path.json")
         self.assertEqual(result, {})
 
     def test_load_component_groups_malformed(self):
         bad_file = os.path.join(self.tmpdir, "bad.json")
         with open(bad_file, "w", encoding="utf-8") as f:
             f.write("{ this is not valid json")
-        result = download_uup.load_component_groups(bad_file)
+        result = keep_list.load_component_groups(bad_file)
         self.assertEqual(result, {})
 
     def test_load_component_groups_skips_invalid_entries(self):
@@ -1310,7 +1310,7 @@ class TestComponentGroups(unittest.TestCase):
         path = os.path.join(self.tmpdir, "mixed.json")
         with open(path, "w", encoding="utf-8") as f:
             json.dump(mixed_data, f)
-        result = download_uup.load_component_groups(path)
+        result = keep_list.load_component_groups(path)
         self.assertIn("good", result)
         self.assertNotIn("no_patterns", result)
         self.assertNotIn("bad_patterns", result)
@@ -1322,36 +1322,36 @@ class TestComponentGroups(unittest.TestCase):
         path = os.path.join(self.tmpdir, "flat.json")
         with open(path, "w", encoding="utf-8") as f:
             json.dump(flat, f)
-        result = download_uup.load_component_groups(path)
+        result = keep_list.load_component_groups(path)
         self.assertIn("gaming", result)
 
     def test_list_component_groups_sorted(self):
-        result = download_uup.list_component_groups(self.groups_file)
+        result = keep_list.list_component_groups(self.groups_file)
         self.assertEqual(result, ["gaming", "telemetry"])
 
     def test_get_component_group_existing(self):
-        group = download_uup.get_component_group("gaming", self.groups_file)
+        group = keep_list.get_component_group("gaming", self.groups_file)
         assert group is not None
         self.assertIn("*Xbox*", group["patterns"])
 
     def test_get_component_group_missing(self):
-        result = download_uup.get_component_group("nope", self.groups_file)
+        result = keep_list.get_component_group("nope", self.groups_file)
         self.assertIsNone(result)
 
     def test_validate_component_groups_all_valid(self):
-        result = download_uup.validate_component_groups(
+        result = keep_list.validate_component_groups(
             ["gaming", "telemetry"], self.groups_file
         )
         self.assertEqual(result, ["gaming", "telemetry"])
 
     def test_validate_component_groups_filters_unknown(self):
-        result = download_uup.validate_component_groups(
+        result = keep_list.validate_component_groups(
             ["gaming", "nope", "telemetry"], self.groups_file
         )
         self.assertEqual(result, ["gaming", "telemetry"])
 
     def test_collect_component_patterns_dedupes(self):
-        patterns = download_uup.collect_component_patterns(
+        patterns = keep_list.collect_component_patterns(
             ["gaming", "telemetry"], self.groups_file
         )
         self.assertEqual(patterns, ["*Xbox*", "*Solitaire*", "*Copilot*", "*Recall*"])
@@ -1369,18 +1369,18 @@ class TestComponentGroups(unittest.TestCase):
                 },
                 f,
             )
-        patterns = download_uup.collect_component_patterns(["a", "b"], overlap_file)
+        patterns = keep_list.collect_component_patterns(["a", "b"], overlap_file)
         self.assertEqual(patterns, ["*X*", "*Y*", "*Z*"])
 
     def test_collect_component_patterns_skips_unknown(self):
-        patterns = download_uup.collect_component_patterns(
+        patterns = keep_list.collect_component_patterns(
             ["gaming", "nope"], self.groups_file
         )
         self.assertEqual(patterns, ["*Xbox*", "*Solitaire*"])
 
     def test_write_component_groups_for_build_success(self):
         out_path = os.path.join(self.tmpdir, ".uup-groups")
-        ok = download_uup.write_component_groups_for_build(
+        ok = keep_list.write_group_selection(
             ["gaming", "telemetry"], out_path
         )
         self.assertTrue(ok)
@@ -1389,7 +1389,7 @@ class TestComponentGroups(unittest.TestCase):
         self.assertEqual(contents, "gaming\ntelemetry\n")
 
     def test_write_component_groups_for_build_failure(self):
-        ok = download_uup.write_component_groups_for_build(
+        ok = keep_list.write_group_selection(
             ["gaming"], "/no/such/dir/.uup-groups"
         )
         self.assertFalse(ok)
@@ -1416,13 +1416,13 @@ class TestMainInfoModes(unittest.TestCase):
         self.tmp = tempfile.mkdtemp()
         self._orig_cwd = os.getcwd()
         os.chdir(self.tmp)
-        download_uup.cache_clear()
+        uup_api.cache_clear()
 
     def tearDown(self):
         os.chdir(self._orig_cwd)
         shutil.rmtree(self.tmp, ignore_errors=True)
 
-    @patch("download_uup.cache_clear", return_value=3)
+    @patch("uup_api.cache_clear", return_value=3)
     @patch("download_uup.log_success")
     def test_main_clear_cache(self, mock_log_success, mock_cache_clear):
         with patch.object(sys, "argv", ["download_uup.py", "--clear-cache"]):
@@ -1487,7 +1487,7 @@ class TestMainInfoModes(unittest.TestCase):
         self.assertEqual(rc, 1)
         mock_log_error.assert_called()
 
-    @patch("download_uup.write_component_groups_for_build", return_value=False)
+    @patch("keep_list.write_group_selection", return_value=False)
     def test_main_write_groups_write_failure(self, _mock_write):
         with patch.object(
             sys,
@@ -1534,7 +1534,7 @@ class TestMainInfoModes(unittest.TestCase):
         self.assertEqual(rc, 1)
         mock_check.assert_called_once()
 
-    @patch("download_uup.get_latest_builds_cached", return_value=[{"id": "x"}])
+    @patch("uup_api.get_latest_builds_cached", return_value=[{"id": "x"}])
     @patch("download_uup.display_builds")
     @patch("download_uup.check_dependencies", return_value=True)
     def test_main_list_builds(self, mock_check, mock_display, mock_get):
@@ -1543,26 +1543,26 @@ class TestMainInfoModes(unittest.TestCase):
         self.assertEqual(rc, 0)
         mock_display.assert_called_once()
 
-    @patch("download_uup.get_latest_builds_cached", return_value=None)
+    @patch("uup_api.get_latest_builds_cached", return_value=None)
     @patch("download_uup.check_dependencies", return_value=True)
     def test_main_list_builds_no_results(self, mock_check, mock_get):
         with patch.object(sys, "argv", ["download_uup.py", "--list"]):
             rc = download_uup.main()
         self.assertEqual(rc, 1)
 
-    @patch("download_uup.get_build_info_cached", return_value=None)
+    @patch("uup_api.get_build_info_cached", return_value=None)
     @patch("download_uup.check_dependencies", return_value=True)
     def test_main_build_id_no_info(self, mock_check, _mock_get_info):
         with (
             patch.object(sys, "argv", ["download_uup.py", "--build-id", "abc"]),
-            patch("download_uup.log_error") as mock_log_error,
+            patch("uup_download.log_error") as mock_log_error,
         ):
             rc = download_uup.main()
         self.assertEqual(rc, 1)
         mock_log_error.assert_called()
 
     @patch(
-        "download_uup.get_build_info_cached",
+        "uup_api.get_build_info_cached",
         return_value={"files": {"Microsoft.Windows.Professional.esd": {"size": 1}}},
     )
     @patch("download_uup.check_dependencies", return_value=True)
@@ -1573,7 +1573,7 @@ class TestMainInfoModes(unittest.TestCase):
                 "argv",
                 ["download_uup.py", "--build-id", "abc", "--edition", "professional"],
             ),
-            patch("download_uup.download_build", return_value=True) as mock_dl,
+            patch("uup_download.download_build", return_value=True) as mock_dl,
         ):
             rc = download_uup.main()
         self.assertEqual(rc, 0)
@@ -1581,18 +1581,22 @@ class TestMainInfoModes(unittest.TestCase):
         args, _ = mock_dl.call_args
         self.assertEqual(args[2], ["Microsoft.Windows.Professional.esd"])
 
-    @patch("download_uup.get_latest_builds_cached", return_value=[{"id": "x"}])
+    @patch("keep_list.write_group_selection", return_value=True)
+    @patch("uup_api.get_latest_builds_cached", return_value=[{"id": "x"}])
     @patch("download_uup.display_builds")
     @patch("download_uup.check_dependencies", return_value=True)
-    def test_main_preset_mode(self, mock_check, mock_display, mock_get):
-        with patch.object(sys, "argv", ["download_uup.py", "--preset", "minimal"]):
+    def test_main_preset_mode(self, mock_check, mock_display, mock_get, mock_write):
+        with patch.object(sys, "argv", ["download_uup.py", "--preset", "standard"]):
             rc = download_uup.main()
         self.assertEqual(rc, 0)
         mock_display.assert_called_once()
+        # Regression: profiles.json must carry the preset's component groups.
+        mock_write.assert_called_once_with(["telemetry", "social", "oem", "news"])
 
-    @patch("download_uup.get_latest_builds_cached", return_value=None)
+    @patch("keep_list.write_group_selection", return_value=True)
+    @patch("uup_api.get_latest_builds_cached", return_value=None)
     @patch("download_uup.check_dependencies", return_value=True)
-    def test_main_preset_no_builds(self, mock_check, mock_get):
+    def test_main_preset_no_builds(self, mock_check, mock_get, _mock_write):
         with patch.object(sys, "argv", ["download_uup.py", "--preset", "minimal"]):
             rc = download_uup.main()
         self.assertEqual(rc, 1)
@@ -1625,7 +1629,7 @@ class TestHandleInfoMode(unittest.TestCase):
     """Tests for _handle_info_mode individual branches."""
 
     @patch(
-        "download_uup.get_available_editions",
+        "uup_api.get_available_editions",
         return_value={"editionList": ["pro"], "editionFancyNames": {"pro": "Pro"}},
     )
     def test_editions_success(self, mock_get):
@@ -1640,7 +1644,7 @@ class TestHandleInfoMode(unittest.TestCase):
             rc = download_uup._handle_info_mode(args)
         self.assertEqual(rc, 0)
 
-    @patch("download_uup.get_available_editions", return_value=None)
+    @patch("uup_api.get_available_editions", return_value=None)
     def test_editions_failure(self, mock_get):
         from argparse import Namespace
 
@@ -1653,7 +1657,7 @@ class TestHandleInfoMode(unittest.TestCase):
         self.assertEqual(rc, 1)
 
     @patch(
-        "download_uup.get_available_languages",
+        "uup_api.get_available_languages",
         return_value={"langList": ["en-us"], "langFancyNames": {"en-us": "English"}},
     )
     def test_languages_success(self, mock_get):
@@ -1668,7 +1672,7 @@ class TestHandleInfoMode(unittest.TestCase):
             rc = download_uup._handle_info_mode(args)
         self.assertEqual(rc, 0)
 
-    @patch("download_uup.get_available_languages", return_value=None)
+    @patch("uup_api.get_available_languages", return_value=None)
     def test_languages_failure(self, mock_get):
         from argparse import Namespace
 
@@ -1681,7 +1685,7 @@ class TestHandleInfoMode(unittest.TestCase):
         self.assertEqual(rc, 1)
 
     @patch(
-        "download_uup.fetch_latest_from_wu",
+        "uup_api.fetch_latest_from_wu",
         return_value={
             "updateId": "u1",
             "updateTitle": "T",
@@ -1703,7 +1707,7 @@ class TestHandleInfoMode(unittest.TestCase):
             rc = download_uup._handle_info_mode(args)
         self.assertEqual(rc, 0)
 
-    @patch("download_uup.fetch_latest_from_wu", return_value=None)
+    @patch("uup_api.fetch_latest_from_wu", return_value=None)
     def test_latest_failure(self, mock_get):
         from argparse import Namespace
 
@@ -1754,92 +1758,92 @@ class TestCacheEdgeCases(unittest.TestCase):
         self.tmp = tempfile.mkdtemp()
         self._cwd = os.getcwd()
         os.chdir(self.tmp)
-        download_uup.cache_clear()
+        uup_api.cache_clear()
 
     def tearDown(self):
         os.chdir(self._cwd)
         shutil.rmtree(self.tmp, ignore_errors=True)
 
     def test_cache_get_malformed_structure(self):
-        cache_dir = download_uup.get_cache_dir()
-        cache_file = cache_dir / download_uup._safe_cache_name("weird")
+        cache_dir = uup_api.get_cache_dir()
+        cache_file = cache_dir / uup_api._safe_cache_name("weird")
         cache_file.write_text(json.dumps({"timestamp": 1.0}))
-        self.assertIsNone(download_uup.cache_get("weird", ttl_seconds=60))
+        self.assertIsNone(uup_api.cache_get("weird", ttl_seconds=60))
 
     def test_cache_get_corrupt_unlinks(self):
-        cache_dir = download_uup.get_cache_dir()
-        cache_file = cache_dir / download_uup._safe_cache_name("bad")
+        cache_dir = uup_api.get_cache_dir()
+        cache_file = cache_dir / uup_api._safe_cache_name("bad")
         cache_file.write_text("{ not json")
-        download_uup.cache_get("bad", ttl_seconds=60)
+        uup_api.cache_get("bad", ttl_seconds=60)
         self.assertFalse(cache_file.exists())
 
     def test_cache_set_non_serializable(self):
-        ok = download_uup.cache_set("oops", {"fn": lambda: 1})
+        ok = uup_api.cache_set("oops", {"fn": lambda: 1})
         self.assertFalse(ok)
 
     def test_cache_clear_missing_key(self):
-        removed = download_uup.cache_clear("never-existed")
+        removed = uup_api.cache_clear("never-existed")
         self.assertEqual(removed, 0)
 
     def test_cache_clear_with_key_present(self):
-        download_uup.cache_set("present", 42)
-        removed = download_uup.cache_clear("present")
+        uup_api.cache_set("present", 42)
+        removed = uup_api.cache_clear("present")
         self.assertEqual(removed, 1)
 
 
 class TestFetchUrlBranches(unittest.TestCase):
     def setUp(self):
-        download_uup._url_cache.clear()
+        uup_api._url_cache.clear()
         self.addCleanup(setattr, download_uup, "_client", None)
 
     def tearDown(self):
-        download_uup._url_cache.clear()
+        uup_api._url_cache.clear()
 
     def _use_handler(self, handler):
-        download_uup._client = httpx.Client(transport=httpx.MockTransport(handler))
+        uup_api._client = httpx.Client(transport=httpx.MockTransport(handler))
 
     def test_cache_hit(self):
         def handler(request):
             raise AssertionError("network should not be called on cache hit")
 
         self._use_handler(handler)
-        download_uup._url_cache["cached-url:False"] = "cached-value"
-        result = download_uup.fetch_url("cached-url")
+        uup_api._url_cache["cached-url:False"] = "cached-value"
+        result = uup_api.fetch_url("cached-url")
         self.assertEqual(result, "cached-value")
 
-    @patch("download_uup.log_error")
+    @patch("uup_api.log_error")
     def test_json_decode_error(self, mock_log_error):
         self._use_handler(lambda request: httpx.Response(200, text="not valid json"))
-        result = download_uup.fetch_url("http://example.com", return_json=True)
+        result = uup_api.fetch_url("http://example.com", return_json=True)
         self.assertIsNone(result)
         mock_log_error.assert_called()
 
-    @patch("download_uup.log_error")
+    @patch("uup_api.log_error")
     def test_json_not_dict(self, mock_log_error):
         self._use_handler(lambda request: httpx.Response(200, text='["a", "list"]'))
-        result = download_uup.fetch_url("http://example.com", return_json=True)
+        result = uup_api.fetch_url("http://example.com", return_json=True)
         self.assertIsNone(result)
         mock_log_error.assert_called()
 
     def test_json_success_cached(self):
         self._use_handler(lambda request: httpx.Response(200, text='{"a": 1}'))
-        result = download_uup.fetch_url("http://example.com", return_json=True)
+        result = uup_api.fetch_url("http://example.com", return_json=True)
         self.assertEqual(result, {"a": 1})
 
 
 class TestGetApiVersion(unittest.TestCase):
-    @patch("download_uup.fetch_url", return_value='{"response": {"apiVersion": "1.0"}}')
+    @patch("uup_api.fetch_url", return_value='{"response": {"apiVersion": "1.0"}}')
     def test_success(self, _mock_fetch):
-        info = download_uup.get_api_version()
+        info = uup_api.get_api_version()
         self.assertEqual(info, {"apiVersion": "1.0"})
 
-    @patch("download_uup.fetch_url", return_value=None)
+    @patch("uup_api.fetch_url", return_value=None)
     def test_no_response(self, _mock_fetch):
-        self.assertIsNone(download_uup.get_api_version())
+        self.assertIsNone(uup_api.get_api_version())
 
-    @patch("download_uup.fetch_url", return_value="not json at all")
+    @patch("uup_api.fetch_url", return_value="not json at all")
     def test_json_decode_error(self, _mock_fetch):
-        self.assertIsNone(download_uup.get_api_version())
+        self.assertIsNone(uup_api.get_api_version())
 
 
 class TestDisplayComponentGroups(unittest.TestCase):
@@ -1900,13 +1904,13 @@ class TestLoadComponentGroupsEdgeCases(unittest.TestCase):
         path = os.path.join(self.tmpdir, "list.json")
         with open(path, "w") as f:
             json.dump(["a", "b"], f)
-        self.assertEqual(download_uup.load_component_groups(path), {})
+        self.assertEqual(keep_list.load_component_groups(path), {})
 
     def test_groups_not_mapping(self):
         path = os.path.join(self.tmpdir, "bad_groups.json")
         with open(path, "w") as f:
             json.dump({"groups": ["a", "b"]}, f)
-        self.assertEqual(download_uup.load_component_groups(path), {})
+        self.assertEqual(keep_list.load_component_groups(path), {})
 
 
 class TestGetProfiles(unittest.TestCase):
@@ -1938,10 +1942,11 @@ class TestSavePinnedBuild(unittest.TestCase):
 
     def test_save_pinned_build_minimal(self):
         # Use a build_id-only save by calling in a temp project root
-        with patch.object(download_uup, "Path") as MockPath:
-            MockPath.return_value.parent.parent = self.tmp_path
+        pin = self.tmp_path / ".uup-pin.json"
+        with patch.object(download_uup, "PIN_FILE", pin):
             ok = download_uup.save_pinned_build("b1")
         self.assertTrue(ok)
+        self.assertEqual(json.loads(pin.read_text()), {"build_id": "b1"})
 
 
 class TestSelectEditionsAllEditions(unittest.TestCase):
@@ -1958,7 +1963,7 @@ class TestSelectEditionsAllEditions(unittest.TestCase):
                 "Win_Education.esd": {"size": 1},
             }
         }
-        result = download_uup.select_editions(build_info)
+        result = uup_download.select_editions(build_info)
         self.assertIsNone(result)
 
     @patch("builtins.input", return_value="3")
@@ -1970,26 +1975,26 @@ class TestSelectEditionsAllEditions(unittest.TestCase):
                 "Win_Home.esd": {"size": 1},
             }
         }
-        result = download_uup.select_editions(build_info)
+        result = uup_download.select_editions(build_info)
         self.assertEqual(result, ["Win_Home.esd"])
 
 
 class TestGetLatestBuildsEmpty(unittest.TestCase):
-    @patch("download_uup.fetch_url", return_value={"response": {"builds": []}})
+    @patch("uup_api.fetch_url", return_value={"response": {"builds": []}})
     def test_empty_builds_list(self, _mock_fetch):
-        self.assertEqual(download_uup.get_latest_builds(), [])
+        self.assertEqual(uup_api.get_latest_builds(), [])
 
 
 class TestDownloadLanguagePacks(unittest.TestCase):
-    @patch("download_uup.download_build", return_value=True)
-    @patch("download_uup.get_build_info_cached")
+    @patch("uup_download.download_build", return_value=True)
+    @patch("uup_api.get_build_info_cached")
     def test_download_language_packs_success(
         self, mock_get_build_info_cached, mock_download_build
     ):
         mock_get_build_info_cached.return_value = {"files": {"foo.esd": {"size": 1}}}
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            result = download_uup.download_language_packs(
+            result = uup_download.download_language_packs(
                 "test-id", ["en-us", "fr-fr"], tmpdir
             )
             self.assertTrue(result)
@@ -2000,13 +2005,13 @@ class TestDownloadLanguagePacks(unittest.TestCase):
             second_call_args = mock_download_build.call_args_list[1]
             self.assertIn("lang_fr-fr", str(second_call_args))
 
-    @patch("download_uup.download_build", return_value=True)
-    @patch("download_uup.get_build_info_cached", return_value=None)
+    @patch("uup_download.download_build", return_value=True)
+    @patch("uup_api.get_build_info_cached", return_value=None)
     def test_download_language_packs_no_files(
         self, mock_get_build_info_cached, mock_download_build
     ):
         with tempfile.TemporaryDirectory() as tmpdir:
-            result = download_uup.download_language_packs("test-id", ["en-us"], tmpdir)
+            result = uup_download.download_language_packs("test-id", ["en-us"], tmpdir)
             self.assertFalse(result)
             mock_download_build.assert_not_called()
 
@@ -2019,15 +2024,15 @@ class TestGetBuildFiles(unittest.TestCase):
                 "b.cab": {"size": 200},
             }
         }
-        result = download_uup.get_build_files(build_info)
+        result = uup_delta.get_build_files(build_info)
         self.assertEqual(set(result.keys()), {"a.esd", "b.cab"})
         self.assertEqual(result["a.esd"], {"size": 100, "sha256": "abc"})
 
     def test_get_build_files_empty(self):
-        self.assertEqual(download_uup.get_build_files({}), {})
+        self.assertEqual(uup_delta.get_build_files({}), {})
 
     def test_get_build_files_missing_files_key(self):
-        self.assertEqual(download_uup.get_build_files({"other": 1}), {})
+        self.assertEqual(uup_delta.get_build_files({"other": 1}), {})
 
     def test_get_build_files_filters_non_dict_entries(self):
         build_info = {
@@ -2037,32 +2042,32 @@ class TestGetBuildFiles(unittest.TestCase):
                 42: {"size": 2},
             }
         }
-        result = download_uup.get_build_files(build_info)
+        result = uup_delta.get_build_files(build_info)
         self.assertEqual(list(result.keys()), ["a.esd"])
 
     def test_get_build_files_returns_copies(self):
         """Modifying the returned dict must not affect build_info."""
         info = {"files": {"a.esd": {"size": 1}}}
-        result = download_uup.get_build_files(info)
+        result = uup_delta.get_build_files(info)
         result["a.esd"]["size"] = 999
         self.assertEqual(info["files"]["a.esd"]["size"], 1)
 
     def test_get_build_files_files_not_dict(self):
         """Non-dict 'files' entry is treated as empty."""
-        self.assertEqual(download_uup.get_build_files({"files": "garbage"}), {})
+        self.assertEqual(uup_delta.get_build_files({"files": "garbage"}), {})
 
 
 class TestCalculateDelta(unittest.TestCase):
     def test_identical_builds(self):
         base = target = {"a.esd": {"size": 1}, "b.cab": {"size": 2}}
-        delta = download_uup.calculate_delta(base, target)
+        delta = uup_delta.calculate_delta(base, target)
         self.assertEqual(delta["added"], [])
         self.assertEqual(delta["removed"], [])
         self.assertEqual(delta["modified"], [])
         self.assertEqual(set(delta["unchanged"]), {"a.esd", "b.cab"})
 
     def test_added_files(self):
-        delta = download_uup.calculate_delta(
+        delta = uup_delta.calculate_delta(
             {"a": {"size": 1}}, {"a": {"size": 1}, "b": {"size": 2}, "c": {"size": 3}}
         )
         self.assertEqual(set(delta["added"]), {"b", "c"})
@@ -2071,7 +2076,7 @@ class TestCalculateDelta(unittest.TestCase):
         self.assertEqual(delta["unchanged"], ["a"])
 
     def test_removed_files(self):
-        delta = download_uup.calculate_delta(
+        delta = uup_delta.calculate_delta(
             {"a": {"size": 1}, "b": {"size": 2}}, {"a": {"size": 1}}
         )
         self.assertEqual(delta["added"], [])
@@ -2080,14 +2085,14 @@ class TestCalculateDelta(unittest.TestCase):
         self.assertEqual(delta["unchanged"], ["a"])
 
     def test_modified_files_size_changed(self):
-        delta = download_uup.calculate_delta({"a": {"size": 1}}, {"a": {"size": 2}})
+        delta = uup_delta.calculate_delta({"a": {"size": 1}}, {"a": {"size": 2}})
         self.assertEqual(delta["added"], [])
         self.assertEqual(delta["removed"], [])
         self.assertEqual(delta["modified"], ["a"])
         self.assertEqual(delta["unchanged"], [])
 
     def test_modified_files_sha256_changed(self):
-        delta = download_uup.calculate_delta(
+        delta = uup_delta.calculate_delta(
             {"a": {"size": 1, "sha256": "old"}},
             {"a": {"size": 1, "sha256": "new"}},
         )
@@ -2095,20 +2100,20 @@ class TestCalculateDelta(unittest.TestCase):
 
     def test_modified_files_extra_key(self):
         """A new metadata key in the target should mark the file as modified."""
-        delta = download_uup.calculate_delta(
+        delta = uup_delta.calculate_delta(
             {"a": {"size": 1}}, {"a": {"size": 1, "sha256": "abc"}}
         )
         self.assertEqual(delta["modified"], ["a"])
 
     def test_both_empty(self):
-        delta = download_uup.calculate_delta({}, {})
+        delta = uup_delta.calculate_delta({}, {})
         self.assertEqual(delta["added"], [])
         self.assertEqual(delta["removed"], [])
         self.assertEqual(delta["modified"], [])
         self.assertEqual(delta["unchanged"], [])
 
     def test_disjoint_builds(self):
-        delta = download_uup.calculate_delta({"a": {"size": 1}}, {"b": {"size": 2}})
+        delta = uup_delta.calculate_delta({"a": {"size": 1}}, {"b": {"size": 2}})
         self.assertEqual(delta["added"], ["b"])
         self.assertEqual(delta["removed"], ["a"])
         self.assertEqual(delta["modified"], [])
@@ -2116,7 +2121,7 @@ class TestCalculateDelta(unittest.TestCase):
 
     def test_results_sorted(self):
         """added/removed/modified/unchanged must be sorted for stable output."""
-        delta = download_uup.calculate_delta(
+        delta = uup_delta.calculate_delta(
             {"z": {"size": 1}, "a": {"size": 1}}, {"m": {"size": 1}, "a": {"size": 1}}
         )
         self.assertEqual(delta["added"], ["m"])
@@ -2124,7 +2129,7 @@ class TestCalculateDelta(unittest.TestCase):
         self.assertEqual(delta["unchanged"], ["a"])
 
     def test_compute_changed_files(self):
-        result = download_uup.compute_changed_files(
+        result = uup_delta.compute_changed_files(
             {"a": {"size": 1}, "b": {"size": 2}, "c": {"size": 3}},
             {"a": {"size": 1}, "b": {"size": 99}, "d": {"size": 4}},
         )
@@ -2139,7 +2144,7 @@ class TestFormatDeltaSummary(unittest.TestCase):
             "modified": ["d"],
             "unchanged": ["e", "f", "g"],
         }
-        text = download_uup.format_delta_summary("base", "target", delta)
+        text = uup_delta.format_delta_summary("base", "target", delta)
         self.assertIn("base", text)
         self.assertIn("target", text)
         self.assertIn("2", text)
@@ -2163,17 +2168,17 @@ class TestDeltaManifestIO(unittest.TestCase):
                 "a.esd": {"size": 100, "sha256": "abc"},
                 "b.cab": {"size": 200},
             }
-            path = download_uup.save_delta_manifest("build-1", files, store_dir=tmp)
+            path = uup_delta.save_delta_manifest("build-1", files, store_dir=tmp)
             assert path is not None
             self.assertTrue(path.exists())
 
-            loaded = download_uup.load_delta_manifest("build-1", store_dir=tmp)
+            loaded = uup_delta.load_delta_manifest("build-1", store_dir=tmp)
             self.assertIsNotNone(loaded)
             self.assertEqual(loaded, files)
 
     def test_load_missing_manifest_returns_none(self):
         with tempfile.TemporaryDirectory() as tmp:
-            result = download_uup.load_delta_manifest("missing", store_dir=tmp)
+            result = uup_delta.load_delta_manifest("missing", store_dir=tmp)
             self.assertIsNone(result)
 
     def test_load_malformed_manifest_returns_none(self):
@@ -2182,7 +2187,7 @@ class TestDeltaManifestIO(unittest.TestCase):
             manifest = store / uup_delta._safe_delta_filename("build-1")
             manifest.write_text("not json{", encoding="utf-8")
             self.assertIsNone(
-                download_uup.load_delta_manifest("build-1", store_dir=tmp)
+                uup_delta.load_delta_manifest("build-1", store_dir=tmp)
             )
 
     def test_load_manifest_filters_non_dict_entries(self):
@@ -2195,7 +2200,7 @@ class TestDeltaManifestIO(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            loaded = download_uup.load_delta_manifest("build-1", store_dir=tmp)
+            loaded = uup_delta.load_delta_manifest("build-1", store_dir=tmp)
             self.assertEqual(loaded, {"a": {"size": 1}})
 
     def test_load_manifest_top_level_not_dict(self):
@@ -2204,7 +2209,7 @@ class TestDeltaManifestIO(unittest.TestCase):
             manifest = store / uup_delta._safe_delta_filename("build-1")
             manifest.write_text(json.dumps(["a", "b"]), encoding="utf-8")
             self.assertIsNone(
-                download_uup.load_delta_manifest("build-1", store_dir=tmp)
+                uup_delta.load_delta_manifest("build-1", store_dir=tmp)
             )
 
     def test_load_manifest_files_not_dict(self):
@@ -2213,13 +2218,13 @@ class TestDeltaManifestIO(unittest.TestCase):
             manifest = store / uup_delta._safe_delta_filename("build-1")
             manifest.write_text(json.dumps({"files": "nope"}), encoding="utf-8")
             self.assertIsNone(
-                download_uup.load_delta_manifest("build-1", store_dir=tmp)
+                uup_delta.load_delta_manifest("build-1", store_dir=tmp)
             )
 
     def test_save_creates_store_dir(self):
         with tempfile.TemporaryDirectory() as tmp:
             nested = Path(tmp) / "nested" / "store"
-            path = download_uup.save_delta_manifest(
+            path = uup_delta.save_delta_manifest(
                 "build-1", {"a": {"size": 1}}, store_dir=nested
             )
             assert path is not None
@@ -2245,7 +2250,7 @@ class TestDeltaManifestIO(unittest.TestCase):
         """
         with tempfile.TemporaryDirectory() as tmp:
             # Save a normal manifest, then attempt to load a traversal one
-            download_uup.save_delta_manifest(
+            uup_delta.save_delta_manifest(
                 "build-1", {"a": {"size": 1}}, store_dir=tmp
             )
             # "../../../etc/passwd" sanitizes to ".._.._.._etc_passwd" which
@@ -2253,7 +2258,7 @@ class TestDeltaManifestIO(unittest.TestCase):
             # file. The key safety property is that the resolved path is
             # inside the store.
             with patch("download_uup.log_error") as mock_log:
-                result = download_uup.load_delta_manifest(
+                result = uup_delta.load_delta_manifest(
                     "../../../etc/passwd", store_dir=tmp
                 )
             self.assertIsNone(result)  # file doesn't exist
@@ -2267,7 +2272,7 @@ class TestPrepareDownloadListWithDelta(unittest.TestCase):
             "b.cab": {"size": 2},
             "c.esd": {"size": 3},
         }
-        result = download_uup._prepare_download_list(
+        result = uup_download._prepare_download_list(
             "test-id", files, delta_filter={"a.esd", "b.cab"}
         )
         names = {item["name"] for item in result}
@@ -2275,14 +2280,14 @@ class TestPrepareDownloadListWithDelta(unittest.TestCase):
 
     def test_delta_filter_none_includes_all(self):
         files = {"a.esd": {"size": 1}, "b.cab": {"size": 2}}
-        result = download_uup._prepare_download_list(
+        result = uup_download._prepare_download_list(
             "test-id", files, delta_filter=None
         )
         self.assertEqual(len(result), 2)
 
     def test_delta_filter_empty_set_excludes_all(self):
         files = {"a.esd": {"size": 1}, "b.cab": {"size": 2}}
-        result = download_uup._prepare_download_list(
+        result = uup_download._prepare_download_list(
             "test-id", files, delta_filter=set()
         )
         self.assertEqual(result, [])
@@ -2294,7 +2299,7 @@ class TestPrepareDownloadListWithDelta(unittest.TestCase):
             "c.cab": {"size": 3},
         }
         # Edition filter keeps only a.esd, delta filter keeps a.esd + c.cab -> a.esd + c.cab
-        result = download_uup._prepare_download_list(
+        result = uup_download._prepare_download_list(
             "test-id",
             files,
             edition_filter=["a.esd"],
@@ -2314,9 +2319,9 @@ class TestDownloadBuildDelta(unittest.TestCase):
         os.chdir(self._orig_cwd)
         shutil.rmtree(self._tmp, ignore_errors=True)
 
-    @patch("download_uup.save_delta_manifest")
-    @patch("download_uup._run_aria2_download", return_value=True)
-    @patch("download_uup.load_delta_manifest")
+    @patch("uup_delta.save_delta_manifest")
+    @patch("uup_download._run_aria2_download", return_value=True)
+    @patch("uup_delta.load_delta_manifest")
     def test_download_build_with_delta_filters_files(
         self, mock_load, mock_run, mock_save
     ):
@@ -2331,7 +2336,7 @@ class TestDownloadBuildDelta(unittest.TestCase):
                 "c.esd": {"size": 300},  # added
             }
         }
-        result = download_uup.download_build(
+        result = uup_download.download_build(
             "target-id",
             "uup_delta_out",
             build_info=build_info,
@@ -2343,15 +2348,15 @@ class TestDownloadBuildDelta(unittest.TestCase):
         names = {item["name"] for item in download_list_arg}
         self.assertEqual(names, {"b.cab", "c.esd"})
 
-    @patch("download_uup.save_delta_manifest")
-    @patch("download_uup._run_aria2_download", return_value=True)
-    @patch("download_uup.load_delta_manifest")
+    @patch("uup_delta.save_delta_manifest")
+    @patch("uup_download._run_aria2_download", return_value=True)
+    @patch("uup_delta.load_delta_manifest")
     def test_download_build_no_changes_skips_aria2(
         self, mock_load, mock_run, mock_save
     ):
         mock_load.return_value = {"a.esd": {"size": 1}, "b.cab": {"size": 2}}
         build_info = {"files": {"a.esd": {"size": 1}, "b.cab": {"size": 2}}}
-        result = download_uup.download_build(
+        result = uup_download.download_build(
             "target-id",
             "uup_delta_out",
             build_info=build_info,
@@ -2363,14 +2368,14 @@ class TestDownloadBuildDelta(unittest.TestCase):
         mock_save.assert_called_once()
         self.assertEqual(mock_save.call_args[0][0], "target-id")
 
-    @patch("download_uup.save_delta_manifest")
-    @patch("download_uup._run_aria2_download", return_value=True)
-    @patch("download_uup.load_delta_manifest", return_value=None)
+    @patch("uup_delta.save_delta_manifest")
+    @patch("uup_download._run_aria2_download", return_value=True)
+    @patch("uup_delta.load_delta_manifest", return_value=None)
     def test_download_build_delta_from_missing_manifest_downloads_all(
         self, mock_load, mock_run, mock_save
     ):
         build_info = {"files": {"a.esd": {"size": 1}, "b.cab": {"size": 2}}}
-        result = download_uup.download_build(
+        result = uup_download.download_build(
             "target-id",
             "uup_delta_out",
             build_info=build_info,
@@ -2380,11 +2385,11 @@ class TestDownloadBuildDelta(unittest.TestCase):
         download_list_arg = mock_run.call_args[0][2]
         self.assertEqual(len(download_list_arg), 2)
 
-    @patch("download_uup.save_delta_manifest")
-    @patch("download_uup._run_aria2_download", return_value=True)
+    @patch("uup_delta.save_delta_manifest")
+    @patch("uup_download._run_aria2_download", return_value=True)
     def test_download_build_without_delta_saves_manifest(self, mock_run, mock_save):
         build_info = {"files": {"a.esd": {"size": 1}}}
-        download_uup.download_build(
+        uup_download.download_build(
             "test-id",
             "uup_delta_out",
             build_info=build_info,
@@ -2393,16 +2398,16 @@ class TestDownloadBuildDelta(unittest.TestCase):
         self.assertTrue(mock_save.called)
         self.assertEqual(mock_save.call_args[0][0], "test-id")
 
-    @patch("download_uup.save_delta_manifest")
-    @patch("download_uup._run_aria2_download", return_value=False)
-    @patch("download_uup.load_delta_manifest")
+    @patch("uup_delta.save_delta_manifest")
+    @patch("uup_download._run_aria2_download", return_value=False)
+    @patch("uup_delta.load_delta_manifest")
     def test_download_build_failed_does_not_save_manifest(
         self, mock_load, mock_run, mock_save
     ):
         """A failed aria2 run must not overwrite the saved manifest."""
         mock_load.return_value = {"a.esd": {"size": 1}}
         build_info = {"files": {"a.esd": {"size": 2}}}
-        result = download_uup.download_build(
+        result = uup_download.download_build(
             "test-id",
             "uup_delta_out",
             build_info=build_info,
@@ -2442,7 +2447,7 @@ class TestDeltaCLIArgs(unittest.TestCase):
 class TestHandleDeltaInfoMode(unittest.TestCase):
     @patch("download_uup.log_warn")
     @patch("download_uup.log_success")
-    @patch("download_uup.get_build_info_cached")
+    @patch("uup_api.get_build_info_cached")
     def test_save_delta_manifest_success(self, mock_get, mock_success, mock_warn):
         mock_get.return_value = {"files": {"a.esd": {"size": 1}}}
         args = download_uup.parse_args(
@@ -2455,28 +2460,28 @@ class TestHandleDeltaInfoMode(unittest.TestCase):
             mock_success.assert_called()
 
     @patch("download_uup.log_error")
-    @patch("download_uup.get_build_info_cached", return_value=None)
+    @patch("uup_api.get_build_info_cached", return_value=None)
     def test_save_delta_manifest_no_build_info(self, mock_get, mock_log):
         args = download_uup.parse_args(["--save-delta-manifest", "missing"])
         rc = download_uup._handle_info_mode(args)
         self.assertEqual(rc, 1)
         mock_log.assert_called()
 
-    @patch("download_uup.get_build_info_cached")
+    @patch("uup_api.get_build_info_cached")
     def test_save_delta_manifest_empty_files(self, mock_get):
         mock_get.return_value = {"files": {}}
         args = download_uup.parse_args(["--save-delta-manifest", "abc"])
         rc = download_uup._handle_info_mode(args)
         self.assertEqual(rc, 1)
 
-    @patch("download_uup.load_delta_manifest", return_value={"a.esd": {"size": 1}})
+    @patch("uup_delta.load_delta_manifest", return_value={"a.esd": {"size": 1}})
     def test_delta_info_success(self, mock_load):
         args = download_uup.parse_args(["--delta-info", "abc"])
         rc = download_uup._handle_info_mode(args)
         self.assertEqual(rc, 0)
 
     @patch("download_uup.log_warn")
-    @patch("download_uup.load_delta_manifest", return_value=None)
+    @patch("uup_delta.load_delta_manifest", return_value=None)
     def test_delta_info_missing(self, mock_load, mock_warn):
         args = download_uup.parse_args(["--delta-info", "missing"])
         rc = download_uup._handle_info_mode(args)

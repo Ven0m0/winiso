@@ -615,10 +615,12 @@ def main() -> int:
         preset_mode = True
         profile = uup_profiles.get_profile(args.preset)
         if not profile:
+            available = uup_profiles.get_profiles()
+            if not available:
+                log_error(f"No profiles loaded from {uup_profiles.PROFILES_FILE}")
+                return 1
             log_error(f"Unknown profile: {args.preset}")
-            log_info(
-                f"Available profiles: {', '.join(uup_profiles.get_profiles().keys())}"
-            )
+            log_info(f"Available profiles: {', '.join(available)}")
             return 1
         log_info(f"Using profile: {args.preset}")
         print(f"  {profile.get('description', '')}")

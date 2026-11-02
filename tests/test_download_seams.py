@@ -92,5 +92,32 @@ class TestUupDelta(unittest.TestCase):
             self.assertEqual(path.parent.resolve(), Path(tmp).resolve())
 
 
+class TestApiGet(unittest.TestCase):
+    """The one response-unwrapping seam behind every uupdump.net endpoint."""
+
+    def _call(self, payload: object) -> object:
+        with mock.patch.object(uup_api, "fetch_url", return_value=payload) as fetch:
+            result = uup_api._api_get("get.php", {"id": "b 1"})
+        self.assertEqual(
+            fetch.call_args.args[0], "https://api.uupdump.net/get.php?id=b+1"
+        )
+        return result
+
+    def test_response_object_is_returned(self):
+        self.assertEqual(self._call({"response": {"files": {}}}), {"files": {}})
+
+    def test_api_error_returns_none(self):
+        with mock.patch.object(uup_api, "log_error") as log_error:
+            self.assertIsNone(self._call({"response": {"error": "bad id"}}))
+        log_error.assert_called_once_with("API Error: bad id")
+
+    def test_missing_or_non_dict_response_returns_empty(self):
+        self.assertEqual(self._call({"other": 1}), {})
+        self.assertEqual(self._call({"response": ["not", "a", "dict"]}), {})
+
+    def test_fetch_failure_returns_none(self):
+        self.assertIsNone(self._call(None))
+
+
 if __name__ == "__main__":
     unittest.main()

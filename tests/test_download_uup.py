@@ -1691,8 +1691,7 @@ class TestResolveOutputDir(unittest.TestCase):
         self.assertTrue(str(out).endswith("uup_files"))
 
     def test_resolve_output_dir_absolute_within_project(self):
-        project_root = Path(download_uup.__file__).parent.parent.resolve()
-        target = project_root / "uup_files"
+        target = download_uup.PROJECT_ROOT / "uup_files"
         out = download_uup._resolve_output_dir(str(target))
         self.assertEqual(out, target)
 

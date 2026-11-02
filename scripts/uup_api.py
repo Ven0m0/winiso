@@ -15,6 +15,7 @@ PROJECT_ROOT = SCRIPT_DIR.parent
 
 CACHE_DIR_NAME: str = ".uup_cache"
 DEFAULT_CACHE_TTL_SECONDS: int = 3600
+CACHE_DIR: Path = PROJECT_ROOT / CACHE_DIR_NAME
 
 _url_cache: dict[str, str | dict[str, Any]] = {}
 _client: httpx.Client | None = None
@@ -187,9 +188,8 @@ def get_update_info(update_id: str) -> dict[str, Any] | None:
 
 def get_cache_dir() -> Path:
     """Return the cache directory, creating it if necessary."""
-    cache_dir = PROJECT_ROOT / CACHE_DIR_NAME
-    cache_dir.mkdir(parents=True, exist_ok=True)
-    return cache_dir
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    return CACHE_DIR
 
 
 def _safe_cache_name(key: str) -> str:

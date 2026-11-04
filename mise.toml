@@ -9,7 +9,6 @@
 [settings]
 experimental = true
 color = true
-yes = true
 auto_install = true
 
 [settings.python]

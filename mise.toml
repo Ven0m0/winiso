@@ -22,13 +22,13 @@ uvx = true
 cli_telemetry_optout = true
 
 [tools]
-python = "3.15.2"
-uv = "latest"
-ruff = "latest"
-ty = "latest"
-shellcheck = "latest"
-shfmt = "latest"
-powershell = "latest"
+#python = "3.15.2"
+#uv = "latest"
+#ruff = "latest"
+#ty = "latest"
+#shellcheck = "latest"
+#shfmt = "latest"
+#powershell = "latest"
 # xmllint: system package (libxml2-utils on Debian/Ubuntu, libxml2 on Arch/Fedora)
 # biome: JS/TS/JSON/HTML/CSS linter - use bunx @biomejs/biome
 # PSScriptAnalyzer: PowerShell module, not mise-manageable - `mise run pwsh-install` bootstraps it

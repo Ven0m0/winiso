@@ -87,6 +87,12 @@ All notable changes to this project will be documented in this file.
   3rd-party installers, etc).
 
 ### Fixed
+- `win_utils.find_oscdimg()` now falls back to a PATH lookup, so a machine-scope winget install of
+  oscdimg (`%ProgramFiles%\WinGet\Links`) is found instead of failing with "oscdimg.exe not found".
+- `apply_image_settings.py --iso-path` copied ISO files with their read-only attribute, so
+  `dism /Mount-Image` on the extracted `boot.wim` failed with 0xc1510111; it now copies data only.
+- `apply_image_settings.py` passed `bootdata:...` to oscdimg without its leading `-`, so oscdimg took
+  the boot string as the source and the extraction folder as the output file to overwrite.
 - `--preset` never applied its component groups: `config/profiles.json` always overrode the
   built-in profiles but had no `component_groups`. The JSON file is now the single source and
   carries each profile's groups; the dead `keep_gaming_apps`/`include_wsl`/`notes` keys are gone.

@@ -93,6 +93,10 @@ def find_oscdimg() -> str:
     for path in candidates:
         if path.is_file():
             return str(path)
+    # Machine-scope winget installs link into %ProgramFiles%\WinGet\Links, which is on PATH.
+    on_path = shutil.which("oscdimg")
+    if on_path:
+        return on_path
     write_error_exit(
         "oscdimg.exe not found. Install Windows ADK Deployment Tools or winget it."
     )

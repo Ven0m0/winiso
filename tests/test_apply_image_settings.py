@@ -111,5 +111,16 @@ class TestDismSeam(unittest.TestCase):
         self.assertEqual(removed, ["/PackageName:Microsoft.BingNews"])
 
 
+class TestFindOscdimg(unittest.TestCase):
+    def test_falls_back_to_path_lookup(self) -> None:
+        with (
+            mock.patch.object(Path, "is_file", return_value=False),
+            mock.patch.object(
+                win_utils.shutil, "which", return_value=r"C:\Links\oscdimg.exe"
+            ),
+        ):
+            self.assertEqual(win_utils.find_oscdimg(), r"C:\Links\oscdimg.exe")
+
+
 if __name__ == "__main__":
     unittest.main()

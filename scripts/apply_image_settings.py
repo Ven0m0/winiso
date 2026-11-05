@@ -328,7 +328,13 @@ def main() -> int:
         write_step("Mounting and copying ISO contents...")
         source_drive = mount_iso(iso_path)
         try:
-            shutil.copytree(source_drive, extract_dir, dirs_exist_ok=True)
+            # copyfile, not the default copy2: ISO files are read-only and DISM refuses to mount a read-only WIM.
+            shutil.copytree(
+                source_drive,
+                extract_dir,
+                dirs_exist_ok=True,
+                copy_function=shutil.copyfile,
+            )
         finally:
             dismount_iso(iso_path)
         write_success(f"ISO extracted to: {extract_dir}")
@@ -453,7 +459,7 @@ def main() -> int:
         if not boot_efi.is_file():
             write_error_exit("efisys.bin not found")
 
-        boot_data = f"bootdata:2#p0,e,b{boot_etfs}#pEF,e,b{boot_efi}"
+        boot_data = f"-bootdata:2#p0,e,b{boot_etfs}#pEF,e,b{boot_efi}"
         result = subprocess.run(
             [
                 oscdimg_path,

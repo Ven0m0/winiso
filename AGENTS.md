@@ -72,25 +72,29 @@ config/debloat_list.txt             # Bloatware glob patterns (grouped by catego
 config/oem/SetupComplete.cmd        # First-boot CMD script (CRLF required); injected via $OEM$ and directly by apply_image_settings.py
 config/ntlite-presets/*.xml         # NTLite presets — manual alternative path, not consumed by scripts/debloat_wim.py
 config/unattend-generator/apply.reg # Manual TPM/RAM/CPU/SecureBoot bypass + 8.3/power-plan tweaks — companion to the NTLite alternative path, not called by any script
-config/unattend-generator/after-logon.cmd # Reference copy of the generator's FirstLogonScript0 (winget installs + powercfg) — not called by any script
+config/unattend-generator/logon.cmd # Reference copy of the generator's FirstLogonScript0 (winget installs) — not called by any script
+config/unattend-generator/system.cmd # Reference copy of the generator's SystemScript0 (powercfg + fsutil tweaks) — not called by any script
 config/unattend-generator/system.ps1 # Reference copy of the generator's SystemScript1 (disables Defender realtime/behavior monitoring) — not called by any script
 config/component_groups.json        # Named AppX package groups mined from NTLite presets, consumed by validate_debloat.py's `.uup-groups` selection
 config/profiles.json                # Named build profiles (minimal/standard/gaming/enterprise/dev), consumed by uup_profiles.py (single source; each profile's `component_groups` is written to `.uup-groups` by `--preset`)
 config/components.psd1              # PowerShell data file: extra packages/capabilities/features/apps for the NTLite manual path — not consumed by scripts/debloat_wim.py
 
 ventoy/answer/                      # Canonical autounattend.xml source; config/autounattend.xml is a symlink to it
+ventoy/ventoy/                      # Ventoy plugin config (ventoy.json) and themes/ assets
 
 tests/test_download_uup.py          # Unit tests (40+ cases, unittest + mock)
 tests/test_keep_list.py             # Keep-list, component-group round trip, stdlib-only import guard
 tests/test_download_seams.py        # Prompt seam, path containment, uup_delta
 tests/test_validators.py            # Validator checks, sign_iso checksum, single-home logging guard
 tests/test_security.py              # Path traversal validation tests
+tests/test_apply_image_settings.py  # Windows-side servicing script tests
+tests/conftest.py                   # Shared pytest fixtures
 docs/autounattend.md                # Autounattend customisation guide
 
 PLAN.md                             # Real remaining work (Next / Someday-maybe)
 TODO.md                             # External-repo inspiration: evaluation verdict (taken/rejected)
 CHANGELOG.md                        # Contributor-facing change log
-mise.toml                           # Dev env (Python 3.14, ruff, uv, shellcheck)
+mise.toml                           # Dev tasks (the [tools] block is commented out; install tools via the system)
 ```
 
 Runtime directories created during a build (not committed to git):
@@ -220,13 +224,12 @@ the Windows-servicing side) provides.
 - Validate before building: `xmllint --noout config/autounattend.xml`
 - Reference generator: https://schneegans.de/windows/unattend-generator/
 - No `ProductKey`/`UserData` element, deliberately: the windowsPE `Microsoft-Windows-Setup`
-  component has none. Edition selection instead happens via `dism.exe /Apply-Image`'s
-  `/Name:"Windows %OS_VERSION% Pro"` filter (windowsPE Order 20-21), which is how the schneegans
-  generator's own "generic key" mode picks an edition from a multi-edition install.wim/install.esd
-  without embedding any key at all. Never add a real or unverified product key back into this
-  file — if the generator's own output for your settings includes one, replace it with the
-  `/Name:` filter approach instead, or drop it and rely on the WIM already being scoped to one
-  edition (this repo's Linux pipeline exports a single edition via `custom_convert.sh`).
+  component has none. Edition selection instead happens in the `pe.cmd` chain (windowsPE Order
+  20-21): `dism.exe /Get-WimInfo` lists the images, a `set /p` prompt asks for the index, and
+  `dism.exe /Apply-Image` uses `/Index:`. Never add a real or unverified product key back into
+  this file — if the generator's own output for your settings includes one, drop it and rely on
+  the index prompt, or on the WIM already being scoped to one edition (this repo's Linux
+  pipeline exports a single edition via `custom_convert.sh`).
 
 ### `config/oem/SetupComplete.cmd`
 
@@ -381,15 +384,16 @@ mise run precommit-install   # One-time: install git hooks (prek, same config as
 mise run precommit           # Run all .pre-commit-config.yaml hooks against all files
 ```
 
-`.pre-commit-config.yaml` is run by `prek` (a Rust drop-in replacement, already in `mise.toml`) but
+`.pre-commit-config.yaml` is run by `prek` (a Rust drop-in replacement; the `precommit*` mise tasks call it) but
 stays plain pre-commit-compatible — `pre-commit run --all-files` / `pre-commit install` work
 identically against the same file for contributors without prek. Renovate keeps hook `rev:`
 pins current via its `pre-commit` manager (`renovate.json`).
 
-Tools managed by `mise.toml`: `python 3.14`, `uv`, `ruff`, `ty`, `shellcheck`, `shfmt`,
-`powershell` (needed only for `Mount-DiskImage`/`Dismount-DiskImage` inside
-`apply_image_settings.py`; DISM itself is invoked via `dism.exe`, not the PowerShell DISM
-module). `basedpyright` is pre-commit-managed only (pinned via `.pre-commit-config.yaml`,
+The `[tools]` block in `mise.toml` is currently commented out, so mise installs no tools;
+`python` (>=3.14 per `pyproject.toml`), `uv`, `ruff`, `ty`, `shellcheck`, `shfmt` and
+`powershell` must come from the system or be re-enabled there. `powershell` is needed only for
+`Mount-DiskImage`/`Dismount-DiskImage` inside `apply_image_settings.py`; DISM itself is invoked
+via `dism.exe`, not the PowerShell DISM module. `basedpyright` is pre-commit-managed only (pinned via `.pre-commit-config.yaml`,
 scoped to the downloader modules), not a mise tool. `PSScriptAnalyzer` is a PowerShell
 Gallery module, bootstrapped by `mise run pwsh-install` rather than mise itself; its ruleset
 lives in `PSScriptAnalyzerSettings.psd1` at the repo root.

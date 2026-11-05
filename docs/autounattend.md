@@ -1,6 +1,6 @@
 # Autounattend.xml Configuration Guide
 
-`config/autounattend.xml` is the answer file that automates Windows installation.
+`config/autounattend.xml` is the answer file that automates Windows installation. It is a symlink to the canonical `ventoy/answer/autounattend.xml`; edit the canonical file (the same file is used for Ventoy). The file must be UTF-8 without a BOM. `custom_convert.sh` copies it into the ISO root.
 
 ## What is autounattend.xml?
 
@@ -19,6 +19,11 @@ The included `autounattend.xml` is configured with:
 - **Privacy Optimized**: Disables location, diagnostics, tailored experiences
 - **OOBE Bypass**: Skips most first-boot prompts
 - **Keep Essential Services**: Defender, Windows Update, Microsoft Store remain functional
+- **Scripted windowsPE pass**: there is no `<DiskConfiguration>` or `<ImageInstall>`. A chain of `RunSynchronousCommand` entries writes `X:\pe.cmd` in WinPE, which checks the target disk, runs `diskpart`, lists the images with `dism /Get-WimInfo`, prompts for the image index, runs `dism /Apply-Image` and `bcdboot`, then copies the answer file to `Windows\Panther\unattend.xml` so the specialize and oobeSystem passes use it. A deliberate `pause` guards the disk wipe, and `assert.vbs` refuses disks under 100 GiB or with existing partitions
+- **Setup requirement bypasses**: TPM, Secure Boot, RAM, CPU and network (`BypassNRO`) bypass values are written by `.reg` content embedded in the file
+- **First logon**: `FirstLogon.ps1` runs from `C:\Windows\Setup\Scripts`; `config/oem/SetupComplete.cmd` (CRLF) is injected through `$OEM$` and runs on first boot
+- **No `ProductKey`**: never add a real or unverified key to this file
+- **Local account**: the shipped file defines one local administrator with a base64-encoded password (`PlainText` false). That is encoding, not encryption; change the account name and password before sharing an ISO
 
 ## Customizing autounattend.xml
 
@@ -33,7 +38,9 @@ To create a custom autounattend.xml:
    - **Network**: Skip network setup or configure
    - **Apps**: Keep Windows Update, Defender, Store
 3. Download the generated XML
-4. Replace `config/autounattend.xml` with your custom version
+4. Replace `ventoy/answer/autounattend.xml` with your custom version (not the `config/autounattend.xml` symlink; overwriting the symlink breaks the sync check in `make validate-xml`)
+
+A generator file replaces the scripted windowsPE pass described above. Make sure the result still partitions the disk and applies the image, and drop any `ProductKey` element the generator adds.
 
 ### Option 2: Manual Editing
 
@@ -111,17 +118,25 @@ If deploying to domain-joined machines, add:
 Before building your ISO, validate the XML:
 
 ```bash
-# Check XML syntax
-xmllint --noout config/autounattend.xml
+# Every *.xml file: well-formed, UTF-8 without BOM, and config/autounattend.xml
+# still resolves to ventoy/answer/autounattend.xml (uses xmllint if installed,
+# otherwise stdlib ElementTree)
+make validate-xml
 
-# If xmllint is not installed
-make validate  # Will check basic XML validity
+# .reg content embedded in the answer file (and standalone .reg files)
+make validate-reg
+
+# Direct syntax check
+xmllint --noout config/autounattend.xml
 ```
+
+`make validate` (and the pre-build check in `make build`) also runs `xmllint --noout` on the file when `xmllint` is installed, and only warns when it is missing.
 
 ## Testing
 
 After building your ISO:
 
+0. On a Windows host with Hyper-V, `mise run test-iso` (`scripts/Test-IsoBoot.ps1`) automates the steps below; see `docs/hyperv-testing.md`
 1. Boot the ISO in a VM (VirtualBox/VMware/QEMU)
 2. Verify autounattend is applied:
    - Installation proceeds without prompts
@@ -152,7 +167,7 @@ After building your ISO:
 **IMPORTANT**: autounattend.xml may contain sensitive information:
 - User account passwords
 - Domain credentials
-- Product keys
+- Product keys (this repo's file ships none; keep it that way)
 - Network configurations
 
 **Best Practices**:

@@ -21,7 +21,9 @@ make validate   # Check tools, disk space, UUP files, config
 make build      # Full pipeline: UUP -> WIM -> debloat -> ISO
 ```
 
-`mise run install-deps` is the mise equivalent of `make deps`.
+`mise run install-deps` is the mise equivalent of `make deps` (pacman and apt only; use `mise run linux` for dnf). All `make` targets run scripts via `uv run --` (Python 3.14+, `httpx`, `orjson`); override with `make build PY=python3`.
+
+Config-only checks that need no UUP files: `make validate-xml`, `make validate-reg`, `make validate-debloat`.
 
 Stage breakdown:
 
@@ -48,8 +50,11 @@ Stage breakdown:
 |----------|---------|---------|
 | `TARGET_EDITION` | `ProfessionalWorkstation` | Preferred WIM edition name |
 | `FALLBACK_EDITION` | `Professional` | Used if target edition not found |
+| `PROFILE` | unset | Named profile from `config/profiles.json` (minimal, standard, gaming, enterprise, dev); sets the target edition. Same as `build.py --profile` |
 | `PAUSE_FOR_WINDOWS_STAGE` | `0` | Pause after WIM export for Windows DISM servicing |
 | `NANO` | `0` | Enable aggressive debloating mode |
+
+`build.py --edition NAME` overrides both `--profile` and `TARGET_EDITION`. Component groups to strip (from `config/component_groups.json`) come from `.uup-groups`, which `download_uup.py --preset` or `--groups` writes.
 
 ### Signing and cleanup
 
@@ -96,10 +101,12 @@ A non-zero `oscdimg` exit code is treated as fatal.
 
 1. Pause the Linux build: `make build-pause`.
 2. Copy `install.wim` to a Windows machine.
-3. Run `scripts/windows_service.cmd` (DISM cleanup, 8.3 stripping) or
-   `scripts/apply_image_settings.py` (ISO extraction, unattend injection, debloat re-run, driver
-   injection — see `AGENTS.md`'s file table for details) to stage a fresh `iso-root`-style
-   directory.
+3. Run `scripts/windows_service.cmd [WIM_PATH] [MOUNT_DIR] [ISO_DIR]` (DISM cleanup, 8.3
+   stripping) or `scripts/apply_image_settings.py` (flags: `--iso-path`, `--extract-path`,
+   `--output-path`, `--mount-dir`, `--wim-path`, `--skip-iso`, `--debloat`, `--driver-path DIR`
+   for `dism /Add-Driver /Recurse`; needs admin) to stage a fresh `iso-root`-style directory.
+   The PowerShell helpers `Remove-ShortNames.ps1`, `Repair-Wim.ps1`, `Invoke-SystemCleanup.ps1`
+   and `Mount-WimGui.ps1` cover individual steps.
 4. Run `scripts/new_iso.py` against that staged directory to produce the final ISO.
 
 ### Scope boundary

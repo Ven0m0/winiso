@@ -2,17 +2,19 @@
 
 [![Maintainability](https://qlty.sh/gh/Ven0m0/projects/winiso/maintainability.svg)](https://qlty.sh/gh/Ven0m0/projects/winiso)
 
-A Linux-based automation toolset for creating debloated Windows 11 ISO files from UUP (Unified Update Platform) dump files. Removes bloatware, injects unattended setup configuration, and applies performance tweaks—all while preserving essential system components.
+A Linux-based automation toolset for creating debloated Windows 11 ISO files from UUP (Unified Update Platform) dump files. Removes bloatware, injects unattended setup configuration, and applies performance tweaks, all while preserving essential system components.
 
 ## Features
 
 - **Automated UUP Download:** Interactive downloader for fetching Windows 11 builds from uupdump.net
-- **Pre-Build Validation:** Checks dependencies, files, and configuration before starting
+- **Pre-Build Validation:** Checks dependencies, files, and configuration before starting; separate validators for XML, `.reg` content, and the debloat list
 - **Targeted Edition:** Builds Windows 11 Pro for Workstations (fallback to Pro)
-- **70+ Apps Removed:** Xbox, Cortana, Clipchamp, Solitaire, news/weather apps, and more
+- **Build Profiles:** `minimal`, `standard`, `gaming`, `enterprise`, `dev` presets in `config/profiles.json` pick the edition and the AppX component groups to remove
+- **90+ Debloat Patterns:** Xbox, Cortana, Clipchamp, Solitaire, news/weather apps, and more
 - **Unattended Setup:** Injects `autounattend.xml` for OOBE bypass and privacy settings
 - **First-Boot Tweaks:** Applies telemetry reduction, advertising disable, performance optimizations
-- **Optional Windows Stage:** DISM component cleanup, 8.3 short name stripping, registry hardening
+- **Optional Windows Stage:** DISM component cleanup, 8.3 short name stripping, registry hardening, optional driver injection
+- **Release Helpers:** `make sign` writes SHA256/SHA512 checksums (and an optional GPG signature); `scripts/Test-IsoBoot.ps1` boots the ISO in a Hyper-V VM
 - **Preserves Dependencies:** Store, WebView2, VCLibs, Defender, and runtime frameworks remain intact
 
 ## Quick Start
@@ -26,7 +28,7 @@ mise trust mise.toml
 mise run install-deps
 ```
 
-Uses [mise](https://mise.jdx.dev/) for cross-platform tool management.
+Uses [mise](https://mise.jdx.dev/) for task running. `mise run install-deps` covers pacman and apt only; on Fedora use `mise run linux` or `make deps`.
 
 **Option B: Using Make**
 
@@ -36,6 +38,8 @@ make deps
 
 Supports Arch Linux (pacman), Debian/Ubuntu (apt), and Fedora (dnf).
 
+**Python and uv:** the scripts need Python 3.14+ (`requires-python` in `pyproject.toml`) and `httpx`/`orjson`. Every `make` target runs scripts through `uv run --` so those are on the path; `mise.toml` does not install Python or uv (its `[tools]` block is commented out), so install `uv` yourself. To use a system interpreter instead: `make build PY=python3` (needs `httpx` and `orjson` installed globally).
+
 ### 2. Download UUP Files
 
 **Option A: Automatic Download (Recommended)**
@@ -44,7 +48,22 @@ Supports Arch Linux (pacman), Debian/Ubuntu (apt), and Fedora (dnf).
 make download
 ```
 
-This launches an interactive menu to select and download Windows 11 builds directly from uupdump.net.
+This launches an interactive menu to select and download Windows 11 builds directly from uupdump.net (the downloader talks to uupdump.net only).
+
+Useful `scripts/download_uup.py` flags (run it with `--help` for the full list):
+
+| Flag | Purpose |
+|------|---------|
+| `-l` / `--list` | List the latest builds and exit (`mise run list-builds`) |
+| `-b` / `--build-id` | Download a specific build ID |
+| `-e` / `--editions ID`, `--languages [ID]` | List editions or languages for a build and exit |
+| `--edition NAME` | Non-interactive edition filter (`professional`, `enterprise`, `home`, `core`, `education`, or an ESD filename) |
+| `--latest` (with `--arch`, `--ring`) | Fetch the latest build from Windows Update servers |
+| `-p` / `--preset NAME`, `--list-presets` | Apply a profile from `config/profiles.json` (`minimal`, `standard`, `gaming`, `enterprise`, `dev`); its component groups are written to `.uup-groups` |
+| `--groups`, `--list-groups`, `--write-groups PATH` | Choose AppX component groups (from `config/component_groups.json`) to remove during the build |
+| `--pin-build`, `--use-pin`, `--show-pin` | Pin a build ID in `.uup-pin.json` for reproducible builds |
+| `--no-cache`, `--clear-cache`, `--cache-ttl` | Control the local build-metadata cache |
+| `--no-resume`, `--mirrors`, `--verbose` | aria2c resume, custom mirror list, verbose output |
 
 **Option B: Manual Download**
 
@@ -57,16 +76,20 @@ This launches an interactive menu to select and download Windows 11 builds direc
 
 ### 3. Configure (Optional)
 
-- **Unattended Setup:** Replace `config/autounattend.xml` with one generated from [Schneegans Unattend Generator](https://schneegans.de/windows/unattend-generator/)
+- **Unattended Setup:** Edit `ventoy/answer/autounattend.xml` (`config/autounattend.xml` is a symlink to it), or regenerate it from [Schneegans Unattend Generator](https://schneegans.de/windows/unattend-generator/). See `docs/autounattend.md`
 - **Debloat List:** Edit `config/debloat_list.txt` to add/remove app patterns
+- **Profile:** Pick a preset with `uv run -- scripts/download_uup.py --preset NAME` (`make download` takes no arguments), then build with `PROFILE=NAME make build` or `scripts/build.py --profile NAME`. A profile sets the target edition; `--edition NAME` overrides it
 
 ### 4. Validate Prerequisites (Recommended)
 
 ```bash
-make validate
+make validate          # tools, disk space, UUP files, config
+make validate-xml      # every *.xml: well-formed, UTF-8 without BOM, autounattend symlink resolves
+make validate-reg      # .reg headers, standalone and embedded in autounattend.xml
+make validate-debloat  # config/debloat_list.txt: syntax, duplicates, keep-list collisions
 ```
 
-This checks that all dependencies, UUP files, and configuration are ready.
+`make validate` checks that all dependencies, UUP files, and configuration are ready (it needs a populated `uup_files/`); the other three only read repo config and run without UUP files. `make build` runs `validate_prereqs.py` itself first.
 
 ### 5. Build
 
@@ -153,7 +176,14 @@ mise run build        # Build ISO
 mise run build-pro    # Build Pro edition
 mise run build-pause  # Build with pause
 mise run clean-unix   # Clean artifacts
+mise run list-builds  # List latest builds (download_uup.py --list)
+mise run test         # pytest (uv run --group dev pytest tests/)
+mise run lint         # ruff check + format check + ty
+mise run test-iso     # Windows only: boot output/*.iso in a Hyper-V VM
+mise tasks            # Full task list (lint-xml, lint-reg, lint-debloat, lint-shell, lint-ps, ...)
 ```
+
+The `build`, `build-pro` and `build-pause` mise tasks error out on native Windows; run them from WSL or Git Bash.
 
 ### Using Make
 
@@ -162,9 +192,14 @@ mise run clean-unix   # Clean artifacts
 | `make deps` | `mise run install-deps` | Install system dependencies |
 | `make download` | `mise run download` | Download UUP files |
 | `make validate` | `mise run validate` | Validate prerequisites |
+| `make validate-xml` | `mise run lint-xml` | Validate all XML config files |
+| `make validate-reg` | `mise run lint-reg` | Validate `.reg` headers |
+| `make validate-debloat` | `mise run lint-debloat` | Validate `config/debloat_list.txt` |
 | `make build` | `mise run build` | Build ISO (default) |
 | `make build-pro` | `mise run build-pro` | Build Pro edition |
+| `make build-nano` | none | Aggressive debloating (`NANO=1`) |
 | `make build-pause` | `mise run build-pause` | Pause for servicing |
+| `make sign ISO=output/Win11.iso [GPG=1 KEY=<id>]` | none | SHA256/SHA512 checksums, optional GPG signature |
 | `make clean` | `mise run clean-unix` | Remove artifacts |
 
 ### Direct Scripts
@@ -173,7 +208,11 @@ mise run clean-unix   # Clean artifacts
 ./scripts/setup_env.py   # Install dependencies
 ./scripts/download_uup.py --list  # List builds
 ./scripts/build.py       # Build ISO
+./scripts/build.py --profile minimal   # Build using a named profile
+./scripts/build.py --edition Core      # Override the target edition directly
 ```
+
+Run these through `uv run --` (or a venv with `httpx`/`orjson`); `make` does this for you.
 
 ### Environment Variables
 
@@ -181,7 +220,11 @@ mise run clean-unix   # Clean artifacts
 |----------|---------|-------------|
 | `TARGET_EDITION` | `ProfessionalWorkstation` | Preferred Windows edition |
 | `FALLBACK_EDITION` | `Professional` | Fallback if target not found |
+| `PROFILE` | unset | Named profile from `config/profiles.json` (sets the edition); same as `--profile` |
 | `PAUSE_FOR_WINDOWS_STAGE` | `0` | Set to `1` for Windows servicing |
+| `NANO` | `0` | Set to `1` for aggressive debloating |
+
+Precedence for the edition: `--edition` over `--profile`/`PROFILE` over `TARGET_EDITION`.
 
 ## Windows Servicing Stage (Optional)
 
@@ -192,32 +235,64 @@ make build-pause
 ```
 
 When paused:
-1. Copy `scripts/ISODIR/sources/install.wim` to a Windows machine
-2. Run `scripts\windows_service.cmd C:\path\to\install.wim` as Administrator
+1. Copy `scripts/ISODIR/sources/install.wim` to a Windows machine (the converter prints the exact path, `install.esd` if the image is ESD-compressed)
+2. Run `scripts\windows_service.cmd C:\path\to\install.wim [MOUNT_DIR] [ISO_DIR]` as Administrator (defaults: `C:\ISO\sources\install.wim`, `C:\mnt`)
 3. Copy the serviced WIM back
 4. Press Enter to continue ISO generation
+
+Other optional, Windows-only helpers in `scripts/` (none are required by the Linux build):
+
+| Script | Purpose |
+|--------|---------|
+| `apply_image_settings.py` | Extract an ISO, inject the unattend file, re-run debloat (`--debloat`), inject drivers (`--driver-path DIR`, via `dism /Add-Driver /Recurse`). Stdlib-only; needs admin |
+| `new_iso.py` | Build a bootable UEFI+BIOS ISO from a staged tree with `oscdimg` (`--iso-root`, `--output-iso`) |
+| `Invoke-SystemCleanup.ps1`, `Remove-ShortNames.ps1`, `Repair-Wim.ps1`, `Mount-WimGui.ps1` | Live-OS cleanup, 8.3 short-name stripping, DISM RestoreHealth, and a WIM mount GUI |
+| `Test-IsoBoot.ps1` | Boot the newest `output/*.iso` in a throwaway Hyper-V VM and wait for the heartbeat |
+| `Invoke-OnlineServicing.ps1` | Manual WinPE deploy and recapture loop in a Hyper-V VM (needs the Windows ADK) |
+
+See `docs/iso-creation.md` and `docs/hyperv-testing.md` for details.
 
 ## Project Structure
 
 ```
 ├── config/
-│   ├── autounattend.xml      # Unattended setup configuration
+│   ├── autounattend.xml      # Symlink to ventoy/answer/autounattend.xml (unattended setup)
 │   ├── debloat_list.txt      # App removal patterns
+│   ├── component_groups.json # Named AppX groups (gaming, social, telemetry, ...)
+│   ├── profiles.json         # Build profiles (minimal/standard/gaming/enterprise/dev)
+│   ├── components.psd1       # Extra items for the NTLite manual path (not used by scripts)
+│   ├── ntlite-presets/       # NTLite presets (manual alternative)
+│   ├── unattend-generator/   # Reference copies of generator scripts + apply.reg (manual path)
 │   └── oem/
-│       └── SetupComplete.cmd # First-boot tweaks script
+│       └── SetupComplete.cmd # First-boot tweaks script (CRLF)
 ├── docs/
-│   └── autounattend.md       # Guide for autounattend.xml customization
+│   ├── autounattend.md       # Guide for autounattend.xml customization
+│   ├── iso-creation.md       # Linux pipeline vs Windows-side ISO assembly
+│   └── hyperv-testing.md     # Test-IsoBoot.ps1 and Invoke-OnlineServicing.ps1
 ├── scripts/
 │   ├── build.py              # Main build orchestrator
 │   ├── custom_convert.sh     # Modified UUP converter (upstream-derived, stays bash)
 │   ├── convert_config.sh     # Shared converter config (sourced by custom_convert.sh)
+│   ├── utils.sh              # Bash helpers, only used by custom_convert.sh
 │   ├── debloat_wim.py        # WIM debloating logic
+│   ├── keep_list.py          # Owns debloat_list.txt, component groups and the AppX keep-list
+│   ├── download_uup.py       # Downloader CLI (with uup_api.py, uup_download.py, uup_profiles.py, uup_delta.py)
 │   ├── setup_env.py          # Dependency installer
+│   ├── validate_prereqs.py   # Pre-build checks
+│   ├── validate_xml.py, validate_reg_files.py, validate_debloat.py  # Config validators
+│   ├── sign_iso.py           # Checksums and optional GPG signature
+│   ├── pyutils.py            # Shared logging/tool-check helpers
 │   ├── apply_image_settings.py # Windows-side ISO extraction/debloat (dism.exe-based)
-│   └── windows_service.cmd   # Windows servicing script
-├── uup_files/                # Place UUP files here (input)
-├── output/                   # Final ISO appears here (output)
+│   ├── new_iso.py, win_config.py, win_utils.py # Windows-side ISO builder and shared helpers
+│   ├── windows_service.cmd   # Windows servicing script
+│   ├── *.ps1                 # Windows-side PowerShell helpers (WinUtils, HyperVUtils, Test-IsoBoot, ...)
+│   └── winpe/                # WinPE payloads used by Invoke-OnlineServicing.ps1
+├── ventoy/answer/            # Canonical autounattend.xml (plus Ventoy answer files)
+├── tests/                    # pytest suite
+├── uup_files/                # Place UUP files here (input, not committed)
+├── output/                   # Final ISO appears here (output, not committed)
 ├── Makefile                  # Build interface
+├── mise.toml                 # Task runner entries
 └── README.md                 # This file
 ```
 
@@ -244,9 +319,11 @@ Edit `config/debloat_list.txt` to customize which apps are removed:
 
 **Do NOT remove:** `*Store*`, `*WebView*`, `*VCLibs*`, `*UI.Xaml*`, `*Defender*`, `*DesktopAppInstaller*`
 
+Extra AppX patterns come from the component groups selected in `.uup-groups` (written by `download_uup.py --preset/--groups`; group definitions live in `config/component_groups.json`). Protected entries are filtered out of both sources. Run `make validate-debloat` after editing.
+
 ### Autounattend.xml
 
-Generate from [Schneegans Unattend Generator](https://schneegans.de/windows/unattend-generator/) with recommended settings:
+The canonical file is `ventoy/answer/autounattend.xml`; `config/autounattend.xml` is a symlink to it. It contains no `ProductKey`; in the windowsPE pass its `pe.cmd` chain lists the images (`dism /Get-WimInfo`) and prompts for the image index before `dism /Apply-Image`. If you regenerate it from [Schneegans Unattend Generator](https://schneegans.de/windows/unattend-generator/), drop any key the generator adds. Recommended settings:
 - Skip Microsoft Account (use local account)
 - Disable privacy prompts
 - Minimal telemetry
@@ -256,17 +333,27 @@ Generate from [Schneegans Unattend Generator](https://schneegans.de/windows/unat
 
 Prefer NTLite's GUI over this repo's automated Linux pipeline? Mount the WIM in NTLite and
 import `config/ntlite-presets/win11.xml`, then import `config/unattend-generator/apply.reg` (via
-NTLite's Registry tab or `regedit`) for the setup bypasses the preset doesn't include. Optionally add
-`config/ntlite-presets/InstallApps.cmd` under Post-Setup > Commands (timing "After Logon") to
-install your own software via `winget` on first logon. See `AGENTS.md` for the full breakdown.
-None of these files are used by `build.py`/`debloat_wim.py`.
+NTLite's Registry tab or `regedit`) for the setup bypasses the preset doesn't include.
+`config/unattend-generator/logon.cmd`, `system.cmd` and `system.ps1` are reference copies of the
+generator scripts embedded in the answer file (not called by any script). See `AGENTS.md` for the full breakdown. None of these files are used by
+`build.py`/`debloat_wim.py`. Do not combine an NTLite-serviced WIM with `apply_image_settings.py`:
+it overwrites the Panther `unattend.xml` NTLite wrote.
+
+## Alternative: Online Servicing (manual, Windows-only)
+
+`scripts/Invoke-OnlineServicing.ps1` installs an `install.wim` into a Hyper-V VM through WinPE,
+pauses for live tweaks, then recaptures it as a new WIM. Needs the Windows ADK + WinPE add-on and
+Hyper-V. Its output is a distinct artifact: do not mix it with a `debloat_wim.py`-serviced WIM.
+See `docs/hyperv-testing.md`.
 
 ## Requirements
 
 - **Linux:** Arch Linux, Debian/Ubuntu, or Fedora
-- **Tools:** wimlib, aria2, cabextract, chntpw, genisoimage/cdrtools
+- **Tools:** wimlib, aria2, cabextract, chntpw, genisoimage/cdrtools; `xmllint` (libxml2) is optional for XML validation
+- **Python:** 3.14+ with `uv` (runtime deps `httpx[http2]` and `orjson`)
+- **Privileges:** runs as the current user; no `sudo` anywhere in the build pipeline
 - **Disk Space:** ~20GB for build process
-- **Optional:** Windows machine for DISM servicing stage
+- **Optional:** Windows machine for DISM servicing stage; Windows host with Hyper-V for `Test-IsoBoot.ps1`
 
 ## How It Works
 
@@ -363,8 +450,8 @@ wimlib-imagex info uup_files/*.esd | grep "Edition ID"
 # Verify debloat patterns
 grep -v "^#" config/debloat_list.txt | grep -v "^[[:space:]]*$" | wc -l
 
-# Check autounattend.xml validity
-xmllint --noout config/autounattend.xml 2>/dev/null && echo "Valid XML" || echo "Invalid XML"
+# Check XML, .reg content and debloat patterns
+make validate-xml validate-reg validate-debloat
 
 # Verify disk space
 df -h .
@@ -382,6 +469,9 @@ ls -lh output/*.iso
 
 # Check ISO size (should be 3-6GB depending on edition)
 du -h output/*.iso
+
+# Write <iso>.sha256 and <iso>.sha512 (add GPG=1 KEY=<key-id> for <iso>.asc)
+make sign ISO=output/<name>.iso
 ```
 
 ### 2. Inspect ISO Contents
@@ -412,7 +502,15 @@ isoinfo -l -i output/*.iso | grep "install.wim"
 
 ### 4. Test ISO Bootability
 
-**Virtual Machine Test (Recommended):**
+**Automated Hyper-V Test (Windows host):**
+
+```powershell
+mise run test-iso    # or: pwsh -File scripts/Test-IsoBoot.ps1 -Profile Bypass
+```
+
+Boots the newest `output/*.iso` in a throwaway Hyper-V VM (110 GiB disk) and waits for the Hyper-V heartbeat. Needs an elevated shell and an already-built ISO; see `docs/hyperv-testing.md`.
+
+**Virtual Machine Test (manual):**
 1. Create a new VM in VirtualBox/VMware/QEMU
 2. Mount the ISO as virtual CD
 3. Boot from ISO and verify:
@@ -489,8 +587,11 @@ This project uses components from:
 
 1. Fork the repository
 2. Create a feature branch
-3. Test your changes with a full build
-4. Submit a pull request
+3. Run `mise run test` and `mise run lint` (plus `mise run lint-xml`, `lint-reg`, `lint-debloat` for config changes), and test with a full build
+4. Add a `CHANGELOG.md` entry for contributor-facing changes
+5. Submit a pull request
+
+`AGENTS.md` is the canonical repo guide (hard invariants, script rules, CI checks).
 
 ---
 

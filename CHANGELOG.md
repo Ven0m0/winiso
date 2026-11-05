@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+- Refreshed `README.md`, `docs/autounattend.md` and `docs/iso-creation.md` to match the current
+  scripts, make/mise targets and profiles. Corrected `AGENTS.md` (edition selection is an index
+  prompt, not a `/Name:` filter; `unattend-generator/` file names; `mise.toml` tools are commented
+  out; test and ventoy layout). `make help` and the Makefile header now list the `validate-*`
+  targets, and `mise run install-deps` gained a dnf branch to match its error message.
 - Split the 1715-line `scripts/download_uup.py` into `uup_api.py` (uupdump.net client + cache),
   `uup_download.py` (edition filter, output guard, delta, aria2c), `uup_profiles.py` (profiles + pin)
   and a slimmer `download_uup.py` CLI. CLI flags are unchanged. API getters share one `_api_get`

@@ -7,7 +7,10 @@
 #   make build-pro      - Build with Pro edition only
 #   make build-nano     - Extreme debloating (NANO mode)
 #   make build-pause    - Build and pause for Windows servicing stage
-#   make clean          - Remove build artifacts
+#   make validate-xml   - Validate every XML file and the autounattend symlink
+#   make validate-reg   - Validate .reg headers (standalone and embedded)
+#   make validate-debloat - Validate config/debloat_list.txt
+#   make clean         - Remove build artifacts
 #   make help           - Show this help
 # =============================================================================
 
@@ -116,6 +119,9 @@ help:
 	@echo "  make deps        - Install system dependencies (run once)"
 	@echo "  make download    - Download UUP files from uupdump.net"
 	@echo "  make validate    - Validate prerequisites before building"
+	@echo "  make validate-xml     - Validate XML files (well-formed, UTF-8 no BOM, symlink sync)"
+	@echo "  make validate-reg     - Validate .reg headers (standalone and embedded)"
+	@echo "  make validate-debloat - Validate config/debloat_list.txt"
 	@echo "  make build       - Build debloated ISO"
 	@echo "  make build-pro   - Build with Windows 11 Pro only"
 	@echo "  make build-nano  - Build with extreme debloating (NANO mode)"

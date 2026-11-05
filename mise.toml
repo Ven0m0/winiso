@@ -46,6 +46,8 @@ install-deps = [
     pacman -S --needed aria2 cabextract wimlib chntpw cdrtools
   elif command -v apt-get >/dev/null 2>&1; then
     apt update -qq && apt install -yq aria2 cabextract wimtools chntpw genisoimage
+  elif command -v dnf >/dev/null 2>&1; then
+    dnf install -y aria2 cabextract wimlib-utils chntpw genisoimage
   else
     echo 'Unsupported Linux distribution: no supported package manager found (pacman, apt-get, or dnf).' >&2
     exit 1

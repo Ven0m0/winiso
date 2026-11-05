@@ -5,6 +5,9 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+- Expanded the README "Windows Servicing Stage" section: prerequisites, step-by-step
+  `windows_service.cmd` walkthrough (what each stage does, ESD caveat), the Windows-side ISO
+  assembly option (`apply_image_settings.py` + `new_iso.py`), and servicing troubleshooting.
 - Refreshed `README.md`, `docs/autounattend.md` and `docs/iso-creation.md` to match the current
   scripts, make/mise targets and profiles. Corrected `AGENTS.md` (edition selection is an index
   prompt, not a `/Name:` filter; `unattend-generator/` file names; `mise.toml` tools are commented

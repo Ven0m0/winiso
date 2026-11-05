@@ -228,17 +228,77 @@ Precedence for the edition: `--edition` over `--profile`/`PROFILE` over `TARGET_
 
 ## Windows Servicing Stage (Optional)
 
-For maximum optimization (DISM cleanup + 8.3 stripping), use the Windows servicing stage:
+For maximum optimization (DISM cleanup + 8.3 stripping), use the Windows servicing stage. It is
+manual, Windows-only, and never required: the Linux build already produces a bootable ISO without it.
 
-```bash
-make build-pause
-```
+### Windows prerequisites
 
-When paused:
-1. Copy `scripts/ISODIR/sources/install.wim` to a Windows machine (the converter prints the exact path, `install.esd` if the image is ESD-compressed)
-2. Run `scripts\windows_service.cmd C:\path\to\install.wim [MOUNT_DIR] [ISO_DIR]` as Administrator (defaults: `C:\ISO\sources\install.wim`, `C:\mnt`)
-3. Copy the serviced WIM back
-4. Press Enter to continue ISO generation
+| Need | Why |
+|------|-----|
+| Windows 10/11 with `dism.exe` | Every servicing script shells out to DISM (no PowerShell DISM cmdlets) |
+| Administrator shell | Mounting images and loading offline registry hives require elevation |
+| Free disk space for the mount and a second WIM | The image is mounted, then re-exported as `install_cleaned.wim` next to the source before it replaces the original |
+| Python 3 (stdlib only), no venv | Only for `apply_image_settings.py` / `new_iso.py`; they never import `httpx`/`orjson` |
+| Windows ADK (Deployment Tools) | Only for `new_iso.py`; provides `oscdimg.exe` (auto-detected, or set `OSCDIMG_PATH` in `scripts/win_config.py`) |
+| `powershell` / `pwsh` | Only for `apply_image_settings.py` (`Mount-DiskImage`); DISM itself is not used via PowerShell |
+
+### Option 1: `windows_service.cmd` (WIM only, no Python)
+
+1. On Linux, run the pausing build:
+   ```bash
+   make build-pause
+   ```
+2. When it pauses, copy `scripts/ISODIR/sources/install.wim` to the Windows machine. The converter
+   prints the exact path; it is `install.esd` if the image is ESD-compressed. DISM cannot mount an
+   ESD read-write, so convert it first with
+   `dism /Export-Image /SourceImageFile:install.esd /SourceIndex:1 /DestinationImageFile:install.wim /Compress:max`.
+3. In an elevated Command Prompt on Windows:
+   ```bat
+   scripts\windows_service.cmd C:\work\install.wim [MOUNT_DIR] [ISO_DIR]
+   ```
+   Defaults: WIM `C:\ISO\sources\install.wim`, mount dir `C:\mnt`, ISO dir = the WIM's parent folder.
+4. Copy the serviced `install.wim` back over `scripts/ISODIR/sources/install.wim`.
+5. Return to the paused Linux build and press Enter to generate the ISO.
+
+What the script does to **every** image index in the WIM, in order:
+
+1. Clear stale mount points (`/Cleanup-Mountpoints`, `/Cleanup-Wim`)
+2. Mount the index at `MOUNT_DIR`
+3. Strip 8.3 short names (`fsutil 8dot3name strip`)
+4. `/Optimize-ProvisionedAppxPackages`
+5. `/Cleanup-Image /RestoreHealth` (offline; a warning is normal without a source)
+6. `/Cleanup-Image /StartComponentCleanup /ResetBase`
+7. Apply offline registry tweaks (disable 8.3 creation, allow NTFS compression, High Performance power plan)
+8. Delete `*.log`, `*.tmp`, `*.bak` and similar leftovers under `ISO_DIR`
+9. Unmount with `/Commit` (on failure it tries `/Discard` and exits)
+
+After all indexes are done it re-exports them with `/Compress:max /CheckIntegrity` and replaces the
+original WIM with the result. Keep a copy of the unserviced WIM if you want a way back.
+
+### Option 2: build the ISO on Windows
+
+To assemble the final ISO on Windows instead of returning to Linux:
+
+1. Stage an extracted ISO tree, for example with `scripts/apply_image_settings.py` (flags:
+   `--iso-path`, `--extract-path`, `--output-path`, `--mount-dir`, `--wim-path`, `--skip-iso`,
+   `--debloat`, `--driver-path DIR`). Run it from an elevated shell.
+2. Build the ISO from that tree:
+   ```bat
+   python scripts\new_iso.py --iso-root C:\ISO --output-iso C:\Win.iso
+   ```
+   `--iso-root` must already contain `boot\etfsboot.com` and `efi\Microsoft\boot\efisys.bin`.
+
+Do not run `apply_image_settings.py` against a WIM already serviced by NTLite; it overwrites NTLite's
+Panther `unattend.xml` (see the NTLite section below).
+
+### Windows servicing troubleshooting
+
+- **`DISM` fails with `0xc1510111` when mounting `boot.wim`**: files copied out of an ISO keep their
+  read-only flag. Clear it with `attrib -r <folder>\*.* /s` and retry.
+- **Leftover mount after a failed run**: `dism /Cleanup-Mountpoints`, then `dism /Cleanup-Wim`.
+- **Disk-space or path errors**: use short local paths (for example `C:\work`), not network shares.
+
+### Other Windows helpers
 
 Other optional, Windows-only helpers in `scripts/` (none are required by the Linux build):
 

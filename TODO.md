@@ -6,6 +6,8 @@ duplicate items here. This file keeps only unevaluated external references.
 
 ## External inspiration (evaluated)
 
+Read "https://github.com/nohuto/dism-wsim" for more info and verify that my process is correct and optimal
+
 The four repos previously listed here were evaluated for merge. Verdict below;
 no unevaluated references remain.
 

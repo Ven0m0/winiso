@@ -348,7 +348,7 @@ Workflows in `.github/workflows/`:
 
 | File | Triggers | Checks |
 |------|----------|--------|
-| `lint-and-format.yml` | push, PR | ShellCheck, Ruff, xmllint, PSScriptAnalyzer |
+| `lint-and-format.yml` | push, PR | ShellCheck, Ruff, xmllint, .reg and debloat-list validators, PSScriptAnalyzer |
 | `test-matrix.yml` | push, PR | pytest on Python 3.14 |
 
 No ISO-build or Copilot-setup workflow exists — building the ISO is a local-only `make build` step, not run in CI.

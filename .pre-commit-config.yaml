@@ -53,12 +53,12 @@ repos:
         pass_filenames: true
 
   - repo: https://github.com/renovatebot/pre-commit-hooks
-    rev: 44.241.0
+    rev: 44.246.1
     hooks:
       - id: renovate-config-validator
 
   - repo: https://github.com/biomejs/pre-commit
-    rev: v2.6.7
+    rev: v2.6.8
     hooks:
       - id: biome-ci
         exclude: ^ventoy/

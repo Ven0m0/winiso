@@ -73,3 +73,5 @@ Thumbs.db
 Desktop.ini
 *.lnk
 $RECYCLE.BIN/
+
+.claude/context-archive/
